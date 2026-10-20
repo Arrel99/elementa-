@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/card_data.gd" id="1_card"]
+
+[resource]
+script = ExtResource("1_card")
+id = "NH3"
+display_name = "Amonia"
+type = 1
+points = 4
+symbol = "NH3"
+atomic_number = 0
+recipe = Array[String](["N", "H"])
+spell_effect = ""
+description = "Senyawa amonia."
+art = null
+in_deck = true
+weight = 1
+set_id = "senyawa"
+ct_note = ""

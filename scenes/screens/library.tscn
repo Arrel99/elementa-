@@ -1,0 +1,62 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/screens/library.gd" id="1_library"]
+[ext_resource type="PackedScene" path="res://scenes/ui/card_detail.tscn" id="2_detail"]
+
+[node name="Library" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_library")
+
+[node name="Back" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 120.0
+offset_bottom = 44.0
+text = "Kembali"
+
+[node name="Tabs" type="TabContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 50.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dasar" type="ScrollContainer" parent="Tabs"]
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="Tabs/Dasar"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 5
+
+[node name="Spell" type="ScrollContainer" parent="Tabs"]
+visible = false
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="Tabs/Spell"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 5
+
+[node name="Spesial" type="ScrollContainer" parent="Tabs"]
+visible = false
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="Tabs/Spesial"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 5
+
+[node name="Detail" parent="." instance=ExtResource("2_detail")]

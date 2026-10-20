@@ -11,5 +11,25 @@ config_version=5
 [application]
 
 config/name="Elementa"
+config/description="Game kartu kimia 2 pemain, dibuat mengikuti Panduan Elementa."
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
+run/main_scene="res://scenes/screens/main_menu.tscn"
+
+[autoload]
+
+Settings="*res://scripts/settings/settings.gd"
+EventLog="*res://scripts/core/event_log.gd"
+CardDB="*res://scripts/core/card_db.gd"
+Net="*res://scripts/net/net.gd"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[gui]
+
+theme/default_font_size=18

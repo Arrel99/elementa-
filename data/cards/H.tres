@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/card_data.gd" id="1_card"]
+
+[resource]
+script = ExtResource("1_card")
+id = "H"
+display_name = "Hidrogen"
+type = 0
+points = 1
+symbol = "H"
+atomic_number = 1
+recipe = Array[String]([])
+spell_effect = ""
+description = "Unsur dasar hidrogen."
+art = null
+in_deck = true
+weight = 1
+set_id = "dasar"
+ct_note = ""

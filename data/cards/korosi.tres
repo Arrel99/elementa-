@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/card_data.gd" id="1_card"]
+
+[resource]
+script = ExtResource("1_card")
+id = "korosi"
+display_name = "Korosi"
+type = 2
+points = 0
+symbol = ""
+atomic_number = 0
+recipe = Array[String]([])
+spell_effect = "korosi"
+description = "Paksa lawan membuang kartu di zona dasarnya."
+art = null
+in_deck = true
+weight = 1
+set_id = "spell"
+ct_note = ""

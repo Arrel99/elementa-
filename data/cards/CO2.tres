@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/card_data.gd" id="1_card"]
+
+[resource]
+script = ExtResource("1_card")
+id = "CO2"
+display_name = "Karbon Dioksida"
+type = 1
+points = 3
+symbol = "CO2"
+atomic_number = 0
+recipe = Array[String](["C", "O"])
+spell_effect = ""
+description = "Senyawa karbon dioksida."
+art = null
+in_deck = true
+weight = 1
+set_id = "senyawa"
+ct_note = ""

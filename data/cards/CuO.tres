@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/card_data.gd" id="1_card"]
+
+[resource]
+script = ExtResource("1_card")
+id = "CuO"
+display_name = "Tembaga(II) Oksida"
+type = 1
+points = 3
+symbol = "CuO"
+atomic_number = 0
+recipe = Array[String](["Cu", "O"])
+spell_effect = ""
+description = "Senyawa tembaga oksida."
+art = null
+in_deck = true
+weight = 1
+set_id = "senyawa"
+ct_note = ""

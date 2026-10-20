@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/card_data.gd" id="1_card"]
+
+[resource]
+script = ExtResource("1_card")
+id = "O"
+display_name = "Oksigen"
+type = 0
+points = 2
+symbol = "O"
+atomic_number = 8
+recipe = Array[String]([])
+spell_effect = ""
+description = "Unsur dasar oksigen."
+art = null
+in_deck = true
+weight = 1
+set_id = "dasar"
+ct_note = ""
