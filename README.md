@@ -27,10 +27,11 @@ res://
   scripts/settings/    settings (volume + bahasa tersimpan)
   scripts/ui/          card_view, card_detail, toast, reveal_popup
   scripts/screens/     main_menu, lobby, game, library
-  scripts/tools/       test, simulate, validate_cards
+  scripts/tools/       test, simulate, validate_cards, assign_art
   scenes/ui/           card, toast, card_detail, reveal_popup
   scenes/screens/      main_menu, lobby, game, library
   scenes/tools/        test, simulate
+  art/cards/           ilustrasi kartu (nama file = id kartu)
 ```
 
 Aturan emas: `scripts/core` tidak pernah menyentuh Node/Control/scene, sehingga
@@ -49,32 +50,55 @@ logika bisa dites tanpa UI dan dipakai ulang sebagai server.
 | 7 | Menu, Library, audio, polish | `main_menu.gd`, `library.gd`, `settings.gd` |
 | 8 | Playtest, perbaikan, export | `validate_cards.gd`, `simulate.gd`, README |
 
-## Aturan (sesuai contoh panduan, mudah diubah)
+## Aturan (sesuai Buku Peraturan Elementa: Kartu Reaksi)
 
-- Batas tangan 8, zona dasar 6, slot senyawa 10, deck 60 (44 dasar : 16 spell),
-  tangan awal 5. Semua di `data/game_rules.tres`.
-- Menang: menyerah, deck habis (dihitung poin), atau slot senyawa penuh lalu
-  lawan mendapat satu giliran terakhir.
-- Cooldown sintesis satu giliran; pasang kartu dasar lalu tunggu sebelum bisa
-  dipakai sintesis.
-- Jika tangan sudah penuh saat harus menarik kartu, kartu itu dibakar ke
-  tumpukan buang. Ini menjaga deck tetap menyusut sehingga kondisi "deck habis"
-  pasti tercapai dan game tidak bisa buntu (aturan ini bisa kamu ubah di
-  `GameState.draw`).
+- Deck 60 kartu per pemain = **46 kartu unsur + 14 spell** (komposisi pasti di
+  field `deck_copies` tiap kartu). Kartu senyawa **tidak** masuk deck.
+- Batas tangan 8 **di akhir giliran** (pemain memilih kartu yang dibuang),
+  zona dasar 6, zona senyawa 10, tangan awal 5.
+- **Fase menarik kartu: 2 kartu**; pemain pertama tidak menarik pada giliran
+  pertamanya.
+- Cooldown sintesis satu giliran; kartu yang baru dipasang baru bisa dipakai
+  pada giliran pemiliknya berikutnya.
+- **Maksimal 1 spell per giliran**, kecuali Katalis (tidak memakai jatah).
+- **Tiga kondisi menang:** menyerah; deck habis (sisa < 2 saat menarik);
+  atau zona senyawa menyentuh **8 slot** → hitungan mundur **3 giliran**.
+- **Hasil seri** ditentukan jumlah kartu spesial terbanyak; baru kemudian seri.
 
-### 9 resep senyawa contoh
+Semua angka ada di `data/game_rules.tres`.
 
-H2O (H+O), CO2 (C+O), NaCl (Na+Cl), NH3 (N+H), CH4 (C+H), CaO (Ca+O),
-CuO (Cu+O), Fe2O3 (Fe+O), HCl (H+Cl).
+### 9 senyawa (Lampiran B)
 
-### 7 spell
+| Senyawa | Resep | Poin |
+|---|---|---|
+| H₂O — Air | H + O | 6 |
+| CO₂ — Karbon dioksida | C + O | 7 |
+| NH₃ — Amonia | N + H | 8 |
+| CH₄ — Metana | C + H | 8 |
+| HCl — Asam klorida | H + Cl | 8 |
+| CaO — Kalsium oksida | Ca + O | 9 |
+| NaCl — Garam dapur | Na + Cl | 10 |
+| CuO — Tembaga oksida | Cu + O | 10 |
+| Fe₂O₃ — Besi oksida | Fe + O | 11 |
 
-Elektrolisis, Katalis, Spektrometer, Bilas, Korosi, Elektrolisis Paksa,
-Perisai Inert.
+Kartu senyawa hanya 1 salinan di Tabel Senyawa bersama; sekali diambil, resep itu
+tertutup sampai ada yang memecahnya lewat Elektrolisis.
 
-> **Catatan dari panduan:** nama kartu, resep, dan efek spell di sini adalah
-> contoh. Cocokkan dengan Buku Peraturan Elementa milikmu dengan mengedit file
-> `.tres` (tanpa menyentuh kode) dan fungsi `_fx_*` di `game_state.gd`.
+### 7 spell (Lampiran C)
+
+| Spell | Efek |
+|---|---|
+| Elektrolisis | Pecah senyawa sendiri; senyawa ke Tabel Senyawa, 2 unsur ke tangan |
+| Katalis | +1 aksi sintesis; tidak memakai jatah spell |
+| Spektrometer | Lihat 3 kartu teratas deck sendiri; ambil 1, lalu deck diacak kembali |
+| Bilas | Buang 1 kartu zona dasar sendiri, lalu tarik 1 |
+| Korosi | Buang 1 kartu dasar lawan dari zona dasarnya |
+| Elektrolisis Paksa | Pecah senyawa lawan; 2 unsur ke tangan lawan |
+| Perisai Inert | Kebal spell gangguan lawan sampai awal giliran sendiri berikutnya |
+
+> **Catatan:** semua nilai (poin, jumlah salinan, resep) ada di file `.tres`,
+> jadi bisa diubah tanpa menyentuh kode. Efek spell ada di fungsi `_fx_*` pada
+> `scripts/core/game_state.gd`.
 
 ## Multiplayer
 

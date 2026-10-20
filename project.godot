@@ -12,9 +12,9 @@ config_version=5
 
 config/name="Elementa"
 config/description="Game kartu kimia 2 pemain, dibuat mengikuti Panduan Elementa."
+run/main_scene="res://scenes/screens/main_menu.tscn"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
-run/main_scene="res://scenes/screens/main_menu.tscn"
 
 [autoload]
 

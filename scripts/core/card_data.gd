@@ -19,6 +19,6 @@ enum Type { BASIC, SPECIAL, SPELL }
 
 # Tambahan dari bab 11.1
 @export var in_deck: bool = true             # matikan kartu tanpa menghapusnya
-@export var weight: int = 1                  # bobot kemunculan di deck
+@export var deck_copies: int = 0             # jumlah salinan di deck (Lampiran A & C)
 @export var set_id: String = "dasar"         # pengelompokan ekspansi
 @export_multiline var ct_note: String = ""   # catatan Computational Thinking

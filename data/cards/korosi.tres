@@ -15,6 +15,6 @@ spell_effect = "korosi"
 description = "Paksa lawan membuang kartu di zona dasarnya."
 art = null
 in_deck = true
-weight = 1
+deck_copies = 2
 set_id = "spell"
 ct_note = ""

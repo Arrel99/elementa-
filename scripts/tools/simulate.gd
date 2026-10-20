@@ -26,6 +26,10 @@ func _ready() -> void:
 func _bot_turn(g: GameState) -> void:
     var p := g.current
     var pl = g.players[p]
+    # Selesaikan efek Spektrometer bila ada (bot mengambil kartu pertama).
+    if not g.pending.is_empty():
+        var cs: Array = g.pending.get("cards", [])
+        g.resolve_spektrometer(p, int(cs[0].uid) if not cs.is_empty() else -1)
     for c in pl.hand.duplicate():
         if CardDB.get_card(c.id).type == CardData.Type.BASIC:
             g.place_base(p, c.uid)
@@ -33,4 +37,5 @@ func _bot_turn(g: GameState) -> void:
         for b in pl.base.duplicate():
             if a.uid < b.uid and g.synthesize(p, a.uid, b.uid) == "":
                 break
+    g.auto_discard_excess(p)
     g.end_turn(p)

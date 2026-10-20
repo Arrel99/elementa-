@@ -5,7 +5,7 @@ extends Node
 ## dijangkau sebelum scene game dimuat.
 
 const PORT := 24567
-const GAME_VERSION := "0.1.0"
+const GAME_VERSION := "0.2.0"
 
 signal opponent_joined
 signal opponent_left

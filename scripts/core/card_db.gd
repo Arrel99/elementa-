@@ -54,5 +54,5 @@ func cards_hash() -> int:
     var s := ""
     for k in keys:
         var c: CardData = cards[k]
-        s += "%s|%d|%d|%s;" % [k, c.type, c.points, ",".join(PackedStringArray(c.recipe))]
+        s += "%s|%d|%d|%d|%s;" % [k, c.type, c.points, c.deck_copies, ",".join(PackedStringArray(c.recipe))]
     return s.hash()

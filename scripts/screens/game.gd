@@ -15,8 +15,8 @@ const SPELL_TARGET := {
 
 const REASON_TEXT := {
     "surrender": "Salah satu pemain menyerah.",
-    "deck_out": "Deck salah satu pemain habis.",
-    "special_full": "10 slot senyawa terisi dan giliran terakhir selesai.",
+    "deck_out": "Deck salah satu pemain tidak cukup untuk menarik 2 kartu.",
+    "special_full": "Zona senyawa menyentuh 8 slot; hitungan mundur 3 giliran selesai.",
 }
 
 enum Mode { IDLE, PICK_SYNTH, PICK_TARGET }
@@ -31,6 +31,7 @@ var pending_zone := ""
 var local_test := false
 var easy_mode := true
 var turn_timer := Timer.new()
+var _pending_key := ""          # penanda efek interaktif yang sedang ditampilkan
 
 # --- Siklus hidup (bab 4.5 / 6.2) -------------------------------------------
 
@@ -39,6 +40,7 @@ func _ready() -> void:
     $Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
     $Hud/GiveUp.pressed.connect($GiveUpDialog.popup_centered)
     $GiveUpDialog.confirmed.connect(func(): submit({"type": "give_up"}))
+    $RevealPopup.resolved.connect(_on_spektrometer_resolved)
     multiplayer.peer_disconnected.connect(_on_peer_gone)
     multiplayer.server_disconnected.connect(_on_server_gone)
     _setup_timer()
@@ -86,6 +88,8 @@ func _handle(sender_id: int, a: Dictionary) -> void:
         "place":   err = state.place_base(p, int(a.get("uid", -1)))
         "synth":   err = state.synthesize(p, int(a.get("a", -1)), int(a.get("b", -1)))
         "spell":   err = state.play_spell(p, int(a.get("uid", -1)), a.get("args", {}))
+        "discard": err = state.discard_from_hand(p, int(a.get("uid", -1)))
+        "spektro": err = state.resolve_spektrometer(p, int(a.get("take", -1)))
         "end":     err = state.end_turn(p)
         "give_up": state.surrender(p)
         _:         err = "Aksi tidak dikenal."
@@ -96,16 +100,6 @@ func _handle(sender_id: int, a: Dictionary) -> void:
         else:
             show_error.rpc_id(sender_id, err)
         return
-    # Spektrometer: kirim info privat hanya ke pemain yang memainkannya (bab 5.1)
-    if not state.reveal.is_empty():
-        var r: Dictionary = state.reveal
-        state.reveal = {}
-        if r.to == my_index or local_test:
-            _show_reveal(r.cards)
-        else:
-            var peers := multiplayer.get_peers()
-            if not peers.is_empty():
-                receive_reveal.rpc_id(peers[0], r.cards)
     _broadcast()
     if not local_test and multiplayer.is_server() and state.winner == -2:
         turn_timer.start(60)
@@ -118,12 +112,8 @@ func show_error(msg: String) -> void:
 func receive_view(v: Dictionary) -> void:
     render(v)
 
-@rpc("authority", "call_remote", "reliable")
-func receive_reveal(cards: Array) -> void:
-    _show_reveal(cards)
-
-func _show_reveal(cards: Array) -> void:
-    $RevealPopup.show_cards(cards)
+func _on_spektrometer_resolved(take_uid: int) -> void:
+    submit({"type": "spektro", "take": take_uid})
 
 func _broadcast() -> void:
     if local_test:
@@ -145,13 +135,37 @@ func render(v: Dictionary) -> void:
     _fill($Opp/Base, v.opp.base, true)
     _fill($Opp/Special, v.opp.special, true)
     _render_compound_table(v.compound_pile)
-    $Hud/Turn.text = "Giliran %d" % v.turn_no
+    var hand_max := int(v.rules.hand_max)
+    var over: bool = v.me.hand.size() > hand_max
+    var extra := ""
+    if v.countdown > 0:
+        extra = "  •  Hitung mundur %d" % v.countdown
+    $Hud/Turn.text = "Giliran %d  (sintesis %d, spell %d)%s" % [
+        v.turn_no, v.synth_left, v.spell_left, extra]
     $Hud/Points.text = "%d : %d" % [v.me.points, v.opp.points]
     $Hud/DeckInfo.text = "Deck %d | Buang %d  •  Lawan deck %d" % [
         v.me.deck_count, v.me.discard.size(), v.opp.deck_count]
-    $Hud/EndTurn.disabled = (not v.my_turn) or v.winner != -2
+    $Hud/EndTurn.disabled = (not v.my_turn) or v.winner != -2 or over
+    if over and v.my_turn and v.winner == -2:
+        $Hud/Hint.text = "Tangan %d/%d — klik kartu di tangan untuk membuang." % [
+            v.me.hand.size(), hand_max]
+    _sync_pending(v)
     if v.winner != -2:
         _show_result()
+
+## Menampilkan efek interaktif (Spektrometer) hanya untuk pemiliknya.
+func _sync_pending(v: Dictionary) -> void:
+    var key := ""
+    if not v.pending.is_empty():
+        for c in v.pending.cards:
+            key += "%s," % c.uid
+    if key == "":
+        if $RevealPopup.visible:
+            $RevealPopup.hide()
+        _pending_key = ""
+    elif key != _pending_key:
+        _pending_key = key
+        $RevealPopup.show_spektrometer(v.pending.cards)
 
 func _fill(box: Container, cards: Array, face_up: bool) -> void:
     for ch in box.get_children():
@@ -214,6 +228,8 @@ func _card_by_uid(uid: int) -> Dictionary:
 func _on_card_clicked(uid: int) -> void:
     if view.is_empty() or view.winner != -2:
         return
+    if not view.pending.is_empty():
+        return                      # efek Spektrometer harus diselesaikan dulu
     if not view.my_turn:
         $Toast.show_text("Bukan giliranmu.")
         return
@@ -240,6 +256,10 @@ func _on_card_clicked(uid: int) -> void:
 func _click_hand(uid: int) -> void:
     var card := _card_by_uid(uid)
     if card.is_empty():
+        return
+    # Tangan melebihi batas akhir giliran: klik kartu = membuangnya (bagian 4).
+    if view.me.hand.size() > int(view.rules.hand_max):
+        submit({"type": "discard", "uid": uid})
         return
     var data := CardDB.get_card(card.id)
     if data == null:
@@ -292,6 +312,11 @@ func _setup_timer() -> void:
     turn_timer.one_shot = true
     turn_timer.timeout.connect(func():
         if state and state.winner == -2:
+            # Selesaikan efek yang menunggu dan buang kelebihan sebelum habis waktu.
+            if not state.pending.is_empty():
+                var cs: Array = state.pending.get("cards", [])
+                state.resolve_spektrometer(state.current, int(cs[0].uid) if not cs.is_empty() else -1)
+            state.auto_discard_excess(state.current)
             state.end_turn(state.current)
             _broadcast())
     add_child(turn_timer)

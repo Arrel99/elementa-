@@ -32,6 +32,13 @@ func _run() -> void:
             recipes[key] = c.id
         if c.type == CardData.Type.SPELL and c.spell_effect == "":
             errors.append("%s: spell tanpa efek" % c.id)
+        if c.type == CardData.Type.SPECIAL and c.deck_copies != 0:
+            errors.append("%s: kartu senyawa tidak boleh masuk deck" % c.id)
         if c.art == null:
             print("Peringatan: %s belum punya ilustrasi" % c.id)
+    var deck_total := 0
+    for c in cards:
+        deck_total += c.deck_copies
+    if deck_total != CardDB.rules.deck_size:
+        errors.append("Total salinan deck %d, seharusnya %d" % [deck_total, CardDB.rules.deck_size])
     print("Semua kartu valid." if errors.is_empty() else "\n".join(errors))
