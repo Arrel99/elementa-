@@ -373,7 +373,8 @@ func view_for(p: int) -> Dictionary:
 		"opp": {
 			"hand_backs": _backs(op.hand.size()), "base": op.base.duplicate(true),
 			"special": op.special.duplicate(true), "points": op.points,
-			"deck_count": op.deck.size(), "shield": op.shield,
+			"deck_count": op.deck.size(), "discard_count": op.discard.size(),
+			"shield": op.shield,
 		},
 	}
 

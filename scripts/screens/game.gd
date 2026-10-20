@@ -5,6 +5,13 @@ extends Control
 
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 
+# ukuran kartu per zona papan (desain 1080x1350, diskalakan 0.76 oleh node Board)
+const SIZE_OPP_HAND := Vector2(84, 112)
+const SIZE_HAND := Vector2(88, 118)
+const SIZE_BASE := Vector2(108, 144)
+const SIZE_SPECIAL := Vector2(78, 104)
+const SIZE_SEN := Vector2(78, 104)
+
 # efek spell -> zona tempat target dipilih; efek yang tidak ada di sini tanpa target
 const SPELL_TARGET := {
     "bilas": "my_base",
@@ -44,6 +51,7 @@ func _ready() -> void:
     multiplayer.peer_disconnected.connect(_on_peer_gone)
     multiplayer.server_disconnected.connect(_on_server_gone)
     _setup_timer()
+    _build_ghosts()
     # Godot memakai OfflineMultiplayerPeer saat tidak ada jaringan, dan peer
     # itu melaporkan is_server() = true. Deteksi tipe peer-nya lebih dulu.
     var offline := multiplayer.multiplayer_peer is OfflineMultiplayerPeer
@@ -128,13 +136,17 @@ func _broadcast() -> void:
 func render(v: Dictionary) -> void:
     view = v
     _reset_mode()
-    _fill($Me/Hand, v.me.hand, true)
-    _fill($Me/Base, v.me.base, true)
-    _fill($Me/Special, v.me.special, true)
-    _fill($Opp/Hand, v.opp.hand_backs, false)   # hanya jumlah, bukan isi
-    _fill($Opp/Base, v.opp.base, true)
-    _fill($Opp/Special, v.opp.special, true)
+    _fill($Board/Me/Hand, v.me.hand, true, SIZE_HAND)
+    _fill($Board/Me/Base, v.me.base, true, SIZE_BASE)
+    _fill($Board/Me/Special, v.me.special, true, SIZE_SPECIAL)
+    _fill($Board/Opp/Hand, v.opp.hand_backs, false, SIZE_OPP_HAND)   # hanya jumlah, bukan isi
+    _fill($Board/Opp/Base, v.opp.base, true, SIZE_BASE)
+    _fill($Board/Opp/Special, v.opp.special, true, SIZE_SPECIAL)
+    # Zona senyawa = senyawa terakhir yang dibuka (kartu paling akhir di array).
+    _fill($Board/MeSen/V/Slot/Cards, _last_card(v.me.special), true, SIZE_SEN, false)
+    _fill($Board/OppSen/V/Slot/Cards, _last_card(v.opp.special), true, SIZE_SEN, false)
     _render_compound_table(v.compound_pile)
+    _render_counters(v)
     var hand_max := int(v.rules.hand_max)
     var over: bool = v.me.hand.size() > hand_max
     var extra := ""
@@ -167,19 +179,84 @@ func _sync_pending(v: Dictionary) -> void:
         _pending_key = key
         $RevealPopup.show_spektrometer(v.pending.cards)
 
-func _fill(box: Container, cards: Array, face_up: bool) -> void:
+func _fill(box: Container, cards: Array, face_up: bool, size: Vector2, interactive := true) -> void:
     for ch in box.get_children():
         ch.queue_free()
     for c in cards:
         var n := CARD_SCENE.instantiate()
         box.add_child(n)
+        _size_card(n, size)
         n.setup(c, face_up)
-        n.clicked.connect(_on_card_clicked)
-        if box == $Me/Base and int(c.get("placed_turn", -1)) == view.turn_no:
+        if interactive:
+            n.clicked.connect(_on_card_clicked)
+        else:
+            n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        if box == $Board/Me/Base and int(c.get("placed_turn", -1)) == view.turn_no:
             n.modulate = Color(0.6, 0.6, 0.6)   # masih cooldown
 
+## Kartu baru saja masuk zona spesial = elemen terakhir array.
+func _last_card(cards: Array) -> Array:
+    return [] if cards.is_empty() else [cards[cards.size() - 1]]
+
+## Garis samar penanda slot kosong, dibuat sekali saat _ready.
+func _build_ghosts() -> void:
+    _build_ghost_row($Board/Opp/HandGhosts, 8, SIZE_OPP_HAND)
+    _build_ghost_row($Board/Opp/BaseGhosts, 6, SIZE_BASE)
+    _build_ghost_row($Board/Opp/SpecialGhosts, 8, SIZE_SPECIAL)
+    _build_ghost_row($Board/Me/HandGhosts, 8, SIZE_HAND)
+    _build_ghost_row($Board/Me/BaseGhosts, 6, SIZE_BASE)
+    _build_ghost_row($Board/Me/SpecialGhosts, 8, SIZE_SPECIAL)
+
+func _build_ghost_row(box: Container, count: int, size: Vector2) -> void:
+    var sb := StyleBoxFlat.new()
+    sb.bg_color = Color(0.055, 0.086, 0.118, 0.35)
+    sb.border_width_left = 1
+    sb.border_width_top = 1
+    sb.border_width_right = 1
+    sb.border_width_bottom = 1
+    sb.border_color = Color(0.204, 0.329, 0.451, 0.55)
+    sb.corner_radius_top_left = 8
+    sb.corner_radius_top_right = 8
+    sb.corner_radius_bottom_right = 8
+    sb.corner_radius_bottom_left = 8
+    for i in count:
+        var slot := PanelContainer.new()
+        slot.custom_minimum_size = size
+        slot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+        slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+        slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        slot.add_theme_stylebox_override("panel", sb)
+        box.add_child(slot)
+
+## Menyesuaikan isi kartu dengan ukuran zona supaya tidak meluber.
+func _size_card(n: Node, size: Vector2) -> void:
+    n.custom_minimum_size = size
+    n.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+    n.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+    n.clip_contents = true
+    var name_label: Label = n.get_node("V/Name")
+    var info: Label = n.get_node("V/Info")
+    var desc: Label = n.get_node("V/Desc")
+    var art: TextureRect = n.get_node("V/Art")
+    name_label.add_theme_font_size_override("font_size", maxi(9, int(size.y * 0.085)))
+    info.add_theme_font_size_override("font_size", maxi(8, int(size.y * 0.07)))
+    desc.add_theme_font_size_override("font_size", maxi(8, int(size.y * 0.055)))
+    desc.visible = size.y >= 140
+    art.custom_minimum_size = Vector2(0, int(size.y * 0.36))
+
+## Angka pada panel deck / discard / deck senyawa.
+func _render_counters(v: Dictionary) -> void:
+    $Board/OppDeck/V/Count.text = str(v.opp.deck_count)
+    $Board/OppDiscard/V/Count.text = str(v.opp.discard_count)
+    $Board/MeDeck/V/Count.text = str(v.me.deck_count)
+    $Board/MeDiscard/V/Count.text = str(v.me.discard.size())
+    $Board/CompoundDeck/V/Count.text = str(v.compound_pile.size())
+    $Board/OppHandCap.text = "TANGAN LAWAN (%d)" % v.opp.hand_backs.size()
+    $Board/OppSpell/V/Slot/Label.text = "perisai aktif" if v.opp.shield else "—"
+    $Board/MeSpell/V/Slot/Label.text = "perisai aktif" if v.me.shield else "—"
+
 func _render_compound_table(ids: Array) -> void:
-    var list: VBoxContainer = $TablePanel/List
+    var list: Container = $Board/TablePanel/List
     for ch in list.get_children():
         ch.queue_free()
     var mine := {}
@@ -192,7 +269,29 @@ func _render_compound_table(ids: Array) -> void:
         var a := CardDB.get_card(d.recipe[0])
         var b := CardDB.get_card(d.recipe[1])
         var l := Label.new()
-        l.text = "%s  =  %s + %s   (%d poin)" % [d.symbol, a.symbol, b.symbol, d.points]
+        l.text = "%s = %s + %s  (%d poin)" % [d.symbol, a.symbol, b.symbol, d.points]
+        l.custom_minimum_size = Vector2(136, 64)
+        l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+        l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        l.add_theme_font_size_override("font_size", 12)
+        var sb := StyleBoxFlat.new()
+        sb.bg_color = Color(0.07, 0.105, 0.145, 0.85)
+        sb.border_width_left = 1
+        sb.border_width_top = 1
+        sb.border_width_right = 1
+        sb.border_width_bottom = 1
+        sb.border_color = Color(0.24, 0.38, 0.51, 1)
+        sb.corner_radius_top_left = 6
+        sb.corner_radius_top_right = 6
+        sb.corner_radius_bottom_right = 6
+        sb.corner_radius_bottom_left = 6
+        sb.content_margin_left = 4
+        sb.content_margin_top = 3
+        sb.content_margin_right = 4
+        sb.content_margin_bottom = 3
+        l.add_theme_stylebox_override("normal", sb)
         var have := int(mine.has(d.recipe[0])) + int(mine.has(d.recipe[1]))
         if have == 2:
             l.modulate = Color(0.45, 1.0, 0.45)
@@ -204,8 +303,9 @@ func _render_compound_table(ids: Array) -> void:
 
 func _zone_box(z: String) -> Container:
     return {
-        "hand": $Me/Hand, "my_base": $Me/Base, "my_special": $Me/Special,
-        "opp_base": $Opp/Base, "opp_special": $Opp/Special,
+        "hand": $Board/Me/Hand, "my_base": $Board/Me/Base,
+        "my_special": $Board/Me/Special,
+        "opp_base": $Board/Opp/Base, "opp_special": $Board/Opp/Special,
     }[z]
 
 func _zone_of(uid: int) -> String:
