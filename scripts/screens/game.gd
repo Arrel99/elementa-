@@ -42,19 +42,20 @@ func _ready() -> void:
     multiplayer.peer_disconnected.connect(_on_peer_gone)
     multiplayer.server_disconnected.connect(_on_server_gone)
     _setup_timer()
-    if local_test:
+    # Godot memakai OfflineMultiplayerPeer saat tidak ada jaringan, dan peer
+    # itu melaporkan is_server() = true. Deteksi tipe peer-nya lebih dulu.
+    var offline := multiplayer.multiplayer_peer is OfflineMultiplayerPeer
+    if local_test or offline:
+        # Mode uji lokal satu layar (bab 4.8): dua pemain bergantian.
+        local_test = true
+        Net.local_test = true
         start_as_host()
     elif multiplayer.is_server():
         if not Net.client_loaded:
             await Net.client_ready          # tunggu klien selesai memuat scene
         start_as_host()
-    elif multiplayer.multiplayer_peer != null:
-        Net.game_loaded.rpc_id(1)           # klien memberi tahu host: scene sudah siap
     else:
-        # Dijalankan langsung (F6) tanpa jaringan: mode uji lokal satu layar.
-        local_test = true
-        Net.local_test = true
-        start_as_host()
+        Net.game_loaded.rpc_id(1)           # klien memberi tahu host: scene sudah siap
 
 func start_as_host() -> void:
     state = GameState.new()
