@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+GameWindow="*res://scripts/core/app_window.gd"
 Settings="*res://scripts/settings/settings.gd"
 EventLog="*res://scripts/core/event_log.gd"
 CardDB="*res://scripts/core/card_db.gd"
