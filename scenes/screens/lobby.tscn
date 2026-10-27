@@ -18,36 +18,163 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -140.0
-offset_right = 160.0
-offset_bottom = 140.0
+offset_left = -360.0
+offset_top = -310.0
+offset_right = 360.0
+offset_bottom = 310.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
-[node name="HostBtn" type="Button" parent="V"]
-custom_minimum_size = Vector2(0, 44)
+[node name="Title" type="Label" parent="V"]
 layout_mode = 2
-text = "Host (jadi pemain 1)"
+theme_override_font_sizes/font_size = 30
+text = "Main Berdua"
+horizontal_alignment = 1
 
-[node name="IpEdit" type="LineEdit" parent="V"]
-custom_minimum_size = Vector2(0, 36)
+[node name="Hint" type="Label" parent="V"]
 layout_mode = 2
-placeholder_text = "IP host, misal 192.168.1.10"
-
-[node name="JoinBtn" type="Button" parent="V"]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-text = "Join"
-
-[node name="Status" type="Label" parent="V"]
-custom_minimum_size = Vector2(0, 60)
-layout_mode = 2
-text = "Pilih Host atau Join."
+text = "Kedua pemain harus di WiFi/hotspot yang sama. Tidak perlu tahu IP."
+horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="Back" type="Button" parent="V"]
+[node name="Panels" type="HBoxContainer" parent="V"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="HostBox" type="PanelContainer" parent="V/Panels"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="V/Panels/HostBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="HostV" type="VBoxContainer" parent="V/Panels/HostBox/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="H1" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Jadi Host"
+
+[node name="BtnHost" type="Button" parent="V/Panels/HostBox/Margin/HostV"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Buat Room"
+
+[node name="CodeCaption" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.69, 0.8, 1)
+text = "Kode room"
+horizontal_alignment = 1
+
+[node name="Code" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.86, 0.72, 1)
+theme_override_font_sizes/font_size = 56
+text = "----"
+horizontal_alignment = 1
+
+[node name="CodeHint" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Tekan \"Buat Room\", lalu bagikan kodenya."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="IpLabel" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.66, 1)
+theme_override_font_sizes/font_size = 12
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="JoinBox" type="PanelContainer" parent="V/Panels"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="V/Panels/JoinBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="JoinV" type="VBoxContainer" parent="V/Panels/JoinBox/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="H2" type="Label" parent="V/Panels/JoinBox/Margin/JoinV"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Gabung"
+
+[node name="Rooms" type="ItemList" parent="V/Panels/JoinBox/Margin/JoinV"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="Row" type="HBoxContainer" parent="V/Panels/JoinBox/Margin/JoinV"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CodeEdit" type="LineEdit" parent="V/Panels/JoinBox/Margin/JoinV/Row"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Kode, mis. 4821"
+max_length = 8
+
+[node name="BtnCode" type="Button" parent="V/Panels/JoinBox/Margin/JoinV/Row"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Gabung"
+
+[node name="BtnRefresh" type="Button" parent="V/Panels/JoinBox/Margin/JoinV"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Cari ulang room"
+
+[node name="Status" type="Label" parent="V"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+text = "Mencari room di WiFi ini..."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="BtnManual" type="Button" parent="V"]
+layout_mode = 2
+toggle_mode = true
+text = "Koneksi manual (IP)"
+flat = true
+
+[node name="ManualRow" type="HBoxContainer" parent="V"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="IpEdit" type="LineEdit" parent="V/ManualRow"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "IP host, misal 192.168.1.10"
+
+[node name="BtnIp" type="Button" parent="V/ManualRow"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Sambung"
+
+[node name="BtnBack" type="Button" parent="V"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 text = "Kembali"

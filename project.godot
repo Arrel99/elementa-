@@ -23,6 +23,7 @@ Settings="*res://scripts/settings/settings.gd"
 EventLog="*res://scripts/core/event_log.gd"
 CardDB="*res://scripts/core/card_db.gd"
 Net="*res://scripts/net/net.gd"
+Lan="*res://scripts/net/lan.gd"
 
 [display]
 
