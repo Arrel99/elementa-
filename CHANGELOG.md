@@ -1,6 +1,47 @@
 # Changelog
 
-Format mengikuti Keep a Changelog, versi mengikuti `Net.GAME_VERSION`.
+Format mengikuti Keep a Changelog. Versi di sini adalah versi **rilis/milestone**
+(tampilan + protokol). `Net.GAME_VERSION` hanya naik bila protokol atau data
+kartu berubah, karena nilainya dipakai saat handshake.
+
+## [0.4.0] - Hover kartu & papan responsif
+
+### Diperbaiki
+- **Hover kartu tidak pernah ada.** `card_view.gd` hanya menangani klik, jadi
+  satu-satunya hover di game berasal dari `Button` bawaan Godot. Sekarang kartu
+  punya `mouse_entered`/`mouse_exited` yang mengubah warna border & latar
+  `StyleBoxFlat`, plus `tooltip_text` berisi nama + deskripsi kartu terbuka.
+- **`VBoxContainer` di dalam kartu menangkap mouse.** `V` pada `card.tscn`
+  diubah ke `mouse_filter = IGNORE` agar `PanelContainer` kartu menjadi target
+  hover/klik.
+- **Hover hilang setiap papan digambar ulang.** `refresh_hover()` dipanggil di
+  akhir `setup()` dan pada `resized`, sehingga hover tetap benar setelah
+  `_fill()` membuat ulang kartu.
+- **Ruang kosong HUD menahan hover.** `Hud`/`HudBg` kini `anchor_bottom = 1.0`
+  dan `mouse_filter = IGNORE`.
+
+### Diubah
+- **Papan tidak lagi dipaku pada skala 0.76.** `_layout()` baru di
+  `scripts/screens/game.gd` menghitung ulang skala `Board` (kanvas 1080 × 1350)
+  dan lebar kolom HUD setiap kali ukuran jendela berubah.
+- Autoload `GameWindow` menetapkan ukuran jendela minimal **960 × 600**.
+
+### Catatan
+- Tidak ada perubahan aturan: `test.tscn` tetap **63 lulus, 0 gagal**.
+- `Net.GAME_VERSION` tetap `0.3.0` (protokol dan data kartu tidak berubah).
+
+## [0.3.0] - Multiplayer kode room
+
+### Ditambahkan
+- `scripts/net/lan.gd`: penemuan room lewat broadcast **UDP 24568** (host
+  menjawab `DISCOVER` dengan kode + nama, tamu menyusun daftar room, TTL 5 s).
+- Lobby baru: tombol **Buat Room** menampilkan **kode 4 angka**, tamu memilih
+  room dari daftar atau mengetik kode. IP manual hanya jalur cadangan.
+- `Net.hello(version, hash, code)` membawa kode room; `GAME_VERSION` → `0.3.0`.
+- Uji E2E dua proses (`scripts/tools/net_e2e.gd`) untuk alur kode room.
+
+### Diubah
+- `project.godot`: autoload `Lan` ditambahkan.
 
 ## [0.2.0] - Sesuai Buku Peraturan Elementa
 

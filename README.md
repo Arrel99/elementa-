@@ -100,12 +100,34 @@ tertutup sampai ada yang memecahnya lewat Elektrolisis.
 > jadi bisa diubah tanpa menyentuh kode. Efek spell ada di fungsi `_fx_*` pada
 > `scripts/core/game_state.gd`.
 
+## Tampilan & ukuran jendela
+
+- Papan digambar pada kanvas tetap **1080 × 1350**, lalu diskalakan otomatis
+  oleh `_layout()` di `scripts/screens/game.gd` setiap kali jendela berubah
+  ukuran. Tidak ada skala tetap, jadi papan selalu muat dan tidak menabrak HUD.
+- Jendela minimal **960 × 600**. Autoload `GameWindow` mengecilkan jendela bila
+  layar lebih kecil dari 1920 × 1080 (mis. karena skala tampilan Windows 125%).
+- Kartu dan tombol punya efek hover. Kartu mengubah warna border/latar (bukan
+  `scale`, karena zona memakai `clip_contents`) dan menampilkan tooltip berisi
+  nama + deskripsi kartu.
+
 ## Multiplayer
 
 Host-authoritative: host menjalankan `GameState`, klien hanya mengirim aksi dan
 menerima `view_for()` sehingga isi tangan lawan tidak pernah terkirim.
-Port UDP 24567. Untuk main lewat internet, gunakan Tailscale/ZeroTier (tanpa
-ubah kode) atau port forwarding (sering gagal di CGNAT).
+
+Alur: host menekan **Buat Room** dan mendapat **kode 4 angka**; tamu memilih
+room dari daftar (ditemukan lewat broadcast UDP) atau mengetik kodenya. IP host
+hanya dipakai sebagai jalur cadangan.
+
+| Port | Protokol | Fungsi |
+|---|---|---|
+| 24567 | UDP (ENet) | koneksi game |
+| 24568 | UDP | penemuan room (broadcast) |
+
+Keduanya harus diizinkan di Windows Firewall untuk jaringan **Private** pada
+kedua komputer. Main lintas internet belum didukung karena masih butuh relay
+WebSocket; untuk satu WiFi/hotspot sudah jalan.
 
 ## Menambah konten
 
