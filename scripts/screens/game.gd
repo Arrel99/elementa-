@@ -5,7 +5,16 @@ extends Control
 
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 
-# ukuran kartu per zona papan (desain 1080x1350, diskalakan 0.76 oleh node Board)
+# Kanvas desain papan. Node Board diskalakan otomatis supaya selalu muat di
+# sisa ruang layar (lihat _layout), berapa pun ukuran jendelanya.
+const BOARD_DESIGN := Vector2(1080, 1350)
+const EDGE := 20.0                  # jarak papan/HUD ke tepi layar
+const HUD_RATIO := 0.26             # lebar kolom HUD = 26% lebar layar
+const HUD_MIN := 280.0
+const HUD_MAX := 520.0
+const HUD_INNER := 16.0             # padding di dalam panel HUD
+
+# ukuran kartu per zona papan (dalam ruang desain Board)
 const SIZE_OPP_HAND := Vector2(84, 112)
 const SIZE_HAND := Vector2(88, 118)
 const SIZE_BASE := Vector2(108, 144)
@@ -44,6 +53,8 @@ var _pending_key := ""          # penanda efek interaktif yang sedang ditampilka
 
 func _ready() -> void:
     local_test = Net.local_test
+    resized.connect(_layout)
+    _layout()
     $Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
     $Hud/GiveUp.pressed.connect($GiveUpDialog.popup_centered)
     $GiveUpDialog.confirmed.connect(func(): submit({"type": "give_up"}))
@@ -72,6 +83,44 @@ func start_as_host() -> void:
     state.setup(randi())
     my_index = 0
     _broadcast()
+
+# --- Tata letak responsif ----------------------------------------------------
+#
+# Papan berukuran tetap 1080x1350 (potret, bab 4.2) tetapi TIDAK lagi dipaku
+# pada satu skala. Setiap kali jendela berubah ukuran, skala dihitung ulang agar
+# papan memakai ruang yang tersedia di kiri, dan kolom HUD dilebarkan/menyempit
+# mengikuti lebar layar. Dengan begitu tata letak tetap utuh di 1920x1080,
+# 1366x768, layar 4:3, maupun jendela yang diperbesar.
+
+func _layout() -> void:
+    var w := maxf(size.x, 320.0)
+    var h := maxf(size.y, 240.0)
+
+    # Kolom HUD proporsional, tetapi dibatasi agar tidak menelan papan.
+    var hud_w := clampf(w * HUD_RATIO, HUD_MIN, HUD_MAX)
+    hud_w = minf(hud_w, w * 0.42)
+
+    var area_w := maxf(w - hud_w - EDGE * 3.0, 160.0)
+    var area_h := maxf(h - EDGE * 2.0, 160.0)
+    var s := minf(area_w / BOARD_DESIGN.x, area_h / BOARD_DESIGN.y)
+    s = clampf(s, 0.16, 1.6)
+
+    var board: Control = $Board
+    board.pivot_offset = BOARD_DESIGN * 0.5          # skala dari titik tengah
+    board.scale = Vector2(s, s)
+    board.position = Vector2(EDGE + area_w * 0.5, h * 0.5) - BOARD_DESIGN * 0.5
+
+    var bg: Control = $HudBg
+    bg.offset_left = -(hud_w + EDGE)
+    bg.offset_right = -EDGE
+    bg.offset_top = EDGE
+    bg.offset_bottom = -EDGE
+
+    var hud: Control = $Hud
+    hud.offset_left = -(hud_w + EDGE) + HUD_INNER
+    hud.offset_right = -EDGE - HUD_INNER
+    hud.offset_top = EDGE + HUD_INNER
+    hud.offset_bottom = -EDGE - HUD_INNER
 
 # --- Aksi (bab 4.8 / 6.2) ---------------------------------------------------
 
@@ -186,11 +235,9 @@ func _fill(box: Container, cards: Array, face_up: bool, size: Vector2, interacti
         var n := CARD_SCENE.instantiate()
         box.add_child(n)
         _size_card(n, size)
-        n.setup(c, face_up)
+        n.setup(c, face_up, interactive)
         if interactive:
             n.clicked.connect(_on_card_clicked)
-        else:
-            n.mouse_filter = Control.MOUSE_FILTER_IGNORE
         if box == $Board/Me/Base and int(c.get("placed_turn", -1)) == view.turn_no:
             n.modulate = Color(0.6, 0.6, 0.6)   # masih cooldown
 

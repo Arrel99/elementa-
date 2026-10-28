@@ -17,7 +17,13 @@ const MIN_SCALE := 0.5          # jendela tidak pernah lebih kecil dari ini
 const MARGIN := 16              # sisa ruang di tepi layar
 const TITLE_BAR := 40           # perkiraan title bar + border jendela Windows
 
+# Batas bawah ukuran jendela. Papan sudah responsif (lihat game.gd::_layout),
+# tetapi di bawah ukuran ini teks HUD dan kartu menjadi tidak terbaca.
+const MIN_WINDOW := Vector2i(960, 600)
+
 func _ready() -> void:
+    if DisplayServer.get_name() != "headless":
+        DisplayServer.window_set_min_size(MIN_WINDOW)
     _fit_window()
 
 func _fit_window() -> void:
