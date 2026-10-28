@@ -119,9 +119,21 @@ jadi berlaku untuk **semua** tombol tanpa `theme_override` di tiap scene:
 | Keadaan | Tampilan |
 |---|---|
 | normal | panel `#1a2733`, garis `#3c5c78`, radius 10 |
-| hover | panel lebih terang `#273c4f`, **garis hijau aksen** `#76d399` |
-| pressed | isi hijau aksen, teks gelap |
+| hover | **isi panel jauh lebih terang** `#3c5c78` **dan** garis hijau aksen `#76d399`; teks jadi putih |
+| pressed | isi hijau aksen `#76d399`, teks gelap |
 | disabled | panel redup, teks abu |
+| focus | hanya garis (tanpa isi), supaya tidak menutupi warna hover |
+
+> [!important] Kenapa isi panel harus berubah, bukan hanya garis tepi
+> Versi pertama theme hanya mengubah garis tepi dan warna teks. Pengguna melaporkan
+> hover *"masih aneh... hanya beberapa titik saja"*. Ternyata perubahan isi panel
+> dari `#1a2733` ke `#273c4f` terlalu halus untuk terlihat di latar gelap, sehingga
+> yang tampak hanya teks dan garis tipis. Setelah isi panel diubah ke `#3c5c78`
+> (luminance 0.152 → 0.351), **seluruh badan tombol** terlihat berubah.
+>
+> Gaya `focus` juga dibuat tanpa isi (`alpha = 0`), karena Godot menggambar gaya
+> focus **di atas** gaya hover; isi semi-transparan pada focus akan memudarkan
+> warna hover tepat setelah tombol pernah diklik.
 
 Sebelum theme ini ada, project sama sekali tidak punya theme: semua tombol memakai
 theme bawaan Godot yang hover-nya nyaris tidak terlihat di latar gelap game. Itu

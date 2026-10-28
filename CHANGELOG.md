@@ -31,8 +31,13 @@ kartu berubah, karena nilainya dipakai saat handshake.
   didaftarkan lewat `[gui] theme/custom` di `project.godot`. Sebelumnya project
   tidak punya theme sama sekali, sehingga semua tombol memakai theme bawaan
   Godot yang hover-nya nyaris tak terlihat di latar gelap. Sekarang hover
-  mengubah isi panel **dan** garis tepi (garis menjadi hijau aksen `#76d399`),
-  jadi tidak mungkin terlewat.
+  mengubah isi panel **dan** garis tepi: isi panel dari `#1a2733` menjadi
+  `#3c5c78` (luminance 0.152 → 0.351), garis tepi menjadi hijau aksen `#76d399`,
+  teks menjadi putih.
+- **Gaya `focus` tanpa isi** (`bg_color` alpha 0). Godot menggambar gaya focus
+  **di atas** gaya hover; isi semi-transparan pada focus memudarkan warna hover
+  tepat setelah tombol pernah diklik. Dengan focus hanya berupa garis, hover
+  tetap terlihat penuh.
 - **`scripts/core/ui_polish.gd`** (autoload `UiPolish`) — memasang kursor
   "tangan menunjuk" pada setiap `Button` lewat `node_added`, termasuk tombol yang
   dibuat dari kode dan tombol bawaan dialog Godot yang tidak ada di `.tscn`.
