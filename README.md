@@ -111,6 +111,33 @@ tertutup sampai ada yang memecahnya lewat Elektrolisis.
   `scale`, karena zona memakai `clip_contents`) dan menampilkan tooltip berisi
   nama + deskripsi kartu.
 
+### Theme global
+
+`themes/elementa.tres` didaftarkan lewat `[gui] theme/custom` di `project.godot`,
+jadi berlaku untuk **semua** tombol tanpa `theme_override` di tiap scene:
+
+| Keadaan | Tampilan |
+|---|---|
+| normal | panel `#1a2733`, garis `#3c5c78`, radius 10 |
+| hover | panel lebih terang `#273c4f`, **garis hijau aksen** `#76d399` |
+| pressed | isi hijau aksen, teks gelap |
+| disabled | panel redup, teks abu |
+
+Sebelum theme ini ada, project sama sekali tidak punya theme: semua tombol memakai
+theme bawaan Godot yang hover-nya nyaris tidak terlihat di latar gelap game. Itu
+sebabnya hover terasa "tidak pas" walau posisi kursor sebenarnya sudah benar.
+
+Kursor "tangan menunjuk" **tidak bisa** diatur lewat Theme (itu properti per
+`Control`), jadi autoload `UiPolish` (`scripts/core/ui_polish.gd`) memasangnya
+pada setiap `Button` lewat `node_added` — termasuk tombol yang dibuat dari kode
+(pilihan kartu Spektrometer) dan tombol bawaan dialog Godot (OK/Batal) yang tidak
+ada di file `.tscn` mana pun.
+
+> [!note] Kalau ingin menambah jenis tombol baru
+> Cukup pakai `Button` biasa; theme dan kursor otomatis ikut. Jangan set
+> `flat = true`, karena tombol flat tidak menggambar latar normal maupun hover
+> sehingga efek hover-nya hilang.
+
 ## Multiplayer
 
 Host-authoritative: host menjalankan `GameState`, klien hanya mengirim aksi dan

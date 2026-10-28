@@ -24,6 +24,7 @@ EventLog="*res://scripts/core/event_log.gd"
 CardDB="*res://scripts/core/card_db.gd"
 Net="*res://scripts/net/net.gd"
 Lan="*res://scripts/net/lan.gd"
+UiPolish="*res://scripts/core/ui_polish.gd"
 
 [display]
 
@@ -34,4 +35,5 @@ window/stretch/aspect="expand"
 
 [gui]
 
+theme/custom="res://themes/elementa.tres"
 theme/default_font_size=18

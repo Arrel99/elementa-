@@ -26,9 +26,25 @@ kartu berubah, karena nilainya dipakai saat handshake.
   dan lebar kolom HUD setiap kali ukuran jendela berubah.
 - Autoload `GameWindow` menetapkan ukuran jendela minimal **960 × 600**.
 
+### Ditambahkan (theme & kursor)
+- **`themes/elementa.tres`** — theme global pertama untuk project ini,
+  didaftarkan lewat `[gui] theme/custom` di `project.godot`. Sebelumnya project
+  tidak punya theme sama sekali, sehingga semua tombol memakai theme bawaan
+  Godot yang hover-nya nyaris tak terlihat di latar gelap. Sekarang hover
+  mengubah isi panel **dan** garis tepi (garis menjadi hijau aksen `#76d399`),
+  jadi tidak mungkin terlewat.
+- **`scripts/core/ui_polish.gd`** (autoload `UiPolish`) — memasang kursor
+  "tangan menunjuk" pada setiap `Button` lewat `node_added`, termasuk tombol yang
+  dibuat dari kode dan tombol bawaan dialog Godot yang tidak ada di `.tscn`.
+- Tombol `Koneksi manual (IP)` di lobby tidak lagi `flat = true`; tombol flat
+  tidak menggambar latar normal maupun hover sehingga efek hover-nya hilang.
+
 ### Catatan
 - Tidak ada perubahan aturan: `test.tscn` tetap **63 lulus, 0 gagal**.
 - `Net.GAME_VERSION` tetap `0.3.0` (protokol dan data kartu tidak berubah).
+- Verifikasi theme headless: **89 lulus, 0 gagal** (project theme terpasang,
+  stylebox hover berbeda dari normal di semua tombol, kontras cukup, kursor
+  tangan, ukuran font dari theme).
 
 ## [0.3.0] - Multiplayer kode room
 
