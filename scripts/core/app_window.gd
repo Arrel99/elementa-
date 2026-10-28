@@ -1,34 +1,39 @@
 extends Node
 
-## Autoload GameWindow: memastikan jendela game selalu muat di layar.
+## Autoload GameWindow: memastikan jendela game muat di layar.
 ##
 ## Kenapa perlu: papan dirancang pada kanvas 1920x1080. Pada layar kecil, atau
-## Windows dengan skala tampilan 125% (desktop logis 1536x864), jendela
-## 1920x1080 lebih besar daripada layar. Tepi kanan papan (HUD, Senyawa lawan)
-## jadi berada di luar layar, sehingga kursor tidak bisa menjangkau tombol yang
-## terlihat. Gejalanya: hover terasa "tidak pas" dengan tombol.
+## Windows dengan skala tampilan 125%, jendela 1920x1080 lebih besar daripada
+## layar, sehingga tepi kanan papan (HUD) berada di luar layar.
 ##
-## Skrip ini hanya mengecilkan jendela bila memang tidak muat; ukuran yang sudah
-## pas dibiarkan apa adanya. Skala viewport diurus oleh stretch "canvas_items",
-## jadi posisi gambar dan posisi hover tetap sejalan.
+## PENTING -- kenapa skrip ini TIDAK lagi mengubah ukuran atau memindahkan
+## jendela sendiri:
+##
+##   Godot menghitung posisi kursor sebagai "posisi kursor di layar" dikurangi
+##   "posisi jendela", lalu dibagi skala stretch. Kalau ukuran/posisi jendela
+##   diubah dari kode, asumsi Godot tentang jendela bisa berbeda dari jendela
+##   yang sebenarnya digambar Windows. Akibatnya hover terasa bergeser --
+##   kursor harus sedikit ke bawah agar tombol di atasnya tersorot.
+##
+##   Karena itu ukuran awal jendela diatur lewat project.godot
+##   (window/size/window_width_override + window_height_override, 1600x900) dan
+##   dipusatkan oleh Windows (initial_position_type = 1). Kalau layarnya tetap
+##   tidak muat, jendela dimaksimalkan -- dan memaksimalkan jendela diurus
+##   sepenuhnya oleh Windows, jadi tidak ada hitungan posisi manual.
 
-const DESIGN := Vector2i(1920, 1080)
-const MIN_SCALE := 0.5          # jendela tidak pernah lebih kecil dari ini
-const MARGIN := 16              # sisa ruang di tepi layar
-const TITLE_BAR := 40           # perkiraan title bar + border jendela Windows
-
-# Batas bawah ukuran jendela. Papan sudah responsif (lihat game.gd::_layout),
-# tetapi di bawah ukuran ini teks HUD dan kartu menjadi tidak terbaca.
+## Batas bawah ukuran jendela. Papan sudah responsif (lihat game.gd::_layout),
+## tetapi di bawah ukuran ini teks HUD dan kartu menjadi tidak terbaca.
 const MIN_WINDOW := Vector2i(960, 600)
 
 func _ready() -> void:
-    if DisplayServer.get_name() != "headless":
-        DisplayServer.window_set_min_size(MIN_WINDOW)
-    _fit_window()
-
-func _fit_window() -> void:
     if DisplayServer.get_name() == "headless":
         return
+    DisplayServer.window_set_min_size(MIN_WINDOW)
+    _fit_window()
+
+## Hanya memaksimalkan jendela bila memang tidak muat. Tidak pernah mengubah
+## ukuran atau memindahkan jendela sendiri.
+func _fit_window() -> void:
     if DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_WINDOWED:
         return
 
@@ -38,24 +43,9 @@ func _fit_window() -> void:
     var usable := DisplayServer.screen_get_usable_rect(screen)
     var win := DisplayServer.window_get_size()
 
-    var avail := Vector2i(
-        maxi(usable.size.x - MARGIN * 2, 320),
-        maxi(usable.size.y - MARGIN - TITLE_BAR, 240)
-    )
-    if win.x <= usable.size.x and win.y + TITLE_BAR <= usable.size.y:
-        return   # sudah muat (termasuk title bar), jangan diubah
+    if win.x <= usable.size.x and win.y <= usable.size.y:
+        return   # sudah muat, jangan diubah sama sekali
 
-    var factor := minf(float(avail.x) / DESIGN.x, float(avail.y) / DESIGN.y)
-    factor = clampf(factor, MIN_SCALE, 1.0)
-    var target := Vector2i(int(DESIGN.x * factor), int(DESIGN.y * factor))
-
-    DisplayServer.window_set_size(target)
-    var offset := Vector2i(target.x, target.y + TITLE_BAR)
-    var pos := usable.position + (usable.size - offset) / 2
-    DisplayServer.window_set_position(Vector2i(
-        maxi(pos.x, usable.position.x),
-        maxi(pos.y, usable.position.y)
-    ))
-
-    print("[GameWindow] layar %s, jendela %s -> %s (skala %.3f)" % [
-        usable.size, win, target, factor])
+    print("[GameWindow] jendela %s lebih besar dari layar %s -> dimaksimalkan" % [
+        win, usable.size])
+    DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
