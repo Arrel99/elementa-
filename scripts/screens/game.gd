@@ -310,6 +310,11 @@ func _render_counters(v: Dictionary) -> void:
 ## tinggal dipasang nanti. Deck Senyawa menyimpan beberapa salinan tiap
 ## senyawa, jadi id dideduplikasi agar tiap senyawa tampil sekali sebagai acuan
 ## resep. Warna kartu tetap menandai ketersediaan bahan di zona dasar.
+##
+## Semua kartu dipaksa berukuran sama persis: GridContainer diminta
+## meregangkan isi selnya (SIZE_FILL) dan bagian seni dibuat menyerap sisa
+## ruang, sehingga nama yang panjang tidak lagi membuat satu kartu lebih tinggi
+## dari yang lain (baris poin & resep tetap rata di bawah).
 func _render_compound_table(ids: Array) -> void:
 	var list: GridContainer = $Board/TablePanel/List
 	for ch in list.get_children():
@@ -335,8 +340,14 @@ func _render_compound_table(ids: Array) -> void:
 		list.add_child(n)
 		_size_card(n, SIZE_SEN)
 		n.setup({"uid": -1, "id": id, "placed_turn": -1}, true, false)
+		var art: TextureRect = n.get_node("V/Art")
 		var desc: Label = n.get_node("V/Desc")
-		desc.text = "%s + %s" % [a.symbol, b.symbol]   # resep di badan kartu
+		n.size_flags_horizontal = Control.SIZE_FILL     # lebar seragam
+		n.size_flags_vertical = Control.SIZE_FILL       # tinggi seragam
+		art.custom_minimum_size = Vector2(0, 16)
+		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		desc.size_flags_vertical = Control.SIZE_FILL
+		desc.text = "%s + %s" % [a.symbol, b.symbol]    # resep di badan kartu
 		desc.visible = true
 		var have := int(mine.has(d.recipe[0])) + int(mine.has(d.recipe[1]))
 		if have == 2:
