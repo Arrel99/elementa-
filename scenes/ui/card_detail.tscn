@@ -1,0 +1,45 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/card_detail.gd" id="1_detail"]
+
+[node name="CardDetail" type="PopupPanel"]
+size = Vector2i(440, 380)
+script = ExtResource("1_detail")
+
+[node name="V" type="VBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = -14.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="V"]
+layout_mode = 2
+text = "Nama"
+horizontal_alignment = 1
+
+[node name="Symbol" type="Label" parent="V"]
+layout_mode = 2
+text = "Simbol"
+autowrap_mode = 2
+
+[node name="Desc" type="Label" parent="V"]
+layout_mode = 2
+text = "Deskripsi"
+autowrap_mode = 2
+
+[node name="Recipe" type="Label" parent="V"]
+layout_mode = 2
+text = "Resep"
+autowrap_mode = 2
+
+[node name="CT" type="Label" parent="V"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Catatan CT"
+autowrap_mode = 2

@@ -1,0 +1,8 @@
+keys,id,en
+MENU_PLAY,Main,Play
+MENU_LIBRARY,Library,Library
+MENU_HOWTO,Cara Bermain,How to Play
+MENU_SETTINGS,Pengaturan,Settings
+MENU_QUIT,Keluar,Quit
+GAME_END_TURN,Akhiri Giliran,End Turn
+GAME_GIVE_UP,Menyerah,Surrender

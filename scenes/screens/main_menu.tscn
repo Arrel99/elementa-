@@ -1,0 +1,104 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/screens/main_menu.gd" id="1_menu"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="V" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -150.0
+offset_right = 120.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Play" type="Button" parent="V"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "Main"
+
+[node name="Library" type="Button" parent="V"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "Library"
+
+[node name="HowTo" type="Button" parent="V"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "Cara Bermain"
+
+[node name="Settings" type="Button" parent="V"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "Pengaturan"
+
+[node name="LocalTest" type="Button" parent="V"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "Uji Lokal (2 pemain)"
+
+[node name="Quit" type="Button" parent="V"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "Keluar"
+
+[node name="Version" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -32.0
+offset_right = -10.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "v0.1.0"
+horizontal_alignment = 2
+
+[node name="HowToDialog" type="AcceptDialog" parent="."]
+title = "Cara Bermain"
+initial_position = 2
+size = Vector2i(560, 320)
+dialog_text = "1. Pasang kartu dasar ke zona dasar.
+2. Tunggu satu giliran (cooldown) sebelum bisa dipakai sintesis.
+3. Klik dua kartu dasar untuk sintesis sesuai Tabel Senyawa.
+4. Mainkan spell untuk mengganggu lawan atau membantu diri sendiri.
+5. Menang dengan poin terbanyak, deck lawan habis, atau lawan menyerah."
+
+[node name="SettingsPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -60.0
+offset_right = 180.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Volume" type="HSlider" parent="SettingsPanel"]
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 0.8
