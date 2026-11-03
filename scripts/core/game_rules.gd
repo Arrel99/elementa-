@@ -12,3 +12,4 @@ extends Resource
 @export var deck_size := 60             # total kartu per deck (bagian 3, Lampiran A & C)
 @export var special_win_threshold := 8  # slot terisi yang memicu hitungan mundur (bagian 9)
 @export var special_win_countdown := 3  # panjang hitungan mundur dalam giliran (bagian 9)
+@export var compound_copies := 2        # salinan tiap senyawa di Deck Senyawa (bagian 7)

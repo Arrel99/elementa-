@@ -43,7 +43,12 @@ func _new_card(id: String) -> Dictionary:
 func setup(rng_seed: int) -> void:
 	seed(rng_seed)
 	players.clear()
-	compound_pile = CardDB.ids_of(CardData.Type.SPECIAL)
+	# Deck Senyawa bersama: tiap senyawa punya beberapa salinan (aturan
+	# compound_copies) supaya kedua pemain bisa menyintesis senyawa yang sama.
+	compound_pile = []
+	for id in CardDB.ids_of(CardData.Type.SPECIAL):
+		for i in _rules().compound_copies:
+			compound_pile.append(id)
 	for i in 2:
 		players.append({
 			"deck": _build_deck(), "hand": [], "base": [], "special": [],
@@ -188,7 +193,11 @@ func synthesize(p: int, uid_a: int, uid_b: int) -> String:
 	_take(pl.base, uid_b)
 	pl.discard.append(a)          # kedua kartu dasar dibuang (bagian 7.4)
 	pl.discard.append(b)
-	compound_pile.erase(result)   # senyawa diambil dari Tabel Senyawa bersama
+	# Hanya 1 salinan yang diambil; senyawa yang sama masih bisa disintesis
+	# pemain lain selama salinannya di Deck Senyawa masih tersisa.
+	var pile_i := compound_pile.find(result)
+	if pile_i >= 0:
+		compound_pile.remove_at(pile_i)
 	var sc := _new_card(result)
 	sc["parts"] = [a.id, b.id]    # dipakai Elektrolisis / Elektrolisis Paksa
 	pl.special.append(sc)

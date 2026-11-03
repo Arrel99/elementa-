@@ -615,7 +615,7 @@ size_flags_vertical = 4
 mouse_filter = 2
 theme_override_constants/h_separation = 5
 theme_override_constants/v_separation = 5
-columns = 5
+columns = 9
 
 [node name="MeSpell" type="PanelContainer" parent="Board"]
 layout_mode = 0

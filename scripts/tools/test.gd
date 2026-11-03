@@ -35,6 +35,14 @@ func _ready() -> void:
 	_check(g.current == 0 or g.current == 1, "Pemain pertama ditentukan acak")
 	_check(g.turn_no == 1, "Mulai dari giliran 1")
 
+	# --- Deck Senyawa: beberapa salinan tiap senyawa (bagian 7) ---
+	var kinds: int = CardDB.ids_of(CardData.Type.SPECIAL).size()
+	var copies: int = CardDB.rules.compound_copies
+	_check(copies == 2, "Aturan compound_copies = 2")
+	_check(g.compound_pile.size() == kinds * copies,
+		"Deck Senyawa = %d senyawa x %d salinan" % [kinds, copies])
+	_check(g.compound_pile.count("H2O") == copies, "Tiap senyawa punya 2 salinan (H2O)")
+
 	# --- Turn pertama tanpa tarik; fase tarik = 2 kartu ---
 	g.current = 0
 	_end(g)
@@ -61,13 +69,27 @@ func _ready() -> void:
 	_check(g3.synthesize(0, a.uid, bb.uid) == "", "Sintesis H + O sukses")
 	_check(g3.players[0].special.size() == 1, "Senyawa masuk zona spesial")
 	_check(g3.players[0].points == 6, "Poin bertambah 6 (H2O)")
-	_check(not g3.compound_pile.has("H2O"), "Senyawa diambil dari Tabel Senyawa")
+	_check(g3.compound_pile.count("H2O") == 1, "Sintesis mengambil 1 salinan saja (sisa 1)")
 
-	# senyawa habis
+	# Dua salinan tiap senyawa: pemain lain masih bisa menyintesis yang sama
+	var g3b := GameState.new()
+	g3b.setup(1000)
+	g3b.current = 0
+	var q1 := _force_base(g3b, 0, "H")
+	var q2 := _force_base(g3b, 0, "O")
+	_check(g3b.synthesize(0, q1.uid, q2.uid) == "", "Pemain 1 menyintesis H2O")
+	_end(g3b)
+	var q3 := _force_base(g3b, 1, "H")
+	var q4 := _force_base(g3b, 1, "O")
+	_check(g3b.synthesize(1, q3.uid, q4.uid) == "", "Pemain 2 masih bisa menyintesis H2O")
+	_check(g3b.compound_pile.count("H2O") == 0, "Dua salinan terpakai -> senyawa habis")
+
+	# senyawa habis (semua salinan sudah diambil)
 	var g4 := GameState.new()
 	g4.setup(7)
 	g4.current = 0
-	g4.compound_pile.erase("H2O")
+	while g4.compound_pile.has("H2O"):
+		g4.compound_pile.erase("H2O")   # erase() membuang 1 salinan per panggilan
 	var d1 := _force_base(g4, 0, "H")
 	var d2 := _force_base(g4, 0, "O")
 	_check(g4.synthesize(0, d1.uid, d2.uid) != "", "Senyawa habis ditolak")

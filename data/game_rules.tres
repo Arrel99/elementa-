@@ -12,3 +12,4 @@ draw_per_turn = 2
 deck_size = 60
 special_win_threshold = 8
 special_win_countdown = 3
+compound_copies = 2
