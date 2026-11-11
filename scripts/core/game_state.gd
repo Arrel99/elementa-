@@ -310,6 +310,91 @@ func resolve_spektrometer(p: int, take_uid: int) -> String:
 	pending = {}
 	return ""
 
+# --- Predikat "bisa dimainkan" untuk UI (bagian 4.4) -------------------------
+#
+# Papan perlu tahu kartu mana yang bisa dimainkan SEKARANG tanpa harus mencoba
+# aksinya (yang akan mengubah state). Predikat di bawah menyalin syarat fungsi
+# aksi di atas tanpa efek samping, supaya aturan tetap hidup di satu tempat.
+
+## Spell dengan target: true bila targetnya ada sekarang.
+func _spell_has_target(p: int, effect: String) -> bool:
+	var me = players[p]
+	var op = players[1 - p]
+	match effect:
+		"bilas":
+			return not me.base.is_empty()
+		"korosi":
+			return not op.shield and not op.base.is_empty()
+		"elektrolisis":
+			return not me.special.is_empty()
+		"elektrolisis_paksa":
+			return not op.shield and not op.special.is_empty()
+		_:
+			return true             # katalis / perisai_inert / spektrometer tanpa target
+
+## Kartu dasar di tangan boleh dipasang ke zona dasar.
+func can_place_base(p: int, uid: int) -> bool:
+	if _turn_guard(p) != "":
+		return false
+	var pl = players[p]
+	if pl.base.size() >= _rules().base_max:
+		return false
+	var c := _peek(pl.hand, uid)
+	if c.is_empty():
+		return false
+	var d := CardDB.get_card(c.id)
+	return d != null and d.type == CardData.Type.BASIC
+
+## Spell di tangan boleh dimainkan (jatah spell cukup & targetnya tersedia).
+func can_cast_spell(p: int, uid: int) -> bool:
+	if _turn_guard(p) != "":
+		return false
+	var c := _peek(players[p].hand, uid)
+	if c.is_empty():
+		return false
+	var d := CardDB.get_card(c.id)
+	if d == null or d.type != CardData.Type.SPELL:
+		return false
+	if not _effects.has(d.spell_effect):
+		return false
+	if d.spell_effect != "katalis" and spell_left <= 0:
+		return false                # Katalis tidak memakai jatah spell
+	return _spell_has_target(p, d.spell_effect)
+
+## Kartu dasar bisa dipakai sintesis: ada pasangan (id beda, tidak cooldown)
+## yang membentuk senyawa yang masih tersedia di Deck Senyawa.
+func can_synth_with(p: int, uid: int) -> bool:
+	if _turn_guard(p) != "":
+		return false
+	if synth_left <= 0:
+		return false
+	var pl = players[p]
+	if pl.special.size() >= _rules().special_max:
+		return false
+	var a := _peek(pl.base, uid)
+	if a.is_empty() or a.placed_turn == turn_no:
+		return false
+	for b in pl.base:
+		if b.uid == uid or b.id == a.id or b.placed_turn == turn_no:
+			continue
+		var result := CardDB.find_recipe(a.id, b.id)
+		if result != "" and compound_pile.has(result):
+			return true
+	return false
+
+## Kumpulan uid kartu yang bisa dimainkan, untuk ditandai di papan.
+func playable_ids(p: int) -> Dictionary:
+	var hand: Array = []
+	var base: Array = []
+	if _turn_guard(p) == "":
+		for c in players[p].hand:
+			if can_place_base(p, c.uid) or can_cast_spell(p, c.uid):
+				hand.append(c.uid)
+		for c in players[p].base:
+			if can_synth_with(p, c.uid):
+				base.append(c.uid)
+	return {"hand": hand, "base": base}
+
 # --- Giliran dan kondisi menang (bagian 6 & 9) ------------------------------
 
 ## Zona spesial menyentuh ambang: mulai hitungan mundur sekali saja (bagian 9.3).
@@ -373,6 +458,7 @@ func view_for(p: int) -> Dictionary:
 			"special_win_threshold": _rules().special_win_threshold,
 		},
 		"pending": _pending_view(p),
+		"playable": playable_ids(p),
 		"me": {
 			"hand": me.hand.duplicate(true), "base": me.base.duplicate(true),
 			"special": me.special.duplicate(true), "points": me.points,

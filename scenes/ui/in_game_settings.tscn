@@ -1,39 +1,83 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/in_game_settings.gd" id="1_settings"]
 
-[node name="InGameSettings" type="PopupPanel"]
-size = Vector2i(380, 300)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slide"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.0705882, 0.105882, 0.145098, 0.98)
+border_width_left = 2
+border_color = Color(0.235294, 0.360784, 0.470588, 1)
+
+[node name="InGameSettings" type="CanvasLayer"]
+layer = 80
 script = ExtResource("1_settings")
 
-[node name="V" type="VBoxContainer" parent="."]
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 18.0
-offset_top = 18.0
-offset_right = -18.0
-offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0.0117647, 0.0156863, 0.0235294, 0.62)
+
+[node name="Gear" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -56.0
+offset_top = -56.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 22
+text = "⚙"
+
+[node name="Slide" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -360.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slide")
+
+[node name="V" type="VBoxContainer" parent="Slide"]
+layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Title" type="Label" parent="V"]
+[node name="Title" type="Label" parent="Slide/V"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "Pengaturan"
 horizontal_alignment = 1
 
-[node name="VolRow" type="HBoxContainer" parent="V"]
+[node name="Status" type="Label" parent="Slide/V"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.760784, 0.827451, 0.890196, 1)
+theme_override_font_sizes/font_size = 15
+text = ""
+autowrap_mode = 2
+
+[node name="VolRow" type="HBoxContainer" parent="Slide/V"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="VolCap" type="Label" parent="V/VolRow"]
+[node name="VolCap" type="Label" parent="Slide/V/VolRow"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "Volume"
 
-[node name="Volume" type="HSlider" parent="V/VolRow"]
+[node name="Volume" type="HSlider" parent="Slide/V/VolRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
@@ -41,17 +85,22 @@ max_value = 1.0
 step = 0.05
 value = 0.8
 
-[node name="GiveUp" type="Button" parent="V"]
-custom_minimum_size = Vector2(0, 44)
+[node name="Spacer" type="Control" parent="Slide/V"]
 layout_mode = 2
-text = "Menyerah"
+size_flags_vertical = 3
+mouse_filter = 2
 
-[node name="ToMenu" type="Button" parent="V"]
-custom_minimum_size = Vector2(0, 44)
+[node name="ToMenu" type="Button" parent="Slide/V"]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "Kembali ke Menu"
 
-[node name="Close" type="Button" parent="V"]
-custom_minimum_size = Vector2(0, 44)
+[node name="Close" type="Button" parent="Slide/V"]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "Tutup"
+
+[node name="GiveUp" type="Button" parent="Slide/V"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Menyerah"

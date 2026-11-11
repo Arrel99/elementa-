@@ -258,6 +258,76 @@ func _ready() -> void:
 	_check(guard < 500, "Bot acak menamatkan game")
 	_check(g19.winner != -2, "Ada pemenang atau seri")
 
+	# --- Predikat "bisa dimainkan" untuk UI (bagian 4.4) ---
+	# Kartu dasar di tangan: bisa dipasang selama zona dasar belum penuh.
+	var p1 := GameState.new()
+	p1.setup(7)
+	p1.current = 0
+	var hb := _force_hand(p1, 0, "H")
+	_check(p1.can_place_base(0, hb.uid), "Kartu dasar di tangan bisa dipasang")
+	_check(p1.playable_ids(0).hand.has(hb.uid), "uid kartu dasar masuk daftar bisa dimainkan")
+	# Bukan gilirannya -> tidak ada yang bisa dimainkan.
+	_check(not p1.can_place_base(1, hb.uid), "Bukan gilirannya: kartu dasar tidak bisa dipasang")
+	_check(p1.playable_ids(1).hand.is_empty() and p1.playable_ids(1).base.is_empty(),
+		"Pemain pasif tidak punya kartu bisa dimainkan")
+	# Zona dasar penuh -> kartu dasar tidak bisa dipasang lagi.
+	for i in p1._rules().base_max:
+		_force_base(p1, 0, "C")
+	_check(not p1.can_place_base(0, hb.uid), "Zona dasar penuh memblokir pemasangan")
+
+	# Spell: butuh jatah spell dan targetnya harus ada.
+	var p2 := GameState.new()
+	p2.setup(7)
+	p2.current = 0
+	var katalis := _force_hand(p2, 0, "katalis")
+	var spektro := _force_hand(p2, 0, "spektrometer")
+	var bilas := _force_hand(p2, 0, "bilas")
+	_check(p2.can_cast_spell(0, katalis.uid), "Katalis selalu bisa dimainkan")
+	_check(p2.can_cast_spell(0, spektro.uid), "Spektrometer bisa dimainkan (tanpa target)")
+	_check(not p2.can_cast_spell(0, bilas.uid), "Bilas butuh target di zona dasar sendiri")
+	_force_base(p2, 0, "H")
+	_check(p2.can_cast_spell(0, bilas.uid), "Bilas bisa dimainkan setelah ada target")
+	var hb2 := _force_hand(p2, 0, "H")
+	_check(not p2.can_cast_spell(0, hb2.uid), "Kartu dasar bukan spell")
+
+	# Jatah spell habis -> spell biasa tidak bisa, Katalis tetap bisa.
+	var p3 := GameState.new()
+	p3.setup(7)
+	p3.current = 0
+	p3.spell_left = 0
+	var spektro3 := _force_hand(p3, 0, "spektrometer")
+	var katalis3 := _force_hand(p3, 0, "katalis")
+	_check(not p3.can_cast_spell(0, spektro3.uid), "Jatah spell habis memblokir spell biasa")
+	_check(p3.can_cast_spell(0, katalis3.uid), "Jatah spell habis tidak memblokir Katalis")
+
+	# Sintesis: kartu dasar yang punya pasangan valid & senyawanya masih tersedia.
+	var p4 := GameState.new()
+	p4.setup(7)
+	p4.current = 0
+	var h4 := _force_base(p4, 0, "H")
+	var o4 := _force_base(p4, 0, "O")
+	var ne4 := _force_base(p4, 0, "Ne")
+	_check(p4.can_synth_with(0, h4.uid), "H bisa disintesis (ada pasangan O)")
+	_check(p4.can_synth_with(0, o4.uid), "O bisa disintesis (ada pasangan H)")
+	_check(not p4.can_synth_with(0, ne4.uid), "Neon tidak punya pasangan di Tabel Senyawa")
+	_check(p4.playable_ids(0).base.has(h4.uid) and p4.playable_ids(0).base.has(o4.uid),
+		"H dan O masuk daftar bisa disintesis")
+	_check(not p4.playable_ids(0).base.has(ne4.uid), "Neon tidak masuk daftar bisa disintesis")
+	# Kartu baru dipasang masih cooldown -> tidak bisa disintesis.
+	var h4b := _force_base(p4, 0, "H", true)
+	_check(not p4.can_synth_with(0, h4b.uid), "Cooldown memblokir predikat sintesis")
+	# Senyawa sudah habis di Deck Senyawa -> tidak bisa disintesis.
+	var p5 := GameState.new()
+	p5.setup(7)
+	p5.current = 0
+	var h5 := _force_base(p5, 0, "H")
+	var o5 := _force_base(p5, 0, "O")
+	p5.compound_pile.erase("H2O")
+	while p5.compound_pile.has("H2O"):
+		p5.compound_pile.erase("H2O")
+	_check(not p5.can_synth_with(0, h5.uid), "Senyawa habis di Deck Senyawa memblokir sintesis")
+	_check(not p5.can_synth_with(0, o5.uid), "Pasangan yang senyawanya habis juga diblokir")
+
 	print("== Hasil: %d lulus, %d gagal ==" % [_ok, _fail])
 	get_tree().quit()
 

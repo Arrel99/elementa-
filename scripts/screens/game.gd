@@ -6,20 +6,21 @@ extends Control
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 
 # Kanvas desain papan. Node Board diskalakan otomatis supaya selalu muat di
-# seluruh layar (lihat _layout), berapa pun ukuran jendelanya.
-const BOARD_DESIGN := Vector2(1730, 1120)
-# Celah di kolom kanan papan: di antara discard lawan (bawah 340) dan deck
-# pemain (atas 680). HUD diletakkan di sini supaya tidak lagi memakan lebar
-# layar di luar papan.
-const HUD_GAP := Rect2(1590, 348, 130, 328)
-const HUD_PAD := 6.0                # padding dalam celah (satuan kanvas)
+# seluruh layar (lihat _layout), berapa pun ukuran jendelanya. Rasio kanvas
+# dibuat 16:9 (2162 x 1216) supaya papan benar-benar mentok tepi layar.
+const BOARD_DESIGN := Vector2(2162, 1216)
+# Celah di kolom kanan papan: di antara discard lawan (bawah 376) dan deck
+# pemain (atas 780). HUD (skor + END TURN) diletakkan di sini supaya tidak
+# memakan lebar layar di luar papan.
+const HUD_GAP := Rect2(1982, 396, 150, 364)
+const HUD_PAD := 8.0                # padding dalam celah (satuan kanvas)
 
 # ukuran kartu per zona papan (dalam ruang desain Board)
-const SIZE_OPP_HAND := Vector2(84, 112)
-const SIZE_HAND := Vector2(88, 118)
-const SIZE_BASE := Vector2(108, 144)
-const SIZE_SPECIAL := Vector2(78, 104)
-const SIZE_SEN := Vector2(78, 104)
+const SIZE_OPP_HAND := Vector2(100, 133)
+const SIZE_HAND := Vector2(106, 141)
+const SIZE_BASE := Vector2(130, 173)
+const SIZE_SPECIAL := Vector2(94, 125)
+const SIZE_SEN := Vector2(94, 125)
 
 # efek spell -> zona tempat target dipilih; efek yang tidak ada di sini tanpa target
 const SPELL_TARGET := {
@@ -37,6 +38,15 @@ const REASON_TEXT := {
 
 enum Mode { IDLE, PICK_SYNTH, PICK_TARGET }
 
+# zona -> node glow (efek "di sekitar zona" yang menggantikan teks petunjuk)
+const ZONE_GLOWS := {
+	"hand": "MeHandGlow",
+	"my_base": "MeBaseGlow",
+	"opp_base": "OppBaseGlow",
+	"my_special": "MeSpecialGlow",
+	"opp_special": "OppSpecialGlow",
+}
+
 var state: GameState            # hanya ada di host
 var my_index := 0
 var mode := Mode.IDLE
@@ -48,6 +58,8 @@ var local_test := false
 var easy_mode := true
 var turn_timer := Timer.new()
 var _pending_key := ""          # penanda efek interaktif yang sedang ditampilkan
+var _glow_tween: Tween          # denyut glow zona yang sedang disorot
+var _playable := {}             # uid kartu yang bisa dimainkan (dari state)
 
 # --- Siklus hidup (bab 4.5 / 6.2) -------------------------------------------
 
@@ -56,7 +68,6 @@ func _ready() -> void:
 	resized.connect(_layout)
 	_layout()
 	$Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
-	$Hud/Gear.pressed.connect($InGameSettings.open)
 	$InGameSettings.give_up_requested.connect($GiveUpDialog.popup_centered)
 	$InGameSettings.back_to_menu_requested.connect(_back_to_menu)
 	$GiveUpDialog.confirmed.connect(func(): submit({"type": "give_up"}))
@@ -188,8 +199,9 @@ func render(v: Dictionary) -> void:
 	view = v
 	$CardPreview.hide_preview()     # kartu lama akan dibuang
 	_reset_mode()
-	_fill($Board/Me/Hand, v.me.hand, true, SIZE_HAND)
-	_fill($Board/Me/Base, v.me.base, true, SIZE_BASE)
+	_playable = v.get("playable", {})
+	_fill($Board/Me/Hand, v.me.hand, true, SIZE_HAND, true, "hand")
+	_fill($Board/Me/Base, v.me.base, true, SIZE_BASE, true, "base")
 	_fill($Board/Me/Special, v.me.special, true, SIZE_SPECIAL)
 	_fill($Board/Opp/Hand, v.opp.hand_backs, false, SIZE_OPP_HAND)   # hanya jumlah, bukan isi
 	_fill($Board/Opp/Base, v.opp.base, true, SIZE_BASE)
@@ -204,16 +216,17 @@ func render(v: Dictionary) -> void:
 	var extra := ""
 	if v.countdown > 0:
 		extra = "  •  Hitung mundur %d" % v.countdown
-	$Hud/Turn.text = "Giliran %d  (sintesis %d, spell %d)%s" % [
-		v.turn_no, v.synth_left, v.spell_left, extra]
 	$Hud/OppBadge/Num.text = str(v.opp.points)
 	$Hud/MyBadge/Num.text = str(v.me.points)
-	$Hud/DeckInfo.text = "Deck %d | Buang %d  •  Lawan deck %d" % [
-		v.me.deck_count, v.me.discard.size(), v.opp.deck_count]
 	$Hud/EndTurn.disabled = (not v.my_turn) or v.winner != -2 or over
 	if over and v.my_turn and v.winner == -2:
-		$Hud/Hint.text = "Tangan %d/%d — klik kartu di tangan untuk membuang." % [
-			v.me.hand.size(), hand_max]
+		_highlight_zone("hand")     # tangan melebihi batas: sorot zona tangan
+	# Teks status tidak lagi di celah tengah; masuk ke panel Pengaturan (overlay).
+	$InGameSettings.set_status(
+		"Giliran %d  (sintesis %d, spell %d)%s" % [
+			v.turn_no, v.synth_left, v.spell_left, extra],
+		"Deck %d | Buang %d  •  Lawan deck %d" % [
+			v.me.deck_count, v.me.discard.size(), v.opp.deck_count])
 	_sync_pending(v)
 	if v.winner != -2:
 		_show_result()
@@ -232,9 +245,11 @@ func _sync_pending(v: Dictionary) -> void:
 		_pending_key = key
 		$RevealPopup.show_spektrometer(v.pending.cards)
 
-func _fill(box: Container, cards: Array, face_up: bool, size: Vector2, interactive := true) -> void:
+func _fill(box: Container, cards: Array, face_up: bool, size: Vector2,
+		interactive := true, playable_key := "") -> void:
 	for ch in box.get_children():
 		ch.queue_free()
+	var playable: Array = _playable.get(playable_key, []) if playable_key != "" else []
 	for c in cards:
 		var n := CARD_SCENE.instantiate()
 		box.add_child(n)
@@ -245,6 +260,8 @@ func _fill(box: Container, cards: Array, face_up: bool, size: Vector2, interacti
 		n.preview_pin.connect(_on_preview_pin)
 		if interactive:
 			n.clicked.connect(_on_card_clicked)
+		if playable.has(int(c.get("uid", -1))):
+			n.set_playable(true)            # cincin hijau: kartu bisa dimainkan
 		if box == $Board/Me/Base and int(c.get("placed_turn", -1)) == view.turn_no:
 			n.modulate = Color(0.6, 0.6, 0.6)   # masih cooldown
 
@@ -308,7 +325,6 @@ func _render_counters(v: Dictionary) -> void:
 	$Board/MeDeck/V/Count.text = str(v.me.deck_count)
 	$Board/MeDiscard/V/Count.text = str(v.me.discard.size())
 	$Board/CompoundDeck/V/Count.text = str(v.compound_pile.size())
-	$Board/OppHandCap.text = "TANGAN LAWAN (%d)" % v.opp.hand_backs.size()
 	$Board/OppSpell/V/Slot/Label.text = "perisai aktif" if v.opp.shield else "—"
 	$Board/MeSpell/V/Slot/Label.text = "perisai aktif" if v.me.shield else "—"
 
@@ -367,13 +383,6 @@ func _render_compound_table(ids: Array) -> void:
 
 # --- Interaksi (bab 4.4 / 4.5) ---------------------------------------------
 
-func _zone_box(z: String) -> Container:
-	return {
-		"hand": $Board/Me/Hand, "my_base": $Board/Me/Base,
-		"my_special": $Board/Me/Special,
-		"opp_base": $Board/Opp/Base, "opp_special": $Board/Opp/Special,
-	}[z]
-
 func _zone_of(uid: int) -> String:
 	var zones := {
 		"hand": view.me.hand, "my_base": view.me.base, "my_special": view.me.special,
@@ -407,7 +416,7 @@ func _on_card_clicked(uid: int) -> void:
 			elif zone == "my_base":
 				mode = Mode.PICK_SYNTH
 				synth_first = uid
-				$Hud/Hint.text = "Pilih bahan kedua di zona dasarmu (Esc untuk batal)"
+				_highlight_zone("my_base")
 		Mode.PICK_SYNTH:
 			if zone == "my_base" and uid != synth_first:
 				submit({"type": "synth", "a": synth_first, "b": uid})
@@ -440,24 +449,50 @@ func _click_hand(uid: int) -> void:
 			mode = Mode.PICK_TARGET
 			pending_spell_uid = uid
 			pending_zone = zone
-			for n in _zone_box(zone).get_children():
-				n.modulate = Color(1.0, 0.9, 0.4)   # sorot zona target
-			$Hud/Hint.text = "Pilih target di zona yang disorot (Esc untuk batal)"
+			_highlight_zone(zone)           # sorot zona target (efek, bukan teks)
 
 func _reset_mode() -> void:
 	mode = Mode.IDLE
 	synth_first = -1
 	pending_spell_uid = -1
 	pending_zone = ""
-	if not view.is_empty():
-		$Hud/Hint.text = "Giliranmu" if view.my_turn else "Menunggu lawan..."
+	_clear_glow()
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel"):
+		if $InGameSettings.is_open():
+			$InGameSettings.close()         # tutup panel pengaturan lebih dulu
+			return
 		if $CardPreview.is_open():
-			$CardPreview.hide_preview()     # tutup pratinjau lebih dulu
+			$CardPreview.hide_preview()     # lalu pratinjau kartu
 			return
 		_reset_mode()
+
+# --- Efek zona (menggantikan teks petunjuk) --------------------------------
+
+## Menyalakan denyut glow di sekeliling zona yang perlu diperhatikan.
+func _highlight_zone(zone: String) -> void:
+	_clear_glow()
+	var path: String = ZONE_GLOWS.get(zone, "")
+	if path == "":
+		return
+	var n: Control = $Board.get_node_or_null(path)
+	if n == null:
+		return
+	n.visible = true
+	n.modulate.a = 0.0
+	_glow_tween = create_tween().set_loops()
+	_glow_tween.tween_property(n, "modulate:a", 1.0, 0.6).set_trans(Tween.TRANS_SINE)
+	_glow_tween.tween_property(n, "modulate:a", 0.35, 0.6).set_trans(Tween.TRANS_SINE)
+
+func _clear_glow() -> void:
+	if _glow_tween != null and _glow_tween.is_valid():
+		_glow_tween.kill()
+	_glow_tween = null
+	for path in ZONE_GLOWS.values():
+		var n: Control = $Board.get_node_or_null(path)
+		if n != null:
+			n.visible = false
 
 # --- Hasil (bab 4.7) --------------------------------------------------------
 

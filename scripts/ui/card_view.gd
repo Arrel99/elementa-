@@ -26,6 +26,7 @@ var _base_border := Color.WHITE
 var _base_bg := Color.BLACK
 var _hovered := false
 var _data := {}
+var _play_tween: Tween            # denyut cincin "bisa dimainkan"
 
 func _ready() -> void:
     var sb := get_theme_stylebox("panel")
@@ -130,3 +131,23 @@ func fit(size: Vector2) -> void:
     desc.add_theme_font_size_override("font_size", clampi(int(size.y * 0.055), 8, 17))
     desc.visible = size.y >= 140
     art.custom_minimum_size = Vector2(0, int(size.y * 0.36))
+
+## Menandai kartu ini sedang bisa dimainkan: cincin hijau yang berdenyut di
+## dalam kartu. Dipakai papan untuk kartu dasar di tangan dan kartu dasar yang
+## bisa disintesis. Kartu yang tidak bisa dimainkan dibiarkan normal.
+func set_playable(on: bool) -> void:
+    var glow: Control = get_node_or_null("Glow")
+    if glow == null:
+        return
+    if _play_tween != null and _play_tween.is_valid():
+        _play_tween.kill()
+    _play_tween = null
+    if not on:
+        glow.visible = false
+        glow.modulate.a = 0.0
+        return
+    glow.visible = true
+    glow.modulate.a = 0.9
+    _play_tween = create_tween().set_loops()
+    _play_tween.tween_property(glow, "modulate:a", 0.3, 0.7).set_trans(Tween.TRANS_SINE)
+    _play_tween.tween_property(glow, "modulate:a", 1.0, 0.7).set_trans(Tween.TRANS_SINE)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/ui/toast.tscn" id="2_toast"]
@@ -53,6 +53,20 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glow"]
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.462745, 0.827451, 0.6, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.462745, 0.827451, 0.6, 0.6)
+shadow_size = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge_opp"]
 content_margin_left = 8.0
@@ -112,13 +126,13 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -865.0
-offset_top = -560.0
-offset_right = 865.0
-offset_bottom = 560.0
+offset_left = -1081.0
+offset_top = -600.0
+offset_right = 1081.0
+offset_bottom = 600.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(865, 560)
+pivot_offset = Vector2(1081, 600)
 scale = Vector2(0.76, 0.76)
 mouse_filter = 2
 
@@ -140,69 +154,69 @@ mouse_filter = 2
 [node name="HandGhosts" type="HBoxContainer" parent="Board/Opp"]
 clip_contents = true
 layout_mode = 0
-offset_left = 400.0
-offset_top = 28.0
-offset_right = 1107.0
-offset_bottom = 140.0
+offset_left = 490.0
+offset_top = 16.0
+offset_right = 1402.0
+offset_bottom = 149.0
 mouse_filter = 2
 alignment = 0
-theme_override_constants/separation = 5
+theme_override_constants/separation = 16
 
 [node name="BaseGhosts" type="HBoxContainer" parent="Board/Opp"]
 clip_contents = true
 layout_mode = 0
-offset_left = 400.0
-offset_top = 334.0
-offset_right = 1078.0
-offset_bottom = 478.0
+offset_left = 490.0
+offset_top = 339.0
+offset_right = 1370.0
+offset_bottom = 512.0
 mouse_filter = 2
 alignment = 0
-theme_override_constants/separation = 6
+theme_override_constants/separation = 20
 
 [node name="SpecialGhosts" type="GridContainer" parent="Board/Opp"]
 clip_contents = true
 layout_mode = 0
-offset_left = 20.0
-offset_top = 172.0
-offset_right = 350.0
-offset_bottom = 386.0
+offset_left = 24.0
+offset_top = 165.0
+offset_right = 460.0
+offset_bottom = 425.0
 mouse_filter = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 10
 columns = 4
 
 [node name="Hand" type="HBoxContainer" parent="Board/Opp"]
 clip_contents = true
 layout_mode = 0
-offset_left = 400.0
-offset_top = 28.0
-offset_right = 1107.0
-offset_bottom = 140.0
+offset_left = 490.0
+offset_top = 16.0
+offset_right = 1402.0
+offset_bottom = 149.0
 mouse_filter = 2
 alignment = 0
-theme_override_constants/separation = 5
+theme_override_constants/separation = 16
 
 [node name="Base" type="HBoxContainer" parent="Board/Opp"]
 clip_contents = true
 layout_mode = 0
-offset_left = 400.0
-offset_top = 334.0
-offset_right = 1078.0
-offset_bottom = 478.0
+offset_left = 490.0
+offset_top = 339.0
+offset_right = 1370.0
+offset_bottom = 512.0
 mouse_filter = 2
 alignment = 0
-theme_override_constants/separation = 6
+theme_override_constants/separation = 20
 
 [node name="Special" type="GridContainer" parent="Board/Opp"]
 clip_contents = true
 layout_mode = 0
-offset_left = 20.0
-offset_top = 172.0
-offset_right = 350.0
-offset_bottom = 386.0
+offset_left = 24.0
+offset_top = 165.0
+offset_right = 460.0
+offset_bottom = 425.0
 mouse_filter = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 10
 columns = 4
 
 [node name="Me" type="Control" parent="Board"]
@@ -217,137 +231,77 @@ mouse_filter = 2
 [node name="HandGhosts" type="HBoxContainer" parent="Board/Me"]
 clip_contents = true
 layout_mode = 0
-offset_left = 400.0
-offset_top = 986.0
-offset_right = 1132.0
-offset_bottom = 1104.0
+offset_left = 490.0
+offset_top = 1058.0
+offset_right = 1450.0
+offset_bottom = 1199.0
 mouse_filter = 2
 alignment = 0
-theme_override_constants/separation = 4
+theme_override_constants/separation = 16
 
 [node name="BaseGhosts" type="HBoxContainer" parent="Board/Me"]
 clip_contents = true
 layout_mode = 0
-offset_left = 400.0
-offset_top = 832.0
-offset_right = 1078.0
-offset_bottom = 976.0
+offset_left = 490.0
+offset_top = 873.0
+offset_right = 1370.0
+offset_bottom = 1046.0
 mouse_filter = 2
 alignment = 0
-theme_override_constants/separation = 6
+theme_override_constants/separation = 20
 
 [node name="SpecialGhosts" type="GridContainer" parent="Board/Me"]
 clip_contents = true
 layout_mode = 0
-offset_left = 20.0
-offset_top = 670.0
-offset_right = 350.0
-offset_bottom = 884.0
+offset_left = 24.0
+offset_top = 699.0
+offset_right = 460.0
+offset_bottom = 959.0
 mouse_filter = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 10
 columns = 4
 
 [node name="Hand" type="HBoxContainer" parent="Board/Me"]
 clip_contents = true
 layout_mode = 0
-offset_left = 400.0
-offset_top = 986.0
-offset_right = 1132.0
-offset_bottom = 1104.0
+offset_left = 490.0
+offset_top = 1058.0
+offset_right = 1450.0
+offset_bottom = 1199.0
 mouse_filter = 2
 alignment = 0
-theme_override_constants/separation = 4
+theme_override_constants/separation = 16
 
 [node name="Base" type="HBoxContainer" parent="Board/Me"]
 clip_contents = true
 layout_mode = 0
-offset_left = 400.0
-offset_top = 832.0
-offset_right = 1078.0
-offset_bottom = 976.0
+offset_left = 490.0
+offset_top = 873.0
+offset_right = 1370.0
+offset_bottom = 1046.0
 mouse_filter = 2
 alignment = 0
-theme_override_constants/separation = 6
+theme_override_constants/separation = 20
 
 [node name="Special" type="GridContainer" parent="Board/Me"]
 clip_contents = true
 layout_mode = 0
-offset_left = 20.0
-offset_top = 670.0
-offset_right = 350.0
-offset_bottom = 884.0
+offset_left = 24.0
+offset_top = 699.0
+offset_right = 460.0
+offset_bottom = 959.0
 mouse_filter = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 10
 columns = 4
-
-[node name="OppHandCap" type="Label" parent="Board"]
-layout_mode = 0
-offset_left = 400.0
-offset_top = 6.0
-offset_right = 1107.0
-offset_bottom = 26.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.572549, 0.694118, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "TANGAN LAWAN"
-horizontal_alignment = 1
-
-[node name="OppBaseCap" type="Label" parent="Board"]
-layout_mode = 0
-offset_left = 400.0
-offset_top = 312.0
-offset_right = 1078.0
-offset_bottom = 332.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.572549, 0.694118, 0.8, 1)
-theme_override_font_sizes/font_size = 13
-text = "KARTU DASAR LAWAN"
-horizontal_alignment = 1
-
-[node name="OppSpecialCap" type="Label" parent="Board"]
-layout_mode = 0
-offset_left = 20.0
-offset_top = 150.0
-offset_right = 350.0
-offset_bottom = 170.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.572549, 0.694118, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "SPESIAL LAWAN"
-horizontal_alignment = 1
-
-[node name="MeBaseCap" type="Label" parent="Board"]
-layout_mode = 0
-offset_left = 400.0
-offset_top = 810.0
-offset_right = 1078.0
-offset_bottom = 830.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.572549, 0.694118, 0.8, 1)
-theme_override_font_sizes/font_size = 13
-text = "KARTU DASAR"
-horizontal_alignment = 1
-
-[node name="MeSpecialCap" type="Label" parent="Board"]
-layout_mode = 0
-offset_left = 20.0
-offset_top = 648.0
-offset_right = 350.0
-offset_bottom = 668.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.572549, 0.694118, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "SPESIAL (DIBUKA)"
-horizontal_alignment = 1
 
 [node name="OppDeck" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 1590.0
-offset_top = 10.0
-offset_right = 1720.0
-offset_bottom = 170.0
+offset_left = 1982.0
+offset_top = 16.0
+offset_right = 2132.0
+offset_bottom = 186.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -377,10 +331,10 @@ vertical_alignment = 1
 
 [node name="OppDiscard" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 1590.0
-offset_top = 180.0
-offset_right = 1720.0
-offset_bottom = 340.0
+offset_left = 1982.0
+offset_top = 206.0
+offset_right = 2132.0
+offset_bottom = 376.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -410,10 +364,10 @@ vertical_alignment = 1
 
 [node name="OppSpell" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 400.0
-offset_top = 172.0
-offset_right = 540.0
-offset_bottom = 302.0
+offset_left = 650.0
+offset_top = 165.0
+offset_right = 810.0
+offset_bottom = 325.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -449,10 +403,10 @@ autowrap_mode = 2
 
 [node name="OppSynth" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 555.0
-offset_top = 172.0
-offset_right = 735.0
-offset_bottom = 302.0
+offset_left = 825.0
+offset_top = 165.0
+offset_right = 1035.0
+offset_bottom = 325.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -510,10 +464,10 @@ vertical_alignment = 1
 
 [node name="OppSen" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 750.0
-offset_top = 172.0
-offset_right = 880.0
-offset_bottom = 302.0
+offset_left = 1050.0
+offset_top = 165.0
+offset_right = 1210.0
+offset_bottom = 325.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -544,10 +498,10 @@ alignment = 1
 
 [node name="CompoundDeck" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 1350.0
-offset_top = 510.0
-offset_right = 1480.0
-offset_bottom = 644.0
+offset_left = 1802.0
+offset_top = 528.0
+offset_right = 1952.0
+offset_bottom = 683.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -575,24 +529,12 @@ text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TableCap" type="Label" parent="Board"]
-layout_mode = 0
-offset_left = 400.0
-offset_top = 486.0
-offset_right = 1330.0
-offset_bottom = 508.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.572549, 0.694118, 0.8, 1)
-theme_override_font_sizes/font_size = 14
-text = "TABEL SENYAWA"
-horizontal_alignment = 1
-
 [node name="TablePanel" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 400.0
-offset_top = 510.0
-offset_right = 1330.0
-offset_bottom = 644.0
+offset_left = 490.0
+offset_top = 528.0
+offset_right = 1772.0
+offset_bottom = 683.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -601,16 +543,16 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 mouse_filter = 2
-theme_override_constants/h_separation = 5
+theme_override_constants/h_separation = 52
 theme_override_constants/v_separation = 5
 columns = 9
 
 [node name="MeSpell" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 400.0
-offset_top = 670.0
-offset_right = 540.0
-offset_bottom = 800.0
+offset_left = 650.0
+offset_top = 699.0
+offset_right = 810.0
+offset_bottom = 859.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -645,10 +587,10 @@ autowrap_mode = 2
 
 [node name="MeSynth" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 555.0
-offset_top = 670.0
-offset_right = 735.0
-offset_bottom = 800.0
+offset_left = 825.0
+offset_top = 699.0
+offset_right = 1035.0
+offset_bottom = 859.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -706,10 +648,10 @@ vertical_alignment = 1
 
 [node name="MeSen" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 750.0
-offset_top = 670.0
-offset_right = 880.0
-offset_bottom = 800.0
+offset_left = 1050.0
+offset_top = 699.0
+offset_right = 1210.0
+offset_bottom = 859.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -740,10 +682,10 @@ alignment = 1
 
 [node name="MeDiscard" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 1590.0
-offset_top = 850.0
-offset_right = 1720.0
-offset_bottom = 1010.0
+offset_left = 1982.0
+offset_top = 970.0
+offset_right = 2132.0
+offset_bottom = 1140.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -772,10 +714,10 @@ vertical_alignment = 1
 
 [node name="MeDeck" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 1590.0
-offset_top = 680.0
-offset_right = 1720.0
-offset_bottom = 840.0
+offset_left = 1982.0
+offset_top = 780.0
+offset_right = 2132.0
+offset_bottom = 950.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -802,6 +744,56 @@ text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="MeHandGlow" type="Panel" parent="Board"]
+visible = false
+layout_mode = 0
+offset_left = 490.0
+offset_top = 1058.0
+offset_right = 1450.0
+offset_bottom = 1199.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+
+[node name="MeBaseGlow" type="Panel" parent="Board"]
+visible = false
+layout_mode = 0
+offset_left = 490.0
+offset_top = 873.0
+offset_right = 1370.0
+offset_bottom = 1046.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+
+[node name="OppBaseGlow" type="Panel" parent="Board"]
+visible = false
+layout_mode = 0
+offset_left = 490.0
+offset_top = 339.0
+offset_right = 1370.0
+offset_bottom = 512.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+
+[node name="MeSpecialGlow" type="Panel" parent="Board"]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 699.0
+offset_right = 460.0
+offset_bottom = 959.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+
+[node name="OppSpecialGlow" type="Panel" parent="Board"]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 165.0
+offset_right = 460.0
+offset_bottom = 425.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+
 [node name="HudBg" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 0
@@ -812,72 +804,41 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 layout_mode = 1
 anchors_preset = 0
 mouse_filter = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 10
+alignment = 1
 
 [node name="OppBadge" type="PanelContainer" parent="Hud"]
-custom_minimum_size = Vector2(0, 42)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge_opp")
 
 [node name="Num" type="Label" parent="Hud/OppBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 54
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="EndTurn" type="Control" parent="Hud"]
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 76)
 layout_mode = 2
 script = ExtResource("4_octagon")
 text = "END TURN"
-font_size = 14
+font_size = 27
 
 [node name="MyBadge" type="PanelContainer" parent="Hud"]
-custom_minimum_size = Vector2(0, 42)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge_me")
 
 [node name="Num" type="Label" parent="Hud/MyBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 54
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="Turn" type="Label" parent="Hud"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.901961, 0.945098, 0.980392, 1)
-theme_override_font_sizes/font_size = 9
-text = "Giliran 1"
-autowrap_mode = 2
-
-[node name="DeckInfo" type="Label" parent="Hud"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.572549, 0.694118, 0.8, 1)
-theme_override_font_sizes/font_size = 8
-text = ""
-autowrap_mode = 2
-
-[node name="Hint" type="Label" parent="Hud"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.760784, 0.827451, 0.890196, 1)
-theme_override_font_sizes/font_size = 9
-text = ""
-autowrap_mode = 2
-
-[node name="Spacer" type="Control" parent="Hud"]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 2
-
-[node name="Gear" type="Button" parent="Hud"]
-custom_minimum_size = Vector2(0, 28)
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "⚙  Pengaturan"
 
 [node name="Toast" parent="." instance=ExtResource("2_toast")]
 
