@@ -364,9 +364,9 @@ vertical_alignment = 1
 
 [node name="OppSpell" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 650.0
+offset_left = 1050.0
 offset_top = 165.0
-offset_right = 810.0
+offset_right = 1210.0
 offset_bottom = 325.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
@@ -464,9 +464,9 @@ vertical_alignment = 1
 
 [node name="OppSen" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 1050.0
+offset_left = 650.0
 offset_top = 165.0
-offset_right = 1210.0
+offset_right = 810.0
 offset_bottom = 325.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
@@ -549,9 +549,9 @@ columns = 9
 
 [node name="MeSpell" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 650.0
+offset_left = 1050.0
 offset_top = 699.0
-offset_right = 810.0
+offset_right = 1210.0
 offset_bottom = 859.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
@@ -648,9 +648,9 @@ vertical_alignment = 1
 
 [node name="MeSen" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 1050.0
+offset_left = 650.0
 offset_top = 699.0
-offset_right = 1210.0
+offset_right = 810.0
 offset_bottom = 859.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
