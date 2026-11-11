@@ -9,15 +9,6 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_board"]
 bg_color = Color(0.0549019, 0.0823529, 0.117647, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.176471, 0.27451, 0.360784, 1)
-corner_radius_top_left = 24
-corner_radius_top_right = 24
-corner_radius_bottom_right = 24
-corner_radius_bottom_left = 24
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 8.0
@@ -64,10 +55,10 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge_opp"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
 bg_color = Color(0.65098, 0.196078, 0.196078, 1)
 border_width_left = 2
 border_width_top = 2
@@ -80,10 +71,10 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge_me"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
 bg_color = Color(0.160784, 0.341176, 0.611765, 1)
 border_width_left = 2
 border_width_top = 2
@@ -112,7 +103,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.0313726, 0.0431373, 0.0627451, 1)
+color = Color(0.0549019, 0.0823529, 0.117647, 1)
 
 [node name="Board" type="Control" parent="."]
 layout_mode = 1
@@ -133,11 +124,7 @@ mouse_filter = 2
 
 [node name="Bg" type="Panel" parent="Board"]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+anchors_preset = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_board")
 
@@ -817,63 +804,45 @@ vertical_alignment = 1
 
 [node name="HudBg" type="Panel" parent="."]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -250.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 0
-grow_vertical = 2
+anchors_preset = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Hud" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -234.0
-offset_top = 36.0
-offset_right = -36.0
-offset_bottom = -36.0
-grow_horizontal = 0
-grow_vertical = 2
+anchors_preset = 0
 mouse_filter = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 5
 
 [node name="OppBadge" type="PanelContainer" parent="Hud"]
-custom_minimum_size = Vector2(0, 86)
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge_opp")
 
 [node name="Num" type="Label" parent="Hud/OppBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 26
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="EndTurn" type="Control" parent="Hud"]
-custom_minimum_size = Vector2(0, 78)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 script = ExtResource("4_octagon")
-text = "END\nTURN"
-font_size = 22
+text = "END TURN"
+font_size = 14
 
 [node name="MyBadge" type="PanelContainer" parent="Hud"]
-custom_minimum_size = Vector2(0, 86)
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge_me")
 
 [node name="Num" type="Label" parent="Hud/MyBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 26
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -881,21 +850,21 @@ vertical_alignment = 1
 [node name="Turn" type="Label" parent="Hud"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.901961, 0.945098, 0.980392, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 9
 text = "Giliran 1"
 autowrap_mode = 2
 
 [node name="DeckInfo" type="Label" parent="Hud"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.572549, 0.694118, 0.8, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 8
 text = ""
 autowrap_mode = 2
 
 [node name="Hint" type="Label" parent="Hud"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.760784, 0.827451, 0.890196, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 9
 text = ""
 autowrap_mode = 2
 
@@ -905,9 +874,9 @@ size_flags_vertical = 3
 mouse_filter = 2
 
 [node name="Gear" type="Button" parent="Hud"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 10
 text = "⚙  Pengaturan"
 
 [node name="Toast" parent="." instance=ExtResource("2_toast")]

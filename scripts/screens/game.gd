@@ -6,13 +6,13 @@ extends Control
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 
 # Kanvas desain papan. Node Board diskalakan otomatis supaya selalu muat di
-# sisa ruang layar (lihat _layout), berapa pun ukuran jendelanya.
+# seluruh layar (lihat _layout), berapa pun ukuran jendelanya.
 const BOARD_DESIGN := Vector2(1730, 1120)
-const EDGE := 20.0                  # jarak papan/HUD ke tepi layar
-const HUD_RATIO := 0.12             # lebar kolom HUD = 12% lebar layar
-const HUD_MIN := 200.0
-const HUD_MAX := 260.0
-const HUD_INNER := 16.0             # padding di dalam panel HUD
+# Celah di kolom kanan papan: di antara discard lawan (bawah 340) dan deck
+# pemain (atas 680). HUD diletakkan di sini supaya tidak lagi memakan lebar
+# layar di luar papan.
+const HUD_GAP := Rect2(1590, 348, 130, 328)
+const HUD_PAD := 6.0                # padding dalam celah (satuan kanvas)
 
 # ukuran kartu per zona papan (dalam ruang desain Board)
 const SIZE_OPP_HAND := Vector2(84, 112)
@@ -88,41 +88,41 @@ func start_as_host() -> void:
 
 # --- Tata letak responsif ----------------------------------------------------
 #
-# Papan berukuran tetap 1080x1350 (potret, bab 4.2) tetapi TIDAK lagi dipaku
-# pada satu skala. Setiap kali jendela berubah ukuran, skala dihitung ulang agar
-# papan memakai ruang yang tersedia di kiri, dan kolom HUD dilebarkan/menyempit
-# mengikuti lebar layar. Dengan begitu tata letak tetap utuh di 1920x1080,
-# 1366x768, layar 4:3, maupun jendela yang diperbesar.
+# Papan berukuran tetap 1730x1120 dan skalanya dihitung ulang setiap kali
+# jendela berubah ukuran. Tidak ada lagi kolom HUD di luar papan: latar papan
+# diperluas sampai menutupi SELURUH jendela, dan HUD dipindahkan ke celah di
+# antara discard lawan dan deck pemain di kolom kanan (HUD_GAP), ikut menskala
+# bersama papan supaya tetap proporsional di semua ukuran layar.
 
 func _layout() -> void:
 	var w := maxf(size.x, 320.0)
 	var h := maxf(size.y, 240.0)
-
-	# Kolom HUD proporsional, tetapi dibatasi agar tidak menelan papan.
-	var hud_w := clampf(w * HUD_RATIO, HUD_MIN, HUD_MAX)
-	hud_w = minf(hud_w, w * 0.42)
-
-	var area_w := maxf(w - hud_w - EDGE * 3.0, 160.0)
-	var area_h := maxf(h - EDGE * 2.0, 160.0)
-	var s := minf(area_w / BOARD_DESIGN.x, area_h / BOARD_DESIGN.y)
+	var s := minf(w / BOARD_DESIGN.x, h / BOARD_DESIGN.y)
 	s = clampf(s, 0.16, 1.6)
 
 	var board: Control = $Board
 	board.pivot_offset = BOARD_DESIGN * 0.5          # skala dari titik tengah
 	board.scale = Vector2(s, s)
-	board.position = Vector2(EDGE + area_w * 0.5, h * 0.5) - BOARD_DESIGN * 0.5
+	board.position = Vector2(w, h) * 0.5 - BOARD_DESIGN * 0.5
+	var mid := Vector2(w, h) * 0.5                   # titik tengah papan di layar
 
-	var bg: Control = $HudBg
-	bg.offset_left = -(hud_w + EDGE)
-	bg.offset_right = -EDGE
-	bg.offset_top = EDGE
-	bg.offset_bottom = -EDGE
+	# Latar papan menutupi seluruh jendela: ubah ukuran jendela ke koordinat
+	# kanvas lewat kebalikan dari pemetaan skala di atas.
+	var bg: Control = $Board/Bg
+	bg.position = BOARD_DESIGN * 0.5 - mid / s
+	bg.size = Vector2(w, h) / s
+
+	# HUD masuk ke celah, ikut menskala bersama papan.
+	var gap_pos := mid + (HUD_GAP.position - BOARD_DESIGN * 0.5) * s
+	var hudbg: Control = $HudBg
+	hudbg.position = gap_pos
+	hudbg.size = HUD_GAP.size
+	hudbg.scale = Vector2(s, s)
 
 	var hud: Control = $Hud
-	hud.offset_left = -(hud_w + EDGE) + HUD_INNER
-	hud.offset_right = -EDGE - HUD_INNER
-	hud.offset_top = EDGE + HUD_INNER
-	hud.offset_bottom = -EDGE - HUD_INNER
+	hud.position = gap_pos + Vector2(HUD_PAD, HUD_PAD) * s
+	hud.size = HUD_GAP.size - Vector2(HUD_PAD, HUD_PAD) * 2.0
+	hud.scale = Vector2(s, s)
 
 # --- Aksi (bab 4.8 / 6.2) ---------------------------------------------------
 
