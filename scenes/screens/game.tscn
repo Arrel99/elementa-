@@ -1,10 +1,11 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/ui/toast.tscn" id="2_toast"]
 [ext_resource type="PackedScene" path="res://scenes/ui/reveal_popup.tscn" id="3_reveal"]
 [ext_resource type="Script" path="res://scripts/ui/octagon_button.gd" id="4_octagon"]
 [ext_resource type="PackedScene" path="res://scenes/ui/in_game_settings.tscn" id="5_settings"]
+[ext_resource type="PackedScene" path="res://scenes/ui/card_preview.tscn" id="6_preview"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_board"]
 bg_color = Color(0.0549019, 0.0823529, 0.117647, 1)
@@ -958,6 +959,8 @@ text = "Kembali ke Menu"
 [node name="RevealPopup" parent="." instance=ExtResource("3_reveal")]
 
 [node name="InGameSettings" parent="." instance=ExtResource("5_settings")]
+
+[node name="CardPreview" parent="." instance=ExtResource("6_preview")]
 
 
 

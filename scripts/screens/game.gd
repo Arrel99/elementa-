@@ -186,6 +186,7 @@ func _broadcast() -> void:
 
 func render(v: Dictionary) -> void:
 	view = v
+	$CardPreview.hide_preview()     # kartu lama akan dibuang
 	_reset_mode()
 	_fill($Board/Me/Hand, v.me.hand, true, SIZE_HAND)
 	_fill($Board/Me/Base, v.me.base, true, SIZE_BASE)
@@ -239,6 +240,9 @@ func _fill(box: Container, cards: Array, face_up: bool, size: Vector2, interacti
 		box.add_child(n)
 		_size_card(n, size)
 		n.setup(c, face_up, interactive)
+		n.preview_hover.connect(_on_preview_hover)
+		n.preview_exit.connect(_on_preview_exit)
+		n.preview_pin.connect(_on_preview_pin)
 		if interactive:
 			n.clicked.connect(_on_card_clicked)
 		if box == $Board/Me/Base and int(c.get("placed_turn", -1)) == view.turn_no:
@@ -279,20 +283,23 @@ func _build_ghost_row(box: Container, count: int, size: Vector2) -> void:
 		box.add_child(slot)
 
 ## Menyesuaikan isi kartu dengan ukuran zona supaya tidak meluber.
+## Aturan ukuran/font ada di card_view.gd (fit) agar pratinjau besar memakai
+## aturan yang sama.
 func _size_card(n: Node, size: Vector2) -> void:
-	n.custom_minimum_size = size
 	n.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	n.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	n.clip_contents = true
-	var name_label: Label = n.get_node("V/Name")
-	var info: Label = n.get_node("V/Info")
-	var desc: Label = n.get_node("V/Desc")
-	var art: TextureRect = n.get_node("V/Art")
-	name_label.add_theme_font_size_override("font_size", maxi(9, int(size.y * 0.085)))
-	info.add_theme_font_size_override("font_size", maxi(8, int(size.y * 0.07)))
-	desc.add_theme_font_size_override("font_size", maxi(8, int(size.y * 0.055)))
-	desc.visible = size.y >= 140
-	art.custom_minimum_size = Vector2(0, int(size.y * 0.36))
+	n.fit(size)
+
+# --- Pratinjau kartu (hover / klik kanan) ----------------------------------
+
+func _on_preview_hover(data: Dictionary, source: Node) -> void:
+	$CardPreview.hover(data, source)
+
+func _on_preview_exit(source: Node) -> void:
+	$CardPreview.unhover(source)
+
+func _on_preview_pin(data: Dictionary, source: Node) -> void:
+	$CardPreview.pin(data, source)
 
 ## Angka pada panel deck / discard / deck senyawa.
 func _render_counters(v: Dictionary) -> void:
@@ -340,6 +347,9 @@ func _render_compound_table(ids: Array) -> void:
 		list.add_child(n)
 		_size_card(n, SIZE_SEN)
 		n.setup({"uid": -1, "id": id, "placed_turn": -1}, true, false)
+		n.preview_hover.connect(_on_preview_hover)
+		n.preview_exit.connect(_on_preview_exit)
+		n.preview_pin.connect(_on_preview_pin)
 		var art: TextureRect = n.get_node("V/Art")
 		var desc: Label = n.get_node("V/Desc")
 		n.size_flags_horizontal = Control.SIZE_FILL     # lebar seragam
@@ -444,6 +454,9 @@ func _reset_mode() -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel"):
+		if $CardPreview.is_open():
+			$CardPreview.hide_preview()     # tutup pratinjau lebih dulu
+			return
 		_reset_mode()
 
 # --- Hasil (bab 4.7) --------------------------------------------------------
