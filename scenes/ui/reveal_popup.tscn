@@ -3,20 +3,39 @@
 [ext_resource type="Script" path="res://scripts/ui/reveal_popup.gd" id="1_reveal"]
 
 [node name="RevealPopup" type="PopupPanel"]
-size = Vector2i(360, 320)
+size = Vector2i(520, 400)
 script = ExtResource("1_reveal")
 
 [node name="V" type="VBoxContainer" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = -12.0
-offset_bottom = -12.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 12
 
-[node name="List" type="VBoxContainer" parent="V"]
+[node name="Title" type="Label" parent="V"]
+layout_mode = 2
+text = "Spektrometer: 3 kartu teratas deck kamu."
+autowrap_mode = 2
+
+[node name="Hint" type="Label" parent="V"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.760784, 0.827451, 0.890196, 1)
+text = "Klik 1 kartu untuk memilih (klik lagi untuk membatalkan). Lalu tekan Konfirmasi — deck lalu diacak kembali."
+autowrap_mode = 2
+
+[node name="Row" type="HBoxContainer" parent="V"]
 layout_mode = 2
 size_flags_vertical = 3
+alignment = 1
+theme_override_constants/separation = 18
+
+[node name="Confirm" type="Button" parent="V"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Konfirmasi"
