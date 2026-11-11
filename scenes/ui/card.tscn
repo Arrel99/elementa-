@@ -3,18 +3,20 @@
 [ext_resource type="Script" path="res://scripts/ui/card_view.gd" id="1_card"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playglow"]
-bg_color = Color(0.462745, 0.827451, 0.6, 0.1)
+expand_margin_left = 6.0
+expand_margin_top = 6.0
+expand_margin_right = 6.0
+expand_margin_bottom = 6.0
+bg_color = Color(1, 1, 1, 0)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.462745, 0.827451, 0.6, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-shadow_color = Color(0.462745, 0.827451, 0.6, 0.5)
-shadow_size = 6
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 content_margin_left = 6.0
