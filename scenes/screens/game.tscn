@@ -498,9 +498,9 @@ alignment = 1
 
 [node name="CompoundDeck" type="PanelContainer" parent="Board"]
 layout_mode = 0
-offset_left = 1802.0
+offset_left = 1510.0
 offset_top = 528.0
-offset_right = 1952.0
+offset_right = 1660.0
 offset_bottom = 683.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
@@ -533,7 +533,7 @@ vertical_alignment = 1
 layout_mode = 0
 offset_left = 490.0
 offset_top = 528.0
-offset_right = 1772.0
+offset_right = 1480.0
 offset_bottom = 683.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
@@ -543,7 +543,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 mouse_filter = 2
-theme_override_constants/h_separation = 52
+theme_override_constants/h_separation = 15
 theme_override_constants/v_separation = 5
 columns = 9
 
