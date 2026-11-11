@@ -166,9 +166,9 @@ theme_override_constants/separation = 16
 clip_contents = true
 layout_mode = 0
 offset_left = 490.0
-offset_top = 339.0
+offset_top = 165.0
 offset_right = 1370.0
-offset_bottom = 512.0
+offset_bottom = 338.0
 mouse_filter = 2
 alignment = 0
 theme_override_constants/separation = 20
@@ -200,9 +200,9 @@ theme_override_constants/separation = 16
 clip_contents = true
 layout_mode = 0
 offset_left = 490.0
-offset_top = 339.0
+offset_top = 165.0
 offset_right = 1370.0
-offset_bottom = 512.0
+offset_bottom = 338.0
 mouse_filter = 2
 alignment = 0
 theme_override_constants/separation = 20
@@ -365,9 +365,9 @@ vertical_alignment = 1
 [node name="OppSpell" type="PanelContainer" parent="Board"]
 layout_mode = 0
 offset_left = 1050.0
-offset_top = 165.0
+offset_top = 352.0
 offset_right = 1210.0
-offset_bottom = 325.0
+offset_bottom = 512.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -404,9 +404,9 @@ autowrap_mode = 2
 [node name="OppSynth" type="PanelContainer" parent="Board"]
 layout_mode = 0
 offset_left = 825.0
-offset_top = 165.0
+offset_top = 352.0
 offset_right = 1035.0
-offset_bottom = 325.0
+offset_bottom = 512.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -465,9 +465,9 @@ vertical_alignment = 1
 [node name="OppSen" type="PanelContainer" parent="Board"]
 layout_mode = 0
 offset_left = 650.0
-offset_top = 165.0
+offset_top = 352.0
 offset_right = 810.0
-offset_bottom = 325.0
+offset_bottom = 512.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -768,9 +768,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
 visible = false
 layout_mode = 0
 offset_left = 490.0
-offset_top = 339.0
+offset_top = 165.0
 offset_right = 1370.0
-offset_bottom = 512.0
+offset_bottom = 338.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
 
