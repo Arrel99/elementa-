@@ -638,6 +638,7 @@ func _pos_sen(is_me: bool) -> Vector3:
 
 func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 	for ch in _cards_root.get_children():
+		_cards_root.remove_child(ch)
 		ch.queue_free()
 
 	var next_uids := {}

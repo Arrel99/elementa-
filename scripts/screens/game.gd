@@ -242,6 +242,7 @@ func _sync_pending(v: Dictionary) -> void:
 func _fill_hand(dock: Control, cards: Array, face_up: bool, base_size: Vector2,
 		interactive: bool, playable_key: String) -> void:
 	for ch in dock.get_children():
+		dock.remove_child(ch)
 		ch.queue_free()
 	var playable: Array = _playable.get(playable_key, []) if playable_key != "" else []
 	var card_sz := (base_size * _ui_scale).round()
