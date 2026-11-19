@@ -17,8 +17,8 @@ const SIZE_SEN := Vector2(0.88, 1.18)
 const SIZE_TABLE := Vector2(0.80, 1.06)
 const SIZE_PILE := Vector2(0.88, 1.18)
 
-const CAM_BASE_POS := Vector3(0.75, 11.9, 9.3)
-const CAM_LOOK_TARGET := Vector3(0.75, -0.35, 0.30)
+const CAM_BASE_POS := Vector3(0.45, 10.6, 8.2)
+const CAM_LOOK_TARGET := Vector3(0.45, -0.25, 0.15)
 
 const COLOR_MAT_BG := Color(0.055, 0.085, 0.125, 1.0)
 const COLOR_FRAME := Color(0.11, 0.16, 0.23, 1.0)
@@ -37,7 +37,6 @@ var _piles: Dictionary = {}          # pile_key -> { "mesh": MeshInstance3D, "co
 var _shields: Dictionary = {}        # "me" | "opp" -> { "ring": MeshInstance3D, "label": Label3D }
 
 var _known_uids := {}                # uid yang sudah ada di papan pada render sebelumnya
-var _cam_offset := Vector2.ZERO
 var _time := 0.0
 
 func _ready() -> void:
@@ -56,19 +55,6 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	# Efek paralaks kamera halus mengikuti kursor supaya kedalaman 2.5D terasa hidup
-	var vp := get_viewport()
-	if vp != null and _camera != null:
-		var rect := vp.get_visible_rect()
-		if rect.size.x > 1.0 and rect.size.y > 1.0:
-			var mp := vp.get_mouse_position()
-			var nx := clampf((mp.x / rect.size.x) * 2.0 - 1.0, -1.0, 1.0)
-			var ny := clampf((mp.y / rect.size.y) * 2.0 - 1.0, -1.0, 1.0)
-			var target := Vector2(nx * 0.24, ny * 0.12)
-			_cam_offset = _cam_offset.lerp(target, clampf(delta * 5.0, 0.0, 1.0))
-			_camera.position = CAM_BASE_POS + Vector3(_cam_offset.x, 0.0, _cam_offset.y)
-			_camera.look_at(CAM_LOOK_TARGET, Vector3.UP)
-
 	# Rotasi halus cincin perisai aktif
 	for k in _shields:
 		var ring: MeshInstance3D = _shields[k].ring
@@ -98,7 +84,7 @@ func _setup_environment() -> void:
 func _setup_camera() -> void:
 	_camera = Camera3D.new()
 	_camera.name = "Camera3D"
-	_camera.fov = 38.0
+	_camera.fov = 40.0
 	_camera.near = 0.2
 	_camera.far = 80.0
 	_camera.position = CAM_BASE_POS
@@ -142,40 +128,28 @@ func _build_table() -> void:
 	table.name = "Table"
 	add_child(table)
 
-	# Lantai luar gelap (agar latar belakang menyatu di segala rasio layar)
-	var floor_mesh := MeshInstance3D.new()
-	var floor_plane := PlaneMesh.new()
-	floor_plane.size = Vector2(60.0, 40.0)
-	floor_mesh.mesh = floor_plane
-	floor_mesh.position = Vector3(0.0, -0.32, 0.0)
-	var floor_mat := StandardMaterial3D.new()
-	floor_mat.albedo_color = Color(0.025, 0.038, 0.058, 1.0)
-	floor_mat.roughness = 0.85
-	floor_mesh.material_override = floor_mat
-	table.add_child(floor_mesh)
-
-	# Bingkai meja metalik berundak
-	var frame := _make_box(Vector3(15.6, 0.28, 9.5), COLOR_FRAME, 0.45, 0.35)
-	frame.position = Vector3(-0.15, -0.17, -0.05)
-	table.add_child(frame)
-
-	# Permukaan playmat utama
-	var mat_box := _make_box(Vector3(15.0, 0.06, 8.9), COLOR_MAT_BG, 0.68, 0.10)
-	mat_box.position = Vector3(-0.15, -0.03, -0.05)
+	# Permukaan playmat penuh memenuhi seluruh layar di semua rasio jendela
+	var mat_box := _make_box(Vector3(38.0, 0.08, 26.0), COLOR_MAT_BG, 0.68, 0.10)
+	mat_box.position = Vector3(0.0, -0.04, 0.0)
 	table.add_child(mat_box)
 
-	# Garis pembatas tengah menyala (pemisah sisi lawan & pemain)
-	var divider := _make_emissive_bar(Vector3(14.5, 0.014, 0.045), Color(0.22, 0.66, 0.84, 1.0), 1.4)
-	divider.position = Vector3(-0.15, 0.008, -0.05)
+	# Panel area arena aktif sedikit menonjol di tengah playmat
+	var arena_pad := _make_box(Vector3(14.8, 0.02, 8.6), Color(0.068, 0.105, 0.152, 1.0), 0.62, 0.14)
+	arena_pad.position = Vector3(-0.15, -0.005, -0.05)
+	table.add_child(arena_pad)
+
+	# Garis pembatas tengah menyala (pemisah sisi lawan & pemain, memanjang penuh)
+	var divider := _make_emissive_bar(Vector3(36.0, 0.014, 0.045), Color(0.22, 0.66, 0.84, 1.0), 1.4)
+	divider.position = Vector3(0.0, 0.008, -0.05)
 	table.add_child(divider)
 
 	# Garis aksen tepi sisi pemain (cyan) & sisi lawan (merah hangat)
-	var me_edge := _make_emissive_bar(Vector3(14.6, 0.018, 0.05), Color(0.24, 0.72, 0.92, 1.0), 1.3)
-	me_edge.position = Vector3(-0.15, 0.01, 4.35)
+	var me_edge := _make_emissive_bar(Vector3(14.8, 0.018, 0.05), Color(0.24, 0.72, 0.92, 1.0), 1.3)
+	me_edge.position = Vector3(-0.15, 0.01, 4.25)
 	table.add_child(me_edge)
 
-	var opp_edge := _make_emissive_bar(Vector3(14.6, 0.018, 0.05), Color(0.92, 0.34, 0.36, 1.0), 1.3)
-	opp_edge.position = Vector3(-0.15, 0.01, -4.45)
+	var opp_edge := _make_emissive_bar(Vector3(14.8, 0.018, 0.05), Color(0.92, 0.34, 0.36, 1.0), 1.3)
+	opp_edge.position = Vector3(-0.15, 0.01, -4.35)
 	table.add_child(opp_edge)
 
 	# Label zona di permukaan meja
