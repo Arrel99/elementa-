@@ -1,26 +1,16 @@
 extends Control
 
-## Papan permainan (bab 4 sampai 6). Satu skrip untuk host dan klien.
+## Papan permainan 2.5D (Arena 3D + HUD & Tangan 2D).
+## Satu skrip untuk host dan klien.
 ## Host = pemain 0 (menjalankan GameState), klien = pemain 1.
 
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 
-# Kanvas desain papan. Node Board diskalakan otomatis supaya selalu muat di
-# seluruh layar (lihat _layout), berapa pun ukuran jendelanya. Rasio kanvas
-# dibuat 16:9 (2162 x 1216) supaya papan benar-benar mentok tepi layar.
-const BOARD_DESIGN := Vector2(2162, 1216)
-# Celah di kolom kanan papan: di antara discard lawan (bawah 376) dan deck
-# pemain (atas 780). HUD (skor + END TURN) diletakkan di sini supaya tidak
-# memakan lebar layar di luar papan.
-const HUD_GAP := Rect2(1982, 396, 150, 364)
-const HUD_PAD := 8.0                # padding dalam celah (satuan kanvas)
-
-# ukuran kartu per zona papan (dalam ruang desain Board)
-const SIZE_OPP_HAND := Vector2(100, 133)
-const SIZE_HAND := Vector2(106, 141)
-const SIZE_BASE := Vector2(130, 173)
-const SIZE_SPECIAL := Vector2(94, 125)
-const SIZE_SEN := Vector2(94, 125)
+# Ukuran kartu tangan di overlay 2D (skala dasar untuk tinggi jendela 1080)
+const SIZE_HAND := Vector2(114, 152)
+const SIZE_OPP_HAND := Vector2(76, 102)
+const HUD_BASE_SIZE := Vector2(150, 320)
+const HUD_PAD := 8.0
 
 # efek spell -> zona tempat target dipilih; efek yang tidak ada di sini tanpa target
 const SPELL_TARGET := {
@@ -38,14 +28,7 @@ const REASON_TEXT := {
 
 enum Mode { IDLE, PICK_SYNTH, PICK_TARGET }
 
-# zona -> node glow (efek "di sekitar zona" yang menggantikan teks petunjuk)
-const ZONE_GLOWS := {
-	"hand": "MeHandGlow",
-	"my_base": "MeBaseGlow",
-	"opp_base": "OppBaseGlow",
-	"my_special": "MeSpecialGlow",
-	"opp_special": "OppSpecialGlow",
-}
+@onready var board3d: Node3D = $BoardViewport/Viewport3D/Board3D
 
 var state: GameState            # hanya ada di host
 var my_index := 0
@@ -58,8 +41,9 @@ var local_test := false
 var easy_mode := true
 var turn_timer := Timer.new()
 var _pending_key := ""          # penanda efek interaktif yang sedang ditampilkan
-var _glow_tween: Tween          # denyut glow zona yang sedang disorot
+var _glow_tween: Tween          # denyut glow zona tangan
 var _playable := {}             # uid kartu yang bisa dimainkan (dari state)
+var _ui_scale := 1.0
 
 # --- Siklus hidup (bab 4.5 / 6.2) -------------------------------------------
 
@@ -67,6 +51,12 @@ func _ready() -> void:
 	local_test = Net.local_test
 	resized.connect(_layout)
 	_layout()
+
+	board3d.card_clicked.connect(_on_card_clicked)
+	board3d.card_preview_hover.connect(_on_preview_hover)
+	board3d.card_preview_exit.connect(_on_preview_exit)
+	board3d.card_preview_pin.connect(_on_preview_pin)
+
 	$Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
 	$InGameSettings.give_up_requested.connect($GiveUpDialog.popup_centered)
 	$InGameSettings.back_to_menu_requested.connect(_back_to_menu)
@@ -75,7 +65,7 @@ func _ready() -> void:
 	multiplayer.peer_disconnected.connect(_on_peer_gone)
 	multiplayer.server_disconnected.connect(_on_server_gone)
 	_setup_timer()
-	_build_ghosts()
+
 	# Godot memakai OfflineMultiplayerPeer saat tidak ada jaringan, dan peer
 	# itu melaporkan is_server() = true. Deteksi tipe peer-nya lebih dulu.
 	var offline := multiplayer.multiplayer_peer is OfflineMultiplayerPeer
@@ -97,43 +87,50 @@ func start_as_host() -> void:
 	my_index = 0
 	_broadcast()
 
-# --- Tata letak responsif ----------------------------------------------------
-#
-# Papan berukuran tetap 1730x1120 dan skalanya dihitung ulang setiap kali
-# jendela berubah ukuran. Tidak ada lagi kolom HUD di luar papan: latar papan
-# diperluas sampai menutupi SELURUH jendela, dan HUD dipindahkan ke celah di
-# antara discard lawan dan deck pemain di kolom kanan (HUD_GAP), ikut menskala
-# bersama papan supaya tetap proporsional di semua ukuran layar.
+# --- Tata letak responsif (Overlay 2D di atas Arena 3D) ----------------------
 
 func _layout() -> void:
 	var w := maxf(size.x, 320.0)
 	var h := maxf(size.y, 240.0)
-	var s := minf(w / BOARD_DESIGN.x, h / BOARD_DESIGN.y)
-	s = clampf(s, 0.16, 1.6)
+	_ui_scale = clampf(minf(w / 1920.0, h / 1080.0), 0.35, 1.35)
 
-	var board: Control = $Board
-	board.pivot_offset = BOARD_DESIGN * 0.5          # skala dari titik tengah
-	board.scale = Vector2(s, s)
-	board.position = Vector2(w, h) * 0.5 - BOARD_DESIGN * 0.5
-	var mid := Vector2(w, h) * 0.5                   # titik tengah papan di layar
+	# HUD di sisi kanan tengah (Skor Lawan + END TURN + Skor Kamu)
+	var hud_w := HUD_BASE_SIZE.x * _ui_scale
+	var hud_h := HUD_BASE_SIZE.y * _ui_scale
+	var hud_x := w - hud_w - 18.0 * _ui_scale
+	var hud_y := (h - hud_h) * 0.5
 
-	# Latar papan menutupi seluruh jendela: ubah ukuran jendela ke koordinat
-	# kanvas lewat kebalikan dari pemetaan skala di atas.
-	var bg: Control = $Board/Bg
-	bg.position = BOARD_DESIGN * 0.5 - mid / s
-	bg.size = Vector2(w, h) / s
-
-	# HUD masuk ke celah, ikut menskala bersama papan.
-	var gap_pos := mid + (HUD_GAP.position - BOARD_DESIGN * 0.5) * s
 	var hudbg: Control = $HudBg
-	hudbg.position = gap_pos
-	hudbg.size = HUD_GAP.size
-	hudbg.scale = Vector2(s, s)
+	hudbg.position = Vector2(hud_x, hud_y)
+	hudbg.size = HUD_BASE_SIZE
+	hudbg.scale = Vector2(_ui_scale, _ui_scale)
 
 	var hud: Control = $Hud
-	hud.position = gap_pos + Vector2(HUD_PAD, HUD_PAD) * s
-	hud.size = HUD_GAP.size - Vector2(HUD_PAD, HUD_PAD) * 2.0
-	hud.scale = Vector2(s, s)
+	hud.position = Vector2(hud_x + HUD_PAD * _ui_scale, hud_y + HUD_PAD * _ui_scale)
+	hud.size = HUD_BASE_SIZE - Vector2(HUD_PAD, HUD_PAD) * 2.0
+	hud.scale = Vector2(_ui_scale, _ui_scale)
+
+	# Dock tangan pemain (bawah tengah, sedikit melengkung ala Yu-Gi-Oh! / Pokemon)
+	var me_w := minf(w * 0.72, 1080.0 * _ui_scale)
+	var me_h := (SIZE_HAND.y + 24.0) * _ui_scale
+	var me_dock: Control = $MeHandDock
+	me_dock.position = Vector2((w - me_w) * 0.5 - 32.0 * _ui_scale, h - me_h + 6.0 * _ui_scale)
+	me_dock.size = Vector2(me_w, me_h)
+
+	var me_glow: Control = $MeHandGlow
+	me_glow.position = me_dock.position - Vector2(10.0, 8.0) * _ui_scale
+	me_glow.size = me_dock.size + Vector2(20.0, 6.0) * _ui_scale
+
+	# Dock tangan lawan (atas tengah, kartu tertutup rapat)
+	var opp_w := minf(w * 0.56, 760.0 * _ui_scale)
+	var opp_h := SIZE_OPP_HAND.y * _ui_scale
+	var opp_dock: Control = $OppHandDock
+	opp_dock.position = Vector2((w - opp_w) * 0.5 - 32.0 * _ui_scale, -24.0 * _ui_scale)
+	opp_dock.size = Vector2(opp_w, opp_h)
+
+	if not view.is_empty():
+		_layout_hand_fan($MeHandDock, true)
+		_layout_hand_fan($OppHandDock, false)
 
 # --- Aksi (bab 4.8 / 6.2) ---------------------------------------------------
 
@@ -193,24 +190,21 @@ func _broadcast() -> void:
 	for id in multiplayer.get_peers():
 		receive_view.rpc_id(id, state.view_for(1))
 
-# --- Render (bab 4.3 / 4.5) -------------------------------------------------
+# --- Render (Arena 3D + Tangan 2D + HUD) ------------------------------------
 
 func render(v: Dictionary) -> void:
 	view = v
 	$CardPreview.hide_preview()     # kartu lama akan dibuang
 	_reset_mode()
 	_playable = v.get("playable", {})
-	_fill($Board/Me/Hand, v.me.hand, true, SIZE_HAND, true, "hand")
-	_fill($Board/Me/Base, v.me.base, true, SIZE_BASE, true, "base")
-	_fill($Board/Me/Special, v.me.special, true, SIZE_SPECIAL)
-	_fill($Board/Opp/Hand, v.opp.hand_backs, false, SIZE_OPP_HAND)   # hanya jumlah, bukan isi
-	_fill($Board/Opp/Base, v.opp.base, true, SIZE_BASE)
-	_fill($Board/Opp/Special, v.opp.special, true, SIZE_SPECIAL)
-	# Zona senyawa = senyawa terakhir yang dibuka (kartu paling akhir di array).
-	_fill($Board/MeSen/V/Slot/Cards, _last_card(v.me.special), true, SIZE_SEN, false)
-	_fill($Board/OppSen/V/Slot/Cards, _last_card(v.opp.special), true, SIZE_SEN, false)
-	_render_compound_table(v.compound_pile)
-	_render_counters(v)
+
+	# Render seluruh papan 2.5D di 3D
+	board3d.render_board(v, _playable, easy_mode)
+
+	# Render tangan pemain & lawan di overlay 2D
+	_fill_hand($MeHandDock, v.me.hand, true, SIZE_HAND, true, "hand")
+	_fill_hand($OppHandDock, v.opp.hand_backs, false, SIZE_OPP_HAND, false, "")
+
 	var hand_max := int(v.rules.hand_max)
 	var over: bool = v.me.hand.size() > hand_max
 	var extra := ""
@@ -221,7 +215,6 @@ func render(v: Dictionary) -> void:
 	$Hud/EndTurn.disabled = (not v.my_turn) or v.winner != -2 or over
 	if over and v.my_turn and v.winner == -2:
 		_highlight_zone("hand")     # tangan melebihi batas: sorot zona tangan
-	# Teks status tidak lagi di celah tengah; masuk ke panel Pengaturan (overlay).
 	$InGameSettings.set_status(
 		"Giliran %d  (sintesis %d, spell %d)%s" % [
 			v.turn_no, v.synth_left, v.spell_left, extra],
@@ -245,67 +238,73 @@ func _sync_pending(v: Dictionary) -> void:
 		_pending_key = key
 		$RevealPopup.show_spektrometer(v.pending.cards)
 
-func _fill(box: Container, cards: Array, face_up: bool, size: Vector2,
-		interactive := true, playable_key := "") -> void:
-	for ch in box.get_children():
+## Mengisi dock tangan 2D dengan susunan kipas (fan) ala Yu-Gi-Oh! / Pokemon.
+func _fill_hand(dock: Control, cards: Array, face_up: bool, base_size: Vector2,
+		interactive: bool, playable_key: String) -> void:
+	for ch in dock.get_children():
 		ch.queue_free()
 	var playable: Array = _playable.get(playable_key, []) if playable_key != "" else []
-	for c in cards:
-		var n := CARD_SCENE.instantiate()
-		box.add_child(n)
-		_size_card(n, size)
-		n.setup(c, face_up, interactive)
+	var card_sz := (base_size * _ui_scale).round()
+	for i in cards.size():
+		var c: Dictionary = cards[i]
+		var n: Control = CARD_SCENE.instantiate()
+		dock.add_child(n)
+		n.fit(card_sz)
+		n.size = card_sz
+		n.pivot_offset = card_sz * 0.5
+		n.setup(c, face_up, interactive, face_up)
 		n.preview_hover.connect(_on_preview_hover)
 		n.preview_exit.connect(_on_preview_exit)
 		n.preview_pin.connect(_on_preview_pin)
 		if interactive:
 			n.clicked.connect(_on_card_clicked)
+			n.mouse_entered.connect(_on_hand_card_hover.bind(n, true))
+			n.mouse_exited.connect(_on_hand_card_hover.bind(n, false))
 		if playable.has(int(c.get("uid", -1))):
-			n.set_playable(true)            # cincin hijau: kartu bisa dimainkan
-		if box == $Board/Me/Base and int(c.get("placed_turn", -1)) == view.turn_no:
-			n.modulate = Color(0.6, 0.6, 0.6)   # masih cooldown
+			n.set_playable(true)
+	_layout_hand_fan(dock, face_up)
 
-## Kartu baru saja masuk zona spesial = elemen terakhir array.
-func _last_card(cards: Array) -> Array:
-	return [] if cards.is_empty() else [cards[cards.size() - 1]]
+func _layout_hand_fan(dock: Control, is_me: bool) -> void:
+	var cards := dock.get_children()
+	var count := cards.size()
+	if count == 0:
+		return
+	var base_sz := (SIZE_HAND if is_me else SIZE_OPP_HAND) * _ui_scale
+	var card_w := base_sz.x
+	var max_span := maxf(dock.size.x - card_w, 40.0)
+	var ideal_step := card_w * (0.94 if is_me else 0.72)
+	var step := ideal_step if count <= 1 else minf(ideal_step, max_span / float(count - 1))
+	var total_w := card_w + step * float(maxi(count - 1, 0))
+	var start_x := (dock.size.x - total_w) * 0.5
+	var mid := float(count - 1) * 0.5
 
-## Garis samar penanda slot kosong, dibuat sekali saat _ready.
-func _build_ghosts() -> void:
-	_build_ghost_row($Board/Opp/HandGhosts, 8, SIZE_OPP_HAND)
-	_build_ghost_row($Board/Opp/BaseGhosts, 6, SIZE_BASE)
-	_build_ghost_row($Board/Opp/SpecialGhosts, 8, SIZE_SPECIAL)
-	_build_ghost_row($Board/Me/HandGhosts, 8, SIZE_HAND)
-	_build_ghost_row($Board/Me/BaseGhosts, 6, SIZE_BASE)
-	_build_ghost_row($Board/Me/SpecialGhosts, 8, SIZE_SPECIAL)
-
-func _build_ghost_row(box: Container, count: int, size: Vector2) -> void:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.055, 0.086, 0.118, 0.35)
-	sb.border_width_left = 1
-	sb.border_width_top = 1
-	sb.border_width_right = 1
-	sb.border_width_bottom = 1
-	sb.border_color = Color(0.204, 0.329, 0.451, 0.55)
-	sb.corner_radius_top_left = 8
-	sb.corner_radius_top_right = 8
-	sb.corner_radius_bottom_right = 8
-	sb.corner_radius_bottom_left = 8
 	for i in count:
-		var slot := PanelContainer.new()
-		slot.custom_minimum_size = size
-		slot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_theme_stylebox_override("panel", sb)
-		box.add_child(slot)
+		var n: Control = cards[i]
+		n.fit(base_sz.round())
+		n.size = base_sz.round()
+		n.pivot_offset = n.size * 0.5
+		var t := 0.0 if count <= 1 else (float(i) - mid) / maxf(mid, 1.0)   # -1..1
+		var arch_y := (t * t) * (16.0 if is_me else -10.0) * _ui_scale
+		var base_y := (18.0 * _ui_scale + arch_y) if is_me else (arch_y)
+		var rot := t * (5.5 if is_me else -4.0)
+		n.position = Vector2(start_x + float(i) * step, base_y)
+		n.rotation_degrees = rot
+		n.z_index = i
+		n.set_meta("base_y", base_y)
+		n.set_meta("base_rot", rot)
+		n.set_meta("base_z", i)
 
-## Menyesuaikan isi kartu dengan ukuran zona supaya tidak meluber.
-## Aturan ukuran/font ada di card_view.gd (fit) agar pratinjau besar memakai
-## aturan yang sama.
-func _size_card(n: Node, size: Vector2) -> void:
-	n.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	n.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	n.fit(size)
+func _on_hand_card_hover(n: Control, on: bool) -> void:
+	if not is_instance_valid(n) or not n.has_meta("base_y"):
+		return
+	var base_y: float = n.get_meta("base_y")
+	var base_rot: float = n.get_meta("base_rot")
+	var base_z: int = n.get_meta("base_z")
+	n.z_index = 40 if on else base_z
+	var tw := n.create_tween().set_parallel(true)
+	tw.tween_property(n, "position:y", base_y - 26.0 * _ui_scale if on else base_y, 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(n, "rotation_degrees", 0.0 if on else base_rot, 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(n, "scale", Vector2(1.08, 1.08) if on else Vector2.ONE, 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 # --- Pratinjau kartu (hover / klik kanan) ----------------------------------
 
@@ -317,69 +316,6 @@ func _on_preview_exit(source: Node) -> void:
 
 func _on_preview_pin(data: Dictionary, source: Node) -> void:
 	$CardPreview.pin(data, source)
-
-## Angka pada panel deck / discard / deck senyawa.
-func _render_counters(v: Dictionary) -> void:
-	$Board/OppDeck/V/Count.text = str(v.opp.deck_count)
-	$Board/OppDiscard/V/Count.text = str(v.opp.discard_count)
-	$Board/MeDeck/V/Count.text = str(v.me.deck_count)
-	$Board/MeDiscard/V/Count.text = str(v.me.discard.size())
-	$Board/CompoundDeck/V/Count.text = str(v.compound_pile.size())
-	$Board/OppSpell/V/Slot/Label.text = "perisai aktif" if v.opp.shield else "—"
-	$Board/MeSpell/V/Slot/Label.text = "perisai aktif" if v.me.shield else "—"
-
-## Tabel Senyawa: daftar senyawa yang masih tersedia, kini digambar sebagai
-## kartu (SIZE_SEN, sama dengan kartu senyawa di zona lain) supaya ilustrasi
-## tinggal dipasang nanti. Deck Senyawa menyimpan beberapa salinan tiap
-## senyawa, jadi id dideduplikasi agar tiap senyawa tampil sekali sebagai acuan
-## resep. Warna kartu tetap menandai ketersediaan bahan di zona dasar.
-##
-## Semua kartu dipaksa berukuran sama persis: GridContainer diminta
-## meregangkan isi selnya (SIZE_FILL) dan bagian seni dibuat menyerap sisa
-## ruang, sehingga nama yang panjang tidak lagi membuat satu kartu lebih tinggi
-## dari yang lain (baris poin & resep tetap rata di bawah).
-func _render_compound_table(ids: Array) -> void:
-	var list: GridContainer = $Board/TablePanel/List
-	for ch in list.get_children():
-		ch.queue_free()
-	var mine := {}
-	for c in view.me.base:
-		mine[c.id] = true
-	var seen := {}
-	var kinds: Array = []
-	for id in ids:
-		if seen.has(id):
-			continue
-		seen[id] = true
-		kinds.append(id)
-	list.columns = maxi(1, kinds.size())   # satu baris berisi semua senyawa
-	for id in kinds:
-		var d := CardDB.get_card(id)
-		if d == null or d.recipe.size() != 2:
-			continue
-		var a := CardDB.get_card(d.recipe[0])
-		var b := CardDB.get_card(d.recipe[1])
-		var n := CARD_SCENE.instantiate()
-		list.add_child(n)
-		_size_card(n, SIZE_SEN)
-		n.setup({"uid": -1, "id": id, "placed_turn": -1}, true, false)
-		n.preview_hover.connect(_on_preview_hover)
-		n.preview_exit.connect(_on_preview_exit)
-		n.preview_pin.connect(_on_preview_pin)
-		var art: TextureRect = n.get_node("V/Art")
-		var desc: Label = n.get_node("V/Desc")
-		n.size_flags_horizontal = Control.SIZE_FILL     # lebar seragam
-		n.size_flags_vertical = Control.SIZE_FILL       # tinggi seragam
-		art.custom_minimum_size = Vector2(0, 16)
-		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		desc.size_flags_vertical = Control.SIZE_FILL
-		desc.text = "%s + %s" % [a.symbol, b.symbol]    # resep di badan kartu
-		desc.visible = true
-		var have := int(mine.has(d.recipe[0])) + int(mine.has(d.recipe[1]))
-		if have == 2:
-			n.modulate = Color(0.45, 1.0, 0.45)
-		elif have == 1 and easy_mode:
-			n.modulate = Color(1.0, 0.9, 0.4)
 
 # --- Interaksi (bab 4.4 / 4.5) ---------------------------------------------
 
@@ -468,31 +404,27 @@ func _unhandled_input(e: InputEvent) -> void:
 			return
 		_reset_mode()
 
-# --- Efek zona (menggantikan teks petunjuk) --------------------------------
+# --- Efek zona (2D untuk tangan, 3D untuk zona arena) ------------------------
 
-## Menyalakan denyut glow di sekeliling zona yang perlu diperhatikan.
 func _highlight_zone(zone: String) -> void:
 	_clear_glow()
-	var path: String = ZONE_GLOWS.get(zone, "")
-	if path == "":
-		return
-	var n: Control = $Board.get_node_or_null(path)
-	if n == null:
-		return
-	n.visible = true
-	n.modulate.a = 0.0
-	_glow_tween = create_tween().set_loops()
-	_glow_tween.tween_property(n, "modulate:a", 1.0, 0.6).set_trans(Tween.TRANS_SINE)
-	_glow_tween.tween_property(n, "modulate:a", 0.35, 0.6).set_trans(Tween.TRANS_SINE)
+	if zone == "hand":
+		var n: Control = $MeHandGlow
+		n.visible = true
+		n.modulate.a = 0.0
+		_glow_tween = create_tween().set_loops()
+		_glow_tween.tween_property(n, "modulate:a", 1.0, 0.6).set_trans(Tween.TRANS_SINE)
+		_glow_tween.tween_property(n, "modulate:a", 0.35, 0.6).set_trans(Tween.TRANS_SINE)
+	else:
+		board3d.highlight_zone(zone)
 
 func _clear_glow() -> void:
 	if _glow_tween != null and _glow_tween.is_valid():
 		_glow_tween.kill()
 	_glow_tween = null
-	for path in ZONE_GLOWS.values():
-		var n: Control = $Board.get_node_or_null(path)
-		if n != null:
-			n.visible = false
+	$MeHandGlow.visible = false
+	if is_instance_valid(board3d):
+		board3d.clear_glow()
 
 # --- Hasil (bab 4.7) --------------------------------------------------------
 

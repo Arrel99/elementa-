@@ -145,7 +145,9 @@ func _process(_dt: float) -> void:
 		hide_preview()
 		return
 	var mp: Vector2 = _card.get_global_mouse_position()
-	if _source.get_global_rect().has_point(mp):
+	if _source is Control and (_source as Control).get_global_rect().has_point(mp):
+		return
+	if _source.has_method("is_hovered_3d") and _source.is_hovered_3d():
 		return
 	if _card.get_global_rect().has_point(mp):
 		return
