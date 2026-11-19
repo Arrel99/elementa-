@@ -42,6 +42,7 @@ var _cards_root: Node3D
 var _glows: Dictionary = {}          # zone_name -> Node3D
 var _glow_mats: Dictionary = {}      # zone_name -> StandardMaterial3D
 var _glow_tween: Tween
+var _slot_hover_frame: Node3D        # bingkai sorot 1 slot saat drag & drop kartu dasar
 
 var _piles: Dictionary = {}          # pile_key -> { "mesh": MeshInstance3D, "count": Label3D }
 var _shields: Dictionary = {}        # "me" | "opp" -> { "ring": MeshInstance3D, "label": Label3D }
@@ -341,6 +342,52 @@ func _build_zone_glows() -> void:
 	_create_zone_glow(root, "opp_special", Vector3(-4.95, 0.022, -2.45), Vector2(3.86, 2.48))
 	_create_zone_glow(root, "my_spell", Vector3(4.60, 0.022, 2.35), SIZE_SPELL + Vector2(0.18, 0.18))
 
+	# Bingkai sorot 1 slot khusus saat pemain menyeret kartu dasar ke slot pilihan
+	_slot_hover_frame = _create_single_slot_highlight(root)
+
+func _create_single_slot_highlight(parent: Node3D) -> Node3D:
+	var holder := Node3D.new()
+	holder.name = "SlotHoverHighlight"
+	holder.visible = false
+	parent.add_child(holder)
+
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.46, 0.88, 0.68, 0.95)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
+	var sz := SIZE_BASE + Vector2(0.10, 0.10)
+	var t := 0.05
+	var specs := [
+		[Vector3(sz.x + t, 0.022, t), Vector3(0.0, 0.0, -sz.y * 0.5)],
+		[Vector3(sz.x + t, 0.022, t), Vector3(0.0, 0.0, sz.y * 0.5)],
+		[Vector3(t, 0.022, sz.y + t), Vector3(-sz.x * 0.5, 0.0, 0.0)],
+		[Vector3(t, 0.022, sz.y + t), Vector3(sz.x * 0.5, 0.0, 0.0)],
+	]
+	for sp in specs:
+		var m := MeshInstance3D.new()
+		var b := BoxMesh.new()
+		b.size = sp[0]
+		m.mesh = b
+		m.position = sp[1]
+		m.material_override = mat
+		holder.add_child(m)
+	return holder
+
+func highlight_base_slot(slot_idx: int) -> void:
+	if _slot_hover_frame == null:
+		return
+	if slot_idx < 0 or slot_idx >= 6:
+		_slot_hover_frame.visible = false
+		return
+	var pos := _pos_base(true, slot_idx)
+	_slot_hover_frame.position = Vector3(pos.x, 0.028, pos.z)
+	_slot_hover_frame.visible = true
+
+func clear_slot_highlight() -> void:
+	if _slot_hover_frame != null:
+		_slot_hover_frame.visible = false
+
 func _create_zone_glow(parent: Node3D, zone: String, center: Vector3, size: Vector2) -> void:
 	var holder := Node3D.new()
 	holder.name = "Glow_" + zone
@@ -390,6 +437,25 @@ func clear_glow() -> void:
 	_glow_tween = null
 	for z in _glows:
 		(_glows[z] as Node3D).visible = false
+	clear_slot_highlight()
+
+## Menentukan index slot Zona Dasar pemain (0..5) di bawah koordinat layar, atau -1 jika di luar.
+func pick_base_slot_at(screen_pos: Vector2) -> int:
+	if _camera == null or not is_inside_tree():
+		return -1
+	var from := _camera.project_ray_origin(screen_pos)
+	var dir := _camera.project_ray_normal(screen_pos)
+	var hit: Variant = Plane(Vector3.UP, 0.0).intersects_ray(from, dir)
+	if hit == null:
+		return -1
+	var pt: Vector3 = hit
+	var half_x := SIZE_BASE.x * 0.56
+	var half_z := SIZE_BASE.y * 0.58
+	for i in 6:
+		var sp := _pos_base(true, i)
+		if absf(pt.x - sp.x) <= half_x and absf(pt.z - sp.z) <= half_z:
+			return i
+	return -1
 
 ## Raycast dari koordinat layar ke kartu 3D di papan (dipakai saat drag & drop spell bertarget).
 func pick_card_uid_at(screen_pos: Vector2) -> int:
@@ -434,26 +500,28 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 	var next_uids := {}
 	var playable_base: Array = playable.get("base", [])
 
-	# Kartu Zona Dasar Pemain
+	# Kartu Zona Dasar Pemain (mengikuti slot pilihan pemain)
 	for i in v.me.base.size():
 		if i >= 6:
 			break
 		var c: Dictionary = v.me.base[i]
 		var uid := int(c.get("uid", -1))
+		var slot_idx := clampi(int(c.get("slot", i)), 0, 5)
 		next_uids[uid] = true
 		var is_cd := int(c.get("placed_turn", -1)) == int(v.turn_no)
 		var is_play := playable_base.has(uid)
-		_spawn_card(c, _pos_base(true, i), SIZE_BASE, true, true, true, "", Color.WHITE,
+		_spawn_card(c, _pos_base(true, slot_idx), SIZE_BASE, true, true, true, "", Color.WHITE,
 			is_cd, is_play, not _known_uids.has(uid))
 
-	# Kartu Zona Dasar Lawan
+	# Kartu Zona Dasar Lawan (mengikuti slot pilihan lawan)
 	for i in v.opp.base.size():
 		if i >= 6:
 			break
 		var c: Dictionary = v.opp.base[i]
 		var uid := int(c.get("uid", -1))
+		var slot_idx := clampi(int(c.get("slot", i)), 0, 5)
 		next_uids[uid] = true
-		_spawn_card(c, _pos_base(false, i), SIZE_BASE, true, true, true, "", Color.WHITE,
+		_spawn_card(c, _pos_base(false, slot_idx), SIZE_BASE, true, true, true, "", Color.WHITE,
 			false, false, not _known_uids.has(uid))
 
 	# Kartu Zona Spesial Pemain (maks 8 tampil di grid, jika lebih ditumpuk di slot terakhir)

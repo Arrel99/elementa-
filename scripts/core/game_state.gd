@@ -124,13 +124,28 @@ func _turn_guard(p: int) -> String:
 
 # --- Aksi dasar -------------------------------------------------------------
 
-func place_base(p: int, uid: int) -> String:
+func place_base(p: int, uid: int, slot: int = -1) -> String:
 	var g := _turn_guard(p)
 	if g != "":
 		return g
 	var pl = players[p]
-	if pl.base.size() >= _rules().base_max:
+	var max_slots: int = _rules().base_max
+	if pl.base.size() >= max_slots:
 		return "Zona dasar penuh. Lakukan sintesis atau pakai Bilas dulu."
+	var used := {}
+	for i in pl.base.size():
+		used[int(pl.base[i].get("slot", i))] = true
+	var chosen := slot
+	if chosen >= 0:
+		if chosen >= max_slots:
+			return "Slot zona dasar tidak valid."
+		if used.has(chosen):
+			return "Slot itu sudah terisi."
+	else:
+		for i in max_slots:
+			if not used.has(i):
+				chosen = i
+				break
 	var c := _take(pl.hand, uid)
 	if c.is_empty():
 		return "Kartu tidak ada di tangan."
@@ -138,6 +153,7 @@ func place_base(p: int, uid: int) -> String:
 		pl.hand.append(c)
 		return "Hanya kartu dasar yang boleh dipasang ke zona dasar."
 	c.placed_turn = turn_no      # cooldown 1 giliran (bagian 7)
+	c["slot"] = chosen
 	pl.base.append(c)
 	return ""
 

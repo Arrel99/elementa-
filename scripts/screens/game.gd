@@ -169,7 +169,7 @@ func _handle(sender_id: int, a: Dictionary) -> void:
 	var p := 0 if sender_id == 1 else 1
 	var err := ""
 	match a.get("type", ""):
-		"place":   err = state.place_base(p, int(a.get("uid", -1)))
+		"place":   err = state.place_base(p, int(a.get("uid", -1)), int(a.get("slot", -1)))
 		"synth":   err = state.synthesize(p, int(a.get("a", -1)), int(a.get("b", -1)))
 		"spell":   err = state.play_spell(p, int(a.get("uid", -1)), a.get("args", {}))
 		"discard": err = state.discard_from_hand(p, int(a.get("uid", -1)))
@@ -387,10 +387,28 @@ func _on_hand_drag_started(uid: int, card_node: Control, global_pos: Vector2) ->
 			var tz: String = SPELL_TARGET.get(String(d.spell_effect), "")
 			_highlight_zone(tz if tz != "" else "my_spell")
 
-func _on_hand_drag_moved(_uid: int, _card_node: Control, global_pos: Vector2) -> void:
+func _on_hand_drag_moved(uid: int, _card_node: Control, global_pos: Vector2) -> void:
 	_drag_target_pos = global_pos
+	# Saat menyeret kartu dasar, sorot slot kosong spesifik di bawah kursor
+	var card := _card_by_uid(uid)
+	if not card.is_empty():
+		var d := CardDB.get_card(String(card.id))
+		if d != null and d.type == CardData.Type.BASIC:
+			var slot: int = board3d.pick_base_slot_at(global_pos)
+			if slot != -1 and _is_my_base_slot_free(slot):
+				board3d.highlight_base_slot(slot)
+			else:
+				board3d.clear_slot_highlight()
 
-func _on_hand_drag_ended(uid: int, card_node: Control, global_pos: Vector2) -> void:
+func _is_my_base_slot_free(slot: int) -> bool:
+	if view.is_empty():
+		return false
+	for i in view.me.base.size():
+		if int(view.me.base[i].get("slot", i)) == slot:
+			return false
+	return true
+
+func _on_hand_drag_ended(uid: int, _card_node: Control, global_pos: Vector2) -> void:
 	if _drag_ghost == null or uid != _drag_uid:
 		return
 	var ghost := _drag_ghost
@@ -406,7 +424,28 @@ func _on_hand_drag_ended(uid: int, card_node: Control, global_pos: Vector2) -> v
 		_animate_ghost_return(ghost, src)
 		return
 
-	# Animasi singkat kartu masuk ke papan saat dilepas
+	# Khusus kartu dasar: harus dijatuhkan di atas salah satu slot kosong (0..5)
+	var card := _card_by_uid(uid)
+	var data := CardDB.get_card(String(card.id)) if not card.is_empty() else null
+	if data != null and data.type == CardData.Type.BASIC:
+		var slot: int = board3d.pick_base_slot_at(global_pos)
+		if slot == -1 or not _is_my_base_slot_free(slot):
+			_clear_glow()
+			_animate_ghost_return(ghost, src)
+			if slot != -1:
+				$Toast.show_text("Slot itu sudah terisi. Pilih slot kosong.")
+			return
+		var tw_b := ghost.create_tween().set_parallel(true)
+		tw_b.tween_property(ghost, "scale", Vector2(0.72, 0.72), 0.14).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		tw_b.tween_property(ghost, "modulate:a", 0.0, 0.14)
+		tw_b.finished.connect(ghost.queue_free)
+		if is_instance_valid(src):
+			src.modulate.a = 1.0
+		_clear_glow()
+		submit({"type": "place", "uid": uid, "slot": slot})
+		return
+
+	# Animasi singkat kartu masuk ke papan saat dilepas (kartu Spell)
 	var tw := ghost.create_tween().set_parallel(true)
 	tw.tween_property(ghost, "scale", Vector2(0.72, 0.72), 0.14).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	tw.tween_property(ghost, "modulate:a", 0.0, 0.14)
