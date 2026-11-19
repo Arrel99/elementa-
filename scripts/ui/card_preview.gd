@@ -25,6 +25,7 @@ const HINT_SPACE := 40.0                # ruang untuk label petunjuk
 
 @onready var _root: Control = $Root
 @onready var _dim: ColorRect = $Root/Dim
+@onready var _center: CenterContainer = $Root/Center
 @onready var _box: VBoxContainer = $Root/Center/Box
 @onready var _hint: Label = $Root/Center/Box/Hint
 
@@ -110,6 +111,7 @@ func _on_timer() -> void:
 func _show() -> void:
 	if _data.is_empty():
 		return
+	_apply_position()
 	var target := _target_size()
 	_card.setup(_data, true, false, false)
 	_card.tooltip_text = ""             # kartu besar tidak perlu tooltip
@@ -121,6 +123,24 @@ func _show() -> void:
 	_root.show()
 	_open = true
 	set_process(true)
+
+## Saat hover: tampilkan pratinjau di sisi kiri agar tengah papan tetap terlihat.
+## Saat dipin (klik kanan): tampilkan di tengah layar dengan latar redup.
+func _apply_position() -> void:
+	if _pinned:
+		_center.anchor_left = 0.0
+		_center.anchor_right = 1.0
+		_center.anchor_top = 0.0
+		_center.anchor_bottom = 1.0
+		_center.offset_left = 0.0
+		_center.offset_top = 0.0
+	else:
+		_center.anchor_left = 0.0
+		_center.anchor_right = 0.30
+		_center.anchor_top = 0.16
+		_center.anchor_bottom = 0.96
+		_center.offset_left = 18.0
+		_center.offset_top = 0.0
 
 ## Kartu senyawa di papan menampilkan resepnya; di pratinjau resep itu
 ## ditambahkan ke deskripsi supaya bahan pembuatnya langsung terbaca.
@@ -157,10 +177,12 @@ func _target_size() -> Vector2:
 	var area := _root.size
 	if area.x < 2.0 or area.y < 2.0:
 		area = get_viewport().get_visible_rect().size
-	var max_w := area.x * MAX_WIDTH_RATIO
-	var max_h := area.y * MAX_HEIGHT_RATIO - HINT_SPACE
+	var w_ratio := MAX_WIDTH_RATIO if _pinned else 0.24
+	var h_ratio := MAX_HEIGHT_RATIO if _pinned else 0.62
+	var max_w := area.x * w_ratio
+	var max_h := area.y * h_ratio - HINT_SPACE
 	var s := minf(max_w / BASE_SIZE.x, max_h / BASE_SIZE.y)
-	s = clampf(s, MIN_SCALE, MAX_SCALE)
+	s = clampf(s, MIN_SCALE, MAX_SCALE if _pinned else 0.92)
 	return (BASE_SIZE * s).round()
 
 ## Latar gelap saat dipin menelan klik supaya kartu di bawahnya tidak
