@@ -112,16 +112,14 @@ func _ready() -> void:
 	g6.players[0].hand.append(extra)
 	_check(g6.place_base(0, extra.uid) != "", "Zona dasar penuh menolak kartu baru")
 
-	# --- Batas tangan di akhir giliran (bagian 4 & 6) ---
+	# --- Tangan tanpa batas kartu (hand_max = 0) ---
 	var g7 := GameState.new()
 	g7.setup(3)
 	g7.current = 0
-	while g7.players[0].hand.size() < 9:
+	while g7.players[0].hand.size() < 12:
 		g7.players[0].hand.append(_new_basic(g7, "H"))
-	_check(g7.end_turn(0) != "", "Akhir giliran ditolak saat tangan > 8")
-	var over: Dictionary = g7.players[0].hand[0]
-	_check(g7.discard_from_hand(0, over.uid) == "", "Buang kelebihan kartu sukses")
-	_check(g7.players[0].hand.size() == 8, "Tangan kembali ke batas 8")
+	_check(g7.end_turn(0) == "", "Akhir giliran sukses walau tangan > 8 kartu")
+	_check(g7.players[0].hand.size() == 12, "Jumlah kartu di tangan tidak dibatasi")
 
 	# --- Batas spell per giliran (bagian 8) ---
 	var g8 := GameState.new()

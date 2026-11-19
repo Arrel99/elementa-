@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_rules")
-hand_max = 8
+hand_max = 0
 base_max = 6
 special_max = 10
 start_hand = 5

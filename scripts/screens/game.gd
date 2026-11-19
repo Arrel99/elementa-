@@ -206,7 +206,7 @@ func render(v: Dictionary) -> void:
 	_fill_hand($OppHandDock, v.opp.hand_backs, false, SIZE_OPP_HAND, false, "")
 
 	var hand_max := int(v.rules.hand_max)
-	var over: bool = v.me.hand.size() > hand_max
+	var over: bool = hand_max > 0 and v.me.hand.size() > hand_max
 	var extra := ""
 	if v.countdown > 0:
 		extra = "  •  Hitung mundur %d" % v.countdown
@@ -368,8 +368,9 @@ func _click_hand(uid: int) -> void:
 	var card := _card_by_uid(uid)
 	if card.is_empty():
 		return
-	# Tangan melebihi batas akhir giliran: klik kartu = membuangnya (bagian 4).
-	if view.me.hand.size() > int(view.rules.hand_max):
+	# Tangan melebihi batas akhir giliran (jika hand_max > 0): klik kartu = membuangnya.
+	var hand_max := int(view.rules.hand_max)
+	if hand_max > 0 and view.me.hand.size() > hand_max:
 		submit({"type": "discard", "uid": uid})
 		return
 	var data := CardDB.get_card(card.id)

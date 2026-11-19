@@ -147,7 +147,7 @@ func discard_from_hand(p: int, uid: int) -> String:
 	if g != "":
 		return g
 	var pl = players[p]
-	if pl.hand.size() <= _rules().hand_max:
+	if _rules().hand_max <= 0 or pl.hand.size() <= _rules().hand_max:
 		return "Tangan belum melebihi batas."
 	var c := _take(pl.hand, uid)
 	if c.is_empty():
@@ -157,6 +157,8 @@ func discard_from_hand(p: int, uid: int) -> String:
 
 ## Kemudahan untuk bot/pewaktu: buang kartu bernilai terendah sampai batas aman.
 func auto_discard_excess(p: int) -> void:
+	if _rules().hand_max <= 0:
+		return
 	var pl = players[p]
 	while pl.hand.size() > _rules().hand_max:
 		var worst_i := 0
@@ -407,7 +409,7 @@ func end_turn(p: int) -> String:
 	if g != "":
 		return g
 	var pl = players[p]
-	if pl.hand.size() > _rules().hand_max:
+	if _rules().hand_max > 0 and pl.hand.size() > _rules().hand_max:
 		return "Tangan melebihi %d kartu. Buang dulu (klik kartunya)." % _rules().hand_max
 	# hitungan mundur berjalan tiap akhir giliran kedua pemain (bagian 9.3)
 	if countdown > 0:

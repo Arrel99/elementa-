@@ -4,7 +4,7 @@ extends Resource
 ## Semua angka aturan di satu tempat (Buku Peraturan Elementa: Kartu Reaksi).
 ## Ubah di res://data/game_rules.tres tanpa menyentuh kode.
 
-@export var hand_max := 8               # batas tangan di akhir giliran (bagian 4)
+@export var hand_max := 0               # batas tangan di akhir giliran (0 = tanpa batas)
 @export var base_max := 6               # slot zona kartu dasar (bagian 4)
 @export var special_max := 10           # slot zona kartu spesial (bagian 4)
 @export var start_hand := 5             # tangan awal (bagian 5)
