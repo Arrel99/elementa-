@@ -1,6 +1,188 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/main_menu.gd" id="1_menu"]
+[ext_resource type="Shader" path="res://shaders/science_menu_bg.gdshader" id="2_bgshader"]
+[ext_resource type="Script" path="res://scripts/ui/science_menu_fx.gd" id="3_fx"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
+shader = ExtResource("2_bgshader")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 28.0
+content_margin_top = 26.0
+content_margin_right = 28.0
+content_margin_bottom = 26.0
+bg_color = Color(0.038, 0.072, 0.122, 0.84)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.20, 0.68, 0.90, 0.65)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.08, 0.45, 0.65, 0.35)
+shadow_size = 22
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_play_normal"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.08, 0.36, 0.44, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.26, 0.94, 0.72, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.18, 0.85, 0.68, 0.38)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_play_hover"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.12, 0.48, 0.56, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.48, 1.0, 0.84, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.26, 0.96, 0.78, 0.55)
+shadow_size = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_play_pressed"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.06, 0.28, 0.35, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.22, 0.86, 0.66, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.065, 0.125, 0.205, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.20, 0.56, 0.78, 0.85)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.11, 0.22, 0.35, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.32, 0.82, 1.0, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.22, 0.72, 1.0, 0.35)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.045, 0.095, 0.16, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.20, 0.65, 0.88, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quit_normal"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.18, 0.065, 0.095, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.28, 0.36, 0.85)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quit_hover"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.28, 0.095, 0.135, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1.0, 0.42, 0.48, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1.0, 0.32, 0.40, 0.35)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quit_pressed"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.13, 0.045, 0.068, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.75, 0.25, 0.34, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_divider"]
+bg_color = Color(0.24, 0.88, 0.74, 0.85)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -11,49 +193,142 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
-[node name="V" type="VBoxContainer" parent="."]
+[node name="BgShader" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_bg")
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -120.0
-offset_top = -150.0
-offset_right = 120.0
-offset_bottom = 150.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
+mouse_filter = 2
 
-[node name="Play" type="Button" parent="V"]
-custom_minimum_size = Vector2(220, 44)
-layout_mode = 2
-text = "Main"
+[node name="ScienceFx" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_fx")
 
-[node name="Library" type="Button" parent="V"]
-custom_minimum_size = Vector2(220, 44)
+[node name="CenterWrap" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Column" type="VBoxContainer" parent="CenterWrap"]
 layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Header" type="VBoxContainer" parent="CenterWrap/Column"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Title" type="Label" parent="CenterWrap/Column/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.98, 1.0, 1)
+theme_override_colors/font_shadow_color = Color(0.12, 0.72, 0.95, 0.65)
+theme_override_colors/font_outline_color = Color(0.03, 0.12, 0.22, 1)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 4
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 76
+text = "ELEMENTA"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="CenterWrap/Column/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.94, 0.78, 0.95)
+theme_override_font_sizes/font_size = 18
+text = "KARTU REAKSI KIMIA  •  LABORATORIUM DUEL"
+horizontal_alignment = 1
+
+[node name="Divider" type="Panel" parent="CenterWrap/Column/Header"]
+custom_minimum_size = Vector2(280, 3)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_divider")
+
+[node name="MenuCard" type="PanelContainer" parent="CenterWrap/Column"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="V" type="VBoxContainer" parent="CenterWrap/Column/MenuCard"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Play" type="Button" parent="CenterWrap/Column/MenuCard/V"]
+custom_minimum_size = Vector2(390, 74)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.95, 1.0, 0.98, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_play_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_play_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_play_pressed")
+text = "MAIN"
+
+[node name="Library" type="Button" parent="CenterWrap/Column/MenuCard/V"]
+custom_minimum_size = Vector2(390, 62)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.88, 0.95, 1.0, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 text = "Library"
 
-[node name="HowTo" type="Button" parent="V"]
-custom_minimum_size = Vector2(220, 44)
+[node name="HowTo" type="Button" parent="CenterWrap/Column/MenuCard/V"]
+custom_minimum_size = Vector2(390, 62)
 layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.88, 0.95, 1.0, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 text = "Cara Bermain"
 
-[node name="Settings" type="Button" parent="V"]
-custom_minimum_size = Vector2(220, 44)
+[node name="Settings" type="Button" parent="CenterWrap/Column/MenuCard/V"]
+custom_minimum_size = Vector2(390, 62)
 layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.88, 0.95, 1.0, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 text = "Pengaturan"
 
-[node name="LocalTest" type="Button" parent="V"]
-custom_minimum_size = Vector2(220, 44)
+[node name="LocalTest" type="Button" parent="CenterWrap/Column/MenuCard/V"]
+custom_minimum_size = Vector2(390, 62)
 layout_mode = 2
-text = "Uji Lokal (2 pemain)"
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.75, 0.98, 0.90, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Uji Lokal (2 Pemain)"
 
-[node name="Quit" type="Button" parent="V"]
-custom_minimum_size = Vector2(220, 44)
+[node name="Quit" type="Button" parent="CenterWrap/Column/MenuCard/V"]
+custom_minimum_size = Vector2(390, 62)
 layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1.0, 0.86, 0.88, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_quit_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_quit_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_quit_pressed")
 text = "Keluar"
 
 [node name="Version" type="Label" parent="."]
@@ -63,19 +338,21 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -32.0
-offset_right = -10.0
-offset_bottom = -8.0
+offset_left = -260.0
+offset_top = -38.0
+offset_right = -18.0
+offset_bottom = -10.0
 grow_horizontal = 0
 grow_vertical = 0
+theme_override_colors/font_color = Color(0.55, 0.78, 0.92, 0.85)
+theme_override_font_sizes/font_size = 16
 text = "v0.1.0"
 horizontal_alignment = 2
 
 [node name="HowToDialog" type="AcceptDialog" parent="."]
 title = "Cara Bermain"
 initial_position = 2
-size = Vector2i(560, 320)
+size = Vector2i(580, 340)
 dialog_text = "1. Pasang kartu dasar ke zona dasar.
 2. Tunggu satu giliran (cooldown) sebelum bisa dipakai sintesis.
 3. Klik dua kartu dasar untuk sintesis sesuai Tabel Senyawa.
@@ -90,15 +367,46 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -180.0
-offset_top = -60.0
-offset_right = 180.0
-offset_bottom = 60.0
+offset_left = -220.0
+offset_top = -110.0
+offset_right = 220.0
+offset_bottom = 110.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="Volume" type="HSlider" parent="SettingsPanel"]
+[node name="Box" type="VBoxContainer" parent="SettingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Title" type="Label" parent="SettingsPanel/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.92, 0.82, 1)
+theme_override_font_sizes/font_size = 24
+text = "PENGATURAN AUDIO"
+horizontal_alignment = 1
+
+[node name="VolumeLabel" type="Label" parent="SettingsPanel/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.94, 1.0, 1)
+theme_override_font_sizes/font_size = 18
+text = "Volume Master: 80%"
+horizontal_alignment = 1
+
+[node name="Volume" type="HSlider" parent="SettingsPanel/Box"]
 layout_mode = 2
 max_value = 1.0
 step = 0.05
 value = 0.8
+
+[node name="Close" type="Button" parent="SettingsPanel/Box"]
+custom_minimum_size = Vector2(200, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Tutup"
