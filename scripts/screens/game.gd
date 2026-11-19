@@ -45,6 +45,13 @@ var _glow_tween: Tween          # denyut glow zona tangan
 var _playable := {}             # uid kartu yang bisa dimainkan (dari state)
 var _ui_scale := 1.0
 
+# Status animasi drag & drop kartu dari tangan
+var _drag_uid := -1
+var _drag_source: Control = null
+var _drag_ghost: Control = null
+var _drag_target_pos := Vector2.ZERO
+var _drag_last_pos := Vector2.ZERO
+
 # --- Siklus hidup (bab 4.5 / 6.2) -------------------------------------------
 
 func _ready() -> void:
@@ -81,6 +88,15 @@ func _ready() -> void:
 		start_as_host()
 	else:
 		Net.game_loaded.rpc_id(1)           # klien memberi tahu host: scene sudah siap
+
+func _process(delta: float) -> void:
+	if _drag_ghost != null and is_instance_valid(_drag_ghost):
+		var target := _drag_target_pos - _drag_ghost.size * 0.5
+		_drag_ghost.position = _drag_ghost.position.lerp(target, clampf(delta * 22.0, 0.0, 1.0))
+		var vx := (_drag_target_pos.x - _drag_last_pos.x) / maxf(delta, 0.001)
+		var tilt := clampf(vx * 0.012, -16.0, 16.0)
+		_drag_ghost.rotation_degrees = lerpf(_drag_ghost.rotation_degrees, tilt, clampf(delta * 14.0, 0.0, 1.0))
+		_drag_last_pos = _drag_target_pos
 
 func start_as_host() -> void:
 	state = GameState.new()
@@ -195,6 +211,7 @@ func _broadcast() -> void:
 
 func render(v: Dictionary) -> void:
 	view = v
+	_cancel_drag_immediate()
 	$CardPreview.hide_preview()     # kartu lama akan dibuang
 	_reset_mode()
 	_playable = v.get("playable", {})
@@ -260,7 +277,11 @@ func _fill_hand(dock: Control, cards: Array, face_up: bool, base_size: Vector2,
 		n.preview_exit.connect(_on_preview_exit)
 		n.preview_pin.connect(_on_preview_pin)
 		if interactive:
+			n.draggable = true
 			n.clicked.connect(_on_card_clicked)
+			n.drag_started.connect(_on_hand_drag_started)
+			n.drag_moved.connect(_on_hand_drag_moved)
+			n.drag_ended.connect(_on_hand_drag_ended)
 			n.mouse_entered.connect(_on_hand_card_hover.bind(n, true))
 			n.mouse_exited.connect(_on_hand_card_hover.bind(n, false))
 		if playable.has(int(c.get("uid", -1))):
@@ -312,13 +333,140 @@ func _on_hand_card_hover(n: Control, on: bool) -> void:
 # --- Pratinjau kartu (hover / klik kanan) ----------------------------------
 
 func _on_preview_hover(data: Dictionary, source: Node) -> void:
+	if _drag_ghost != null:
+		return
 	$CardPreview.hover(data, source)
 
 func _on_preview_exit(source: Node) -> void:
 	$CardPreview.unhover(source)
 
 func _on_preview_pin(data: Dictionary, source: Node) -> void:
+	if _drag_ghost != null:
+		return
 	$CardPreview.pin(data, source)
+
+# --- Drag & Drop kartu tangan -----------------------------------------------
+
+func _on_hand_drag_started(uid: int, card_node: Control, global_pos: Vector2) -> void:
+	if view.is_empty() or view.winner != -2 or not view.my_turn or not view.pending.is_empty():
+		return
+	var card := _card_by_uid(uid)
+	if card.is_empty():
+		return
+	_cancel_drag_immediate()
+	$CardPreview.hide_preview()
+
+	_drag_uid = uid
+	_drag_source = card_node
+	_drag_source.modulate.a = 0.25
+	_drag_target_pos = global_pos
+	_drag_last_pos = global_pos
+
+	var ghost: Control = CARD_SCENE.instantiate()
+	add_child(ghost)
+	var sz := (SIZE_HAND * _ui_scale).round()
+	ghost.fit(sz)
+	ghost.size = sz
+	ghost.pivot_offset = sz * 0.5
+	ghost.setup(card, true, false, false)
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ghost.z_index = 120
+	ghost.position = card_node.global_position
+	ghost.scale = Vector2(1.0, 1.0)
+	_drag_ghost = ghost
+
+	var tw := ghost.create_tween()
+	tw.tween_property(ghost, "scale", Vector2(1.14, 1.14), 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+	# Sorot zona tujuan yang sesuai di papan 3D
+	var d := CardDB.get_card(String(card.id))
+	if d != null:
+		if d.type == CardData.Type.BASIC:
+			_highlight_zone("my_base")
+		elif d.type == CardData.Type.SPELL:
+			var tz: String = SPELL_TARGET.get(String(d.spell_effect), "")
+			_highlight_zone(tz if tz != "" else "my_spell")
+
+func _on_hand_drag_moved(_uid: int, _card_node: Control, global_pos: Vector2) -> void:
+	_drag_target_pos = global_pos
+
+func _on_hand_drag_ended(uid: int, card_node: Control, global_pos: Vector2) -> void:
+	if _drag_ghost == null or uid != _drag_uid:
+		return
+	var ghost := _drag_ghost
+	var src := _drag_source
+	_drag_ghost = null
+	_drag_source = null
+	_drag_uid = -1
+
+	var hand_dock: Control = $MeHandDock
+	var dropped_on_board: bool = global_pos.y < hand_dock.position.y - 12.0
+	if not dropped_on_board:
+		_clear_glow()
+		_animate_ghost_return(ghost, src)
+		return
+
+	# Animasi singkat kartu masuk ke papan saat dilepas
+	var tw := ghost.create_tween().set_parallel(true)
+	tw.tween_property(ghost, "scale", Vector2(0.72, 0.72), 0.14).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tw.tween_property(ghost, "modulate:a", 0.0, 0.14)
+	tw.finished.connect(ghost.queue_free)
+
+	if is_instance_valid(src):
+		src.modulate.a = 1.0
+	_execute_dropped_card(uid, global_pos)
+
+func _animate_ghost_return(ghost: Control, src: Control) -> void:
+	var dest := src.global_position if is_instance_valid(src) else ghost.position
+	var dest_rot: float = src.rotation_degrees if is_instance_valid(src) else 0.0
+	var tw := ghost.create_tween().set_parallel(true)
+	tw.tween_property(ghost, "position", dest, 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ghost, "rotation_degrees", dest_rot, 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ghost, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.finished.connect(func():
+		if is_instance_valid(src):
+			src.modulate.a = 1.0
+		if is_instance_valid(ghost):
+			ghost.queue_free())
+
+func _cancel_drag_immediate() -> void:
+	if is_instance_valid(_drag_ghost):
+		_drag_ghost.queue_free()
+	if is_instance_valid(_drag_source):
+		_drag_source.modulate.a = 1.0
+	_drag_ghost = null
+	_drag_source = null
+	_drag_uid = -1
+
+func _execute_dropped_card(uid: int, global_pos: Vector2) -> void:
+	var card := _card_by_uid(uid)
+	if card.is_empty():
+		_clear_glow()
+		return
+	var data := CardDB.get_card(String(card.id))
+	if data == null:
+		_clear_glow()
+		return
+	if data.type == CardData.Type.BASIC:
+		_clear_glow()
+		submit({"type": "place", "uid": uid})
+	elif data.type == CardData.Type.SPELL:
+		var zone: String = SPELL_TARGET.get(String(data.spell_effect), "")
+		if zone == "":
+			_clear_glow()
+			submit({"type": "spell", "uid": uid, "args": {}})
+		else:
+			# Cek apakah dijatuhkan langsung di atas kartu target 3D yang sah
+			var hit_uid: int = board3d.pick_card_uid_at(global_pos)
+			if hit_uid != -1 and _zone_of(hit_uid) == zone:
+				_clear_glow()
+				submit({"type": "spell", "uid": uid, "args": {"target_uid": hit_uid}})
+			else:
+				mode = Mode.PICK_TARGET
+				pending_spell_uid = uid
+				pending_zone = zone
+				_highlight_zone(zone)
+				_sync_coach()
 
 # --- Interaksi (bab 4.4 / 4.5) ---------------------------------------------
 

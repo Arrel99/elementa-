@@ -10,6 +10,9 @@ extends PanelContainer
 ## CardPreview di layar papan, bukan kartu ini.
 
 signal clicked(uid: int)
+signal drag_started(uid: int, card_node: Control, global_pos: Vector2)
+signal drag_moved(uid: int, card_node: Control, global_pos: Vector2)
+signal drag_ended(uid: int, card_node: Control, global_pos: Vector2)
 signal preview_hover(data: Dictionary, source: Node)
 signal preview_exit(source: Node)
 signal preview_pin(data: Dictionary, source: Node)
@@ -19,12 +22,16 @@ const HOVER_BG := Color(0.219608, 0.278431, 0.360784, 1)    # dasar kartu lebih 
 
 var uid := -1
 var interactive := false
+var draggable := false
 var previewable := false        # boleh memicu pratinjau besar (hover / klik kanan)
 
 var _style: StyleBoxFlat
 var _base_border := Color.WHITE
 var _base_bg := Color.BLACK
 var _hovered := false
+var _pressed := false
+var _dragging := false
+var _press_pos := Vector2.ZERO
 var _data := {}
 var _play_tween: Tween            # denyut cincin "bisa dimainkan"
 
@@ -78,15 +85,39 @@ func setup(card: Dictionary, face_up := true, can_click := true,
     refresh_hover()
 
 func _gui_input(e: InputEvent) -> void:
-    if not (e is InputEventMouseButton) or not e.pressed:
-        return
-    var mb := e as InputEventMouseButton
-    if mb.button_index == MOUSE_BUTTON_LEFT and interactive:
-        clicked.emit(uid)
-        return
-    if mb.button_index == MOUSE_BUTTON_RIGHT and previewable:
-        preview_pin.emit(_data, self)
-        accept_event()
+    if e is InputEventMouseButton:
+        var mb := e as InputEventMouseButton
+        if mb.button_index == MOUSE_BUTTON_LEFT:
+            if mb.pressed and interactive:
+                if draggable:
+                    _pressed = true
+                    _dragging = false
+                    _press_pos = get_global_mouse_position()
+                    accept_event()
+                else:
+                    clicked.emit(uid)
+                return
+            if not mb.pressed and _pressed:
+                _pressed = false
+                if _dragging:
+                    _dragging = false
+                    drag_ended.emit(uid, self, get_global_mouse_position())
+                else:
+                    clicked.emit(uid)
+                accept_event()
+                return
+        if mb.pressed and mb.button_index == MOUSE_BUTTON_RIGHT and previewable:
+            preview_pin.emit(_data, self)
+            accept_event()
+            return
+    elif e is InputEventMouseMotion and _pressed and draggable:
+        var gp := get_global_mouse_position()
+        if not _dragging and gp.distance_to(_press_pos) >= 12.0:
+            _dragging = true
+            drag_started.emit(uid, self, gp)
+        if _dragging:
+            drag_moved.emit(uid, self, gp)
+            accept_event()
 
 func _on_mouse_entered() -> void:
     if previewable:

@@ -15,7 +15,7 @@ const SCIENCE_SHADER := preload("res://shaders/science_board.gdshader")
 
 const SIZE_BASE := Vector2(1.04, 1.38)
 const SIZE_SPECIAL := Vector2(0.82, 1.08)
-const SIZE_SEN := Vector2(0.88, 1.18)
+const SIZE_SPELL := Vector2(0.94, 1.26)
 const SIZE_TABLE := Vector2(0.80, 1.06)
 const SIZE_PILE := Vector2(0.88, 1.18)
 
@@ -180,27 +180,6 @@ func _build_table() -> void:
 		line_opp.position = Vector3(x_div, 0.004, -2.52)
 		table.add_child(line_opp)
 
-	# Label zona bersih & minimalis
-	_add_zone_label(table, "ZONA SENYAWA LAWAN", Vector3(-4.95, 0.014, -3.82), Color(0.84, 0.62, 0.64))
-	_add_zone_label(table, "ZONA DASAR LAWAN", Vector3(0.35, 0.014, -3.44), Color(0.84, 0.62, 0.64))
-	_add_zone_label(table, "TABEL SENYAWA", Vector3(-0.35, 0.014, -0.68), Color(0.62, 0.80, 0.75))
-	_add_zone_label(table, "ZONA SENYAWA KAMU", Vector3(-4.95, 0.014, 3.74), Color(0.62, 0.76, 0.88))
-	_add_zone_label(table, "ZONA DASAR KAMU", Vector3(0.35, 0.014, 3.32), Color(0.62, 0.76, 0.88))
-	_add_zone_label(table, "SENYAWA TERAKHIR", Vector3(4.60, 0.014, -3.30), Color(0.84, 0.62, 0.64))
-	_add_zone_label(table, "SENYAWA TERAKHIR", Vector3(4.60, 0.014, 3.18), Color(0.62, 0.76, 0.88))
-
-func _add_zone_label(parent: Node3D, text: String, pos: Vector3, color: Color) -> void:
-	var lbl := Label3D.new()
-	lbl.text = text
-	lbl.font_size = 22
-	lbl.pixel_size = 0.0082
-	lbl.modulate = color
-	lbl.outline_size = 3
-	lbl.outline_modulate = Color(0.05, 0.06, 0.08, 0.85)
-	lbl.rotation_degrees.x = -90.0
-	lbl.position = pos
-	parent.add_child(lbl)
-
 # --- Slot Zona Minimalis -----------------------------------------------------
 
 func _build_all_slots() -> void:
@@ -217,10 +196,6 @@ func _build_all_slots() -> void:
 	for i in 8:
 		_add_slot_frame(slots, _pos_special(false, i), SIZE_SPECIAL, COLOR_OPP_SLOT_BG, COLOR_OPP_LINE)
 		_add_slot_frame(slots, _pos_special(true, i), SIZE_SPECIAL, COLOR_ME_SLOT_BG, COLOR_ME_LINE)
-
-	# Slot Senyawa Terakhir
-	_add_slot_frame(slots, _pos_sen(false), SIZE_SEN, COLOR_OPP_SLOT_BG, COLOR_OPP_LINE)
-	_add_slot_frame(slots, _pos_sen(true), SIZE_SEN, COLOR_ME_SLOT_BG, COLOR_ME_LINE)
 
 	# Panel dasar Tabel Senyawa di tengah (sage matte)
 	var table_pad := _make_box(Vector3(9.4, 0.010, 1.24), COLOR_MID_SLOT_BG, 0.82, 0.04)
@@ -267,7 +242,7 @@ func _build_piles() -> void:
 	_create_pile(root, "me_discard", "BUANG", Vector3(5.95, 0.0, 1.52), Color(0.18, 0.24, 0.32), COLOR_ME_SLOT_BG, COLOR_ME_LINE)
 	_create_pile(root, "me_deck", "DECK", Vector3(5.95, 0.0, 2.95), Color(0.21, 0.34, 0.46), COLOR_ME_SLOT_BG, COLOR_ME_LINE)
 
-func _create_pile(parent: Node3D, key: String, title: String, pos: Vector3,
+func _create_pile(parent: Node3D, key: String, _title: String, pos: Vector3,
 		stack_col: Color, pad_col: Color, border_col: Color) -> void:
 	_add_slot_frame(parent, pos, SIZE_PILE, pad_col, border_col)
 
@@ -296,17 +271,6 @@ func _create_pile(parent: Node3D, key: String, title: String, pos: Vector3,
 	count_lbl.position = Vector3(pos.x, 0.55, pos.z)
 	parent.add_child(count_lbl)
 
-	var title_lbl := Label3D.new()
-	title_lbl.text = title
-	title_lbl.font_size = 20
-	title_lbl.pixel_size = 0.008
-	title_lbl.modulate = border_col.lightened(0.25)
-	title_lbl.outline_size = 3
-	title_lbl.outline_modulate = Color(0.05, 0.06, 0.08, 0.9)
-	title_lbl.rotation_degrees.x = -90.0
-	title_lbl.position = Vector3(pos.x, 0.015, pos.z + SIZE_PILE.y * 0.5 + 0.16)
-	parent.add_child(title_lbl)
-
 	_piles[key] = {"mesh": stack, "count": count_lbl, "base_pos": pos}
 
 func _update_pile(key: String, count: int) -> void:
@@ -328,57 +292,41 @@ func _update_pile(key: String, count: int) -> void:
 	mesh.position = Vector3(base_pos.x, h * 0.5 + 0.01, base_pos.z)
 	lbl.position = Vector3(base_pos.x, h + 0.26, base_pos.z)
 
-# --- Pad Status Perisai / Spell ----------------------------------------------
+# --- Slot Spell Khusus (menggantikan slot senyawa terakhir) ------------------
 
 func _build_shield_pads() -> void:
 	var root := Node3D.new()
-	root.name = "ShieldPads"
+	root.name = "SpellSlots"
 	add_child(root)
-	_create_shield_pad(root, "opp", Vector3(4.60, 0.0, -1.08), COLOR_OPP_SLOT_BG, COLOR_OPP_LINE)
-	_create_shield_pad(root, "me", Vector3(4.60, 0.0, 0.98), COLOR_ME_SLOT_BG, COLOR_ME_LINE)
+	_create_shield_pad(root, "opp", Vector3(4.60, 0.0, -2.45), COLOR_OPP_SLOT_BG, COLOR_OPP_LINE)
+	_create_shield_pad(root, "me", Vector3(4.60, 0.0, 2.35), COLOR_ME_SLOT_BG, COLOR_ME_LINE)
 
 func _create_shield_pad(parent: Node3D, key: String, pos: Vector3, pad_col: Color, border_col: Color) -> void:
-	_add_slot_frame(parent, pos, Vector2(0.92, 0.72), pad_col, border_col)
+	_add_slot_frame(parent, pos, SIZE_SPELL, pad_col, border_col)
 
 	var ring := MeshInstance3D.new()
 	var torus := TorusMesh.new()
-	torus.inner_radius = 0.24
-	torus.outer_radius = 0.31
+	torus.inner_radius = 0.28
+	torus.outer_radius = 0.36
 	torus.rings = 16
 	torus.ring_segments = 6        # heksagonal kimia minimalis
 	ring.mesh = torus
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = border_col.lightened(0.25)
-	mat.roughness = 0.45
+	mat.albedo_color = border_col.lightened(0.28)
+	mat.roughness = 0.42
 	mat.metallic = 0.35
 	ring.material_override = mat
-	ring.position = Vector3(pos.x, 0.12, pos.z)
+	ring.position = Vector3(pos.x, 0.14, pos.z)
 	ring.visible = false
 	parent.add_child(ring)
 
-	var lbl := Label3D.new()
-	lbl.text = "SPELL"
-	lbl.font_size = 20
-	lbl.pixel_size = 0.008
-	lbl.modulate = border_col.lightened(0.25)
-	lbl.outline_size = 3
-	lbl.outline_modulate = Color(0.05, 0.06, 0.08, 0.9)
-	lbl.rotation_degrees.x = -90.0
-	lbl.position = Vector3(pos.x, 0.016, pos.z)
-	parent.add_child(lbl)
-
-	_shields[key] = {"ring": ring, "label": lbl, "accent": border_col}
+	_shields[key] = {"ring": ring}
 
 func _update_shield(key: String, active: bool) -> void:
 	if not _shields.has(key):
 		return
-	var info: Dictionary = _shields[key]
-	var ring: MeshInstance3D = info.ring
-	var lbl: Label3D = info.label
-	var acc: Color = info.accent
+	var ring: MeshInstance3D = _shields[key].ring
 	ring.visible = active
-	lbl.text = "PERISAI" if active else "SPELL"
-	lbl.modulate = Color(0.94, 0.96, 0.98) if active else acc.lightened(0.15)
 
 # --- Bingkai Penanda Zona Target (bersih, tanpa neon berlebihan) -------------
 
@@ -391,6 +339,7 @@ func _build_zone_glows() -> void:
 	_create_zone_glow(root, "opp_base", Vector3(0.35, 0.022, -2.45), Vector2(7.16, 1.62))
 	_create_zone_glow(root, "my_special", Vector3(-4.95, 0.022, 2.35), Vector2(3.86, 2.48))
 	_create_zone_glow(root, "opp_special", Vector3(-4.95, 0.022, -2.45), Vector2(3.86, 2.48))
+	_create_zone_glow(root, "my_spell", Vector3(4.60, 0.022, 2.35), SIZE_SPELL + Vector2(0.18, 0.18))
 
 func _create_zone_glow(parent: Node3D, zone: String, center: Vector3, size: Vector2) -> void:
 	var holder := Node3D.new()
@@ -442,6 +391,25 @@ func clear_glow() -> void:
 	for z in _glows:
 		(_glows[z] as Node3D).visible = false
 
+## Raycast dari koordinat layar ke kartu 3D di papan (dipakai saat drag & drop spell bertarget).
+func pick_card_uid_at(screen_pos: Vector2) -> int:
+	if _camera == null or not is_inside_tree():
+		return -1
+	var from := _camera.project_ray_origin(screen_pos)
+	var to := from + _camera.project_ray_normal(screen_pos) * 50.0
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return -1
+	var col: Object = hit.get("collider")
+	if col is Node:
+		var parent := (col as Node).get_parent()
+		if parent != null and "uid" in parent:
+			return int(parent.uid)
+	return -1
+
 # --- Posisi Slot -------------------------------------------------------------
 
 func _pos_base(is_me: bool, idx: int) -> Vector3:
@@ -455,9 +423,6 @@ func _pos_special(is_me: bool, idx: int) -> Vector3:
 	var x := -6.36 + float(col) * 0.94
 	var z := (1.75 + float(row) * 1.20) if is_me else (-3.05 + float(row) * 1.20)
 	return Vector3(x, 0.012, z)
-
-func _pos_sen(is_me: bool) -> Vector3:
-	return Vector3(4.60, 0.012, 2.35 if is_me else -2.45)
 
 # --- Render Seluruh Papan 3D -------------------------------------------------
 
@@ -514,14 +479,6 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 			pos.y += float(i - 7) * 0.045
 		_spawn_card(c, pos, SIZE_SPECIAL, true, true, true, "", Color.WHITE,
 			false, false, not _known_uids.has(uid))
-
-	# Senyawa Terakhir Pemain & Lawan (hanya pratinjau, bukan target klik)
-	if not v.me.special.is_empty():
-		var last_me: Dictionary = v.me.special[v.me.special.size() - 1]
-		_spawn_card(last_me, _pos_sen(true), SIZE_SEN, true, false, true, "", Color.WHITE, false, false, false)
-	if not v.opp.special.is_empty():
-		var last_opp: Dictionary = v.opp.special[v.opp.special.size() - 1]
-		_spawn_card(last_opp, _pos_sen(false), SIZE_SEN, true, false, true, "", Color.WHITE, false, false, false)
 
 	# Tabel Senyawa di garis tengah (sedikit dimiringkan ke kamera agar resep mudah dibaca)
 	_render_compound_table(v.compound_pile, v.me.base, easy_mode)

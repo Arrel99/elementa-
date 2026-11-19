@@ -16,11 +16,11 @@ extends CanvasLayer
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 
 const HOVER_DELAY := 0.2
-const BASE_SIZE := Vector2(320, 430)    # ukuran acuan, diskalakan sesuai layar
-const MIN_SCALE := 0.45
-const MAX_SCALE := 1.15
-const MAX_WIDTH_RATIO := 0.42
-const MAX_HEIGHT_RATIO := 0.76
+const BASE_SIZE := Vector2(360, 480)    # ukuran acuan lebih besar agar teks mudah dibaca
+const MIN_SCALE := 0.55
+const MAX_SCALE := 1.35
+const MAX_WIDTH_RATIO := 0.44
+const MAX_HEIGHT_RATIO := 0.82
 const HINT_SPACE := 40.0                # ruang untuk label petunjuk
 
 @onready var _root: Control = $Root
@@ -136,8 +136,8 @@ func _apply_position() -> void:
 		_center.offset_top = 0.0
 	else:
 		_center.anchor_left = 0.0
-		_center.anchor_right = 0.30
-		_center.anchor_top = 0.16
+		_center.anchor_right = 0.34
+		_center.anchor_top = 0.10
 		_center.anchor_bottom = 0.96
 		_center.offset_left = 18.0
 		_center.offset_top = 0.0
@@ -177,12 +177,12 @@ func _target_size() -> Vector2:
 	var area := _root.size
 	if area.x < 2.0 or area.y < 2.0:
 		area = get_viewport().get_visible_rect().size
-	var w_ratio := MAX_WIDTH_RATIO if _pinned else 0.24
-	var h_ratio := MAX_HEIGHT_RATIO if _pinned else 0.62
+	var w_ratio := MAX_WIDTH_RATIO if _pinned else 0.30
+	var h_ratio := MAX_HEIGHT_RATIO if _pinned else 0.76
 	var max_w := area.x * w_ratio
 	var max_h := area.y * h_ratio - HINT_SPACE
 	var s := minf(max_w / BASE_SIZE.x, max_h / BASE_SIZE.y)
-	s = clampf(s, MIN_SCALE, MAX_SCALE if _pinned else 0.92)
+	s = clampf(s, MIN_SCALE, MAX_SCALE if _pinned else 1.18)
 	return (BASE_SIZE * s).round()
 
 ## Latar gelap saat dipin menelan klik supaya kartu di bawahnya tidak
