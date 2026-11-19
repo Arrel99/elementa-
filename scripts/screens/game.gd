@@ -60,6 +60,7 @@ func _ready() -> void:
 	$Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
 	$InGameSettings.give_up_requested.connect($GiveUpDialog.popup_centered)
 	$InGameSettings.back_to_menu_requested.connect(_back_to_menu)
+	$TutorialCoach.open_full_guide_requested.connect(func(): $TutorialModal.open(0))
 	$GiveUpDialog.confirmed.connect(func(): submit({"type": "give_up"}))
 	$RevealPopup.resolved.connect(_on_spektrometer_resolved)
 	multiplayer.peer_disconnected.connect(_on_peer_gone)
@@ -221,6 +222,7 @@ func render(v: Dictionary) -> void:
 		"Deck %d | Buang %d  •  Lawan deck %d" % [
 			v.me.deck_count, v.me.discard.size(), v.opp.deck_count])
 	_sync_pending(v)
+	_sync_coach()
 	if v.winner != -2:
 		_show_result()
 
@@ -354,6 +356,7 @@ func _on_card_clicked(uid: int) -> void:
 				mode = Mode.PICK_SYNTH
 				synth_first = uid
 				_highlight_zone("my_base")
+				_sync_coach()
 		Mode.PICK_SYNTH:
 			if zone == "my_base" and uid != synth_first:
 				submit({"type": "synth", "a": synth_first, "b": uid})
@@ -388,6 +391,7 @@ func _click_hand(uid: int) -> void:
 			pending_spell_uid = uid
 			pending_zone = zone
 			_highlight_zone(zone)           # sorot zona target (efek, bukan teks)
+			_sync_coach()
 
 func _reset_mode() -> void:
 	mode = Mode.IDLE
@@ -395,9 +399,17 @@ func _reset_mode() -> void:
 	pending_spell_uid = -1
 	pending_zone = ""
 	_clear_glow()
+	_sync_coach()
+
+func _sync_coach() -> void:
+	if is_instance_valid($TutorialCoach) and not view.is_empty():
+		$TutorialCoach.update_state(view, int(mode), synth_first, pending_zone)
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel"):
+		if $TutorialModal.is_open():
+			$TutorialModal.close()
+			return
 		if $InGameSettings.is_open():
 			$InGameSettings.close()         # tutup panel pengaturan lebih dulu
 			return

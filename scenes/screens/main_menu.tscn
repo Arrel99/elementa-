@@ -1,8 +1,9 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/main_menu.gd" id="1_menu"]
 [ext_resource type="Shader" path="res://shaders/science_menu_bg.gdshader" id="2_bgshader"]
 [ext_resource type="Script" path="res://scripts/ui/science_menu_fx.gd" id="3_fx"]
+[ext_resource type="PackedScene" path="res://scenes/ui/tutorial_modal.tscn" id="4_tutorial"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
 shader = ExtResource("2_bgshader")
@@ -349,15 +350,7 @@ theme_override_font_sizes/font_size = 16
 text = "v0.1.0"
 horizontal_alignment = 2
 
-[node name="HowToDialog" type="AcceptDialog" parent="."]
-title = "Cara Bermain"
-initial_position = 2
-size = Vector2i(580, 340)
-dialog_text = "1. Pasang kartu dasar ke zona dasar.
-2. Tunggu satu giliran (cooldown) sebelum bisa dipakai sintesis.
-3. Klik dua kartu dasar untuk sintesis sesuai Tabel Senyawa.
-4. Mainkan spell untuk mengganggu lawan atau membantu diri sendiri.
-5. Menang dengan poin terbanyak, deck lawan habis, atau lawan menyerah."
+[node name="TutorialModal" parent="." instance=ExtResource("4_tutorial")]
 
 [node name="SettingsPanel" type="PanelContainer" parent="."]
 visible = false

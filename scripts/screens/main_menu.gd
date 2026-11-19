@@ -9,10 +9,11 @@ extends Control
 func _ready() -> void:
 	_v.get_node("Play").pressed.connect(_go.bind("lobby"))
 	_v.get_node("Library").pressed.connect(_go.bind("library"))
-	_v.get_node("HowTo").pressed.connect($HowToDialog.popup_centered)
+	_v.get_node("HowTo").pressed.connect(func(): $TutorialModal.open(0))
 	_v.get_node("Settings").pressed.connect($SettingsPanel.show)
 	_v.get_node("Quit").pressed.connect(get_tree().quit)
 	$SettingsPanel/Box/Close.pressed.connect($SettingsPanel.hide)
+	$TutorialModal.start_practice_requested.connect(_start_practice)
 	$Version.text = "v" + Net.GAME_VERSION
 	$SettingsPanel.hide()
 
@@ -29,16 +30,17 @@ func _ready() -> void:
 	# tombol uji lokal (bab 4.8) hanya ada di build debug
 	var local_btn: Button = _v.get_node("LocalTest")
 	local_btn.visible = OS.is_debug_build()
-	local_btn.pressed.connect(
-		func() -> void:
-			Net.local_test = true
-			_go("game")
-	)
+	local_btn.pressed.connect(_start_practice)
 
-	# Tutorial singkat satu kali saat pertama bermain (bab 7.3)
+	# Tutorial bertahap satu kali saat pertama bermain (bab 7.3)
 	if not bool(Settings.get_value("ui", "seen_tutorial", false)):
-		$HowToDialog.popup_centered()
+		$TutorialModal.open(0)
 		Settings.set_value("ui", "seen_tutorial", true)
+
+func _start_practice() -> void:
+	Settings.set_value("ui", "show_coach", true)
+	Net.local_test = true
+	_go("game")
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel") and $SettingsPanel.visible:

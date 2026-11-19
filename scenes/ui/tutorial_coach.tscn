@@ -1,0 +1,172 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/tutorial_coach.gd" id="1_coach"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.032, 0.064, 0.112, 0.88)
+border_width_left = 3
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.86, 0.78, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.05, 0.35, 0.50, 0.35)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
+content_margin_left = 8.0
+content_margin_top = 3.0
+content_margin_right = 8.0
+content_margin_bottom = 3.0
+bg_color = Color(0.08, 0.16, 0.26, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.68, 0.90, 0.85)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+content_margin_left = 8.0
+content_margin_top = 3.0
+content_margin_right = 8.0
+content_margin_bottom = 3.0
+bg_color = Color(0.13, 0.26, 0.40, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.88, 1.0, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.045, 0.115, 0.195, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.26, 0.90, 0.76, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
+bg_color = Color(0.22, 0.56, 0.72, 0.35)
+
+[node name="TutorialCoach" type="CanvasLayer"]
+layer = 8
+script = ExtResource("1_coach")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Root"]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 414.0
+offset_bottom = 160.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="V" type="VBoxContainer" parent="Root/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Top" type="HBoxContainer" parent="Root/Panel/V"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Badge" type="Label" parent="Root/Panel/V/Top"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.28, 0.94, 0.76, 1)
+theme_override_font_sizes/font_size = 13
+text = "PANDUAN ADAPTIF"
+vertical_alignment = 1
+
+[node name="GuideBtn" type="Button" parent="Root/Panel/V/Top"]
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "Panduan"
+
+[node name="HideBtn" type="Button" parent="Root/Panel/V/Top"]
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "—"
+
+[node name="Body" type="Label" parent="Root/Panel/V"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.90, 0.96, 1.0, 1)
+theme_override_font_sizes/font_size = 14
+text = "Memuat panduan giliran..."
+autowrap_mode = 3
+
+[node name="Sep" type="Panel" parent="Root/Panel/V"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_sep")
+
+[node name="Steps" type="HBoxContainer" parent="Root/Panel/V"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="S1" type="Label" parent="Root/Panel/V/Steps"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.68, 0.80, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "1. Pasang Unsur"
+
+[node name="S2" type="Label" parent="Root/Panel/V/Steps"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.68, 0.80, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "2. Sintesis"
+
+[node name="S3" type="Label" parent="Root/Panel/V/Steps"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.68, 0.80, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "3. Spell / End Turn"
+
+[node name="CollapsedBtn" type="Button" parent="Root"]
+visible = false
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 152.0
+offset_bottom = 52.0
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "?  Panduan"
