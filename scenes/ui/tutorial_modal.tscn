@@ -3,150 +3,148 @@
 [ext_resource type="Script" path="res://scripts/ui/tutorial_modal.gd" id="1_modal"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
-content_margin_left = 30.0
+content_margin_left = 28.0
 content_margin_top = 24.0
-content_margin_right = 30.0
+content_margin_right = 28.0
 content_margin_bottom = 24.0
-bg_color = Color(0.036, 0.068, 0.118, 0.96)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.22, 0.78, 0.96, 0.85)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0.10, 0.55, 0.78, 0.45)
-shadow_size = 24
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bullets"]
-content_margin_left = 20.0
-content_margin_top = 18.0
-content_margin_right = 20.0
-content_margin_bottom = 18.0
-bg_color = Color(0.055, 0.105, 0.175, 0.88)
+bg_color = Color(0.095, 0.115, 0.142, 0.98)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.18, 0.52, 0.72, 0.65)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tip"]
-content_margin_left = 18.0
-content_margin_top = 12.0
-content_margin_right = 18.0
-content_margin_bottom = 12.0
-bg_color = Color(0.045, 0.165, 0.155, 0.85)
-border_width_left = 3
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.24, 0.92, 0.70, 0.9)
+border_color = Color(0.24, 0.30, 0.37, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bullets"]
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+bg_color = Color(0.125, 0.150, 0.185, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.21, 0.26, 0.32, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tip"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.115, 0.165, 0.160, 1)
+border_width_left = 3
+border_width_top = 0
+border_width_right = 0
+border_width_bottom = 0
+border_color = Color(0.36, 0.66, 0.58, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
 content_margin_left = 18.0
 content_margin_top = 10.0
 content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.075, 0.145, 0.235, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.22, 0.62, 0.86, 0.9)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.14, 0.17, 0.21, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.31, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
 content_margin_left = 18.0
 content_margin_top = 10.0
 content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.12, 0.24, 0.38, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.36, 0.86, 1.0, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.18, 0.22, 0.27, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.50, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cta"]
-content_margin_left = 22.0
+content_margin_left = 20.0
 content_margin_top = 10.0
-content_margin_right = 22.0
+content_margin_right = 20.0
 content_margin_bottom = 10.0
-bg_color = Color(0.08, 0.38, 0.44, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.28, 0.96, 0.74, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.18, 0.44, 0.42, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.64, 0.59, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cta_hover"]
-content_margin_left = 22.0
+content_margin_left = 20.0
 content_margin_top = 10.0
-content_margin_right = 22.0
+content_margin_right = 20.0
 content_margin_bottom = 10.0
-bg_color = Color(0.12, 0.50, 0.58, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.48, 1.0, 0.85, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.22, 0.52, 0.49, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.76, 0.70, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
 content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.20, 0.08, 0.11, 0.9)
+bg_color = Color(0.16, 0.18, 0.22, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.85, 0.34, 0.42, 0.85)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+border_color = Color(0.28, 0.33, 0.40, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_hover"]
 content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.32, 0.11, 0.15, 1)
+bg_color = Color(0.24, 0.16, 0.18, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1.0, 0.46, 0.52, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+border_color = Color(0.55, 0.34, 0.38, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="TutorialModal" type="CanvasLayer"]
 layer = 20
@@ -168,7 +166,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.015, 0.025, 0.045, 0.78)
+color = Color(0.04, 0.05, 0.07, 0.76)
 
 [node name="Center" type="CenterContainer" parent="Root"]
 layout_mode = 1
@@ -194,31 +192,31 @@ layout_mode = 2
 [node name="Badge" type="Label" parent="Root/Center/Card/V/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.32, 0.94, 0.76, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.52, 0.78, 0.72, 1)
+theme_override_font_sizes/font_size = 15
 text = "LANGKAH 1 / 6"
 vertical_alignment = 1
 
 [node name="Close" type="Button" parent="Root/Center/Card/V/TopBar"]
-custom_minimum_size = Vector2(40, 36)
+custom_minimum_size = Vector2(38, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_close")
 theme_override_styles/hover = SubResource("StyleBoxFlat_close_hover")
 text = "X"
 
 [node name="Title" type="Label" parent="Root/Center/Card/V"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.99, 1.0, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.94, 0.96, 0.98, 1)
+theme_override_font_sizes/font_size = 30
 text = "Judul Langkah"
 autowrap_mode = 3
 
 [node name="Summary" type="Label" parent="Root/Center/Card/V"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.76, 0.88, 0.96, 1)
-theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.72, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 18
 text = "Ringkasan"
 autowrap_mode = 3
 
@@ -238,8 +236,8 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_tip")
 
 [node name="Tip" type="Label" parent="Root/Center/Card/V/TipPanel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.68, 0.98, 0.88, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.78, 0.90, 0.86, 1)
+theme_override_font_sizes/font_size = 16
 text = "Tips"
 autowrap_mode = 3
 
@@ -253,10 +251,10 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="Prev" type="Button" parent="Root/Center/Card/V/Footer"]
-custom_minimum_size = Vector2(165, 52)
+custom_minimum_size = Vector2(165, 50)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "<  Sebelumnya"
@@ -267,19 +265,19 @@ size_flags_horizontal = 3
 
 [node name="Practice" type="Button" parent="Root/Center/Card/V/Footer"]
 visible = false
-custom_minimum_size = Vector2(220, 52)
+custom_minimum_size = Vector2(215, 50)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 theme_override_styles/normal = SubResource("StyleBoxFlat_cta")
 theme_override_styles/hover = SubResource("StyleBoxFlat_cta_hover")
 text = "Latihan di Arena"
 
 [node name="Next" type="Button" parent="Root/Center/Card/V/Footer"]
-custom_minimum_size = Vector2(165, 52)
+custom_minimum_size = Vector2(165, 50)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 theme_override_styles/normal = SubResource("StyleBoxFlat_cta")
 theme_override_styles/hover = SubResource("StyleBoxFlat_cta_hover")
 text = "Lanjut  >"

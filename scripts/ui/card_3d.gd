@@ -14,10 +14,10 @@ const CARD_UI_SCENE := preload("res://scenes/ui/card.tscn")
 const CARD_THICKNESS := 0.035
 const TEX_SIZE := Vector2i(240, 320)
 
-const COLOR_EDGE := Color(0.14, 0.18, 0.24, 1.0)
-const COLOR_BACK := Color(0.09, 0.14, 0.22, 1.0)
-const COLOR_PLAYABLE := Color(0.35, 0.92, 0.58, 1.0)
-const COLOR_HOVER := Color(0.45, 0.85, 1.0, 1.0)
+const COLOR_EDGE := Color(0.16, 0.19, 0.23, 1.0)
+const COLOR_BACK := Color(0.12, 0.16, 0.21, 1.0)
+const COLOR_PLAYABLE := Color(0.38, 0.74, 0.56, 1.0)
+const COLOR_HOVER := Color(0.76, 0.84, 0.92, 1.0)
 
 var uid := -1
 var interactive := false
@@ -73,17 +73,14 @@ func _build_nodes() -> void:
 	_front_mesh.material_override = _front_mat
 	_visual.add_child(_front_mesh)
 
-	# Bingkai cahaya (untuk status playable & hover)
+	# Bingkai penanda bersih (status playable & hover, tanpa neon)
 	_glow_mesh = MeshInstance3D.new()
 	_glow_mesh.name = "GlowRim"
 	_glow_mesh.rotation_degrees.x = -90.0
 	_glow_mesh.visible = false
 	_glow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_glow_mat = StandardMaterial3D.new()
-	_glow_mat.albedo_color = Color(0.35, 0.92, 0.58, 0.85)
-	_glow_mat.emission_enabled = true
-	_glow_mat.emission = COLOR_PLAYABLE
-	_glow_mat.emission_energy_multiplier = 1.6
+	_glow_mat.albedo_color = Color(COLOR_PLAYABLE.r, COLOR_PLAYABLE.g, COLOR_PLAYABLE.b, 0.78)
 	_glow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_glow_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_glow_mesh.material_override = _glow_mat
@@ -197,19 +194,15 @@ func _update_glow_visual() -> void:
 		if _play_tween != null and _play_tween.is_valid():
 			_play_tween.kill()
 		_glow_mesh.visible = true
-		_glow_mat.albedo_color = Color(COLOR_HOVER.r, COLOR_HOVER.g, COLOR_HOVER.b, 0.85)
-		_glow_mat.emission = COLOR_HOVER
-		_glow_mat.emission_energy_multiplier = 2.0
+		_glow_mat.albedo_color = Color(COLOR_HOVER.r, COLOR_HOVER.g, COLOR_HOVER.b, 0.72)
 		return
 	if _playable:
 		_glow_mesh.visible = true
 		_glow_mat.albedo_color = Color(COLOR_PLAYABLE.r, COLOR_PLAYABLE.g, COLOR_PLAYABLE.b, 0.78)
-		_glow_mat.emission = COLOR_PLAYABLE
-		_glow_mat.emission_energy_multiplier = 1.5
 		if _play_tween == null or not _play_tween.is_valid():
 			_play_tween = create_tween().set_loops()
-			_play_tween.tween_property(_glow_mat, "emission_energy_multiplier", 0.55, 0.65).set_trans(Tween.TRANS_SINE)
-			_play_tween.tween_property(_glow_mat, "emission_energy_multiplier", 1.75, 0.65).set_trans(Tween.TRANS_SINE)
+			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.35, 0.75).set_trans(Tween.TRANS_SINE)
+			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.80, 0.75).set_trans(Tween.TRANS_SINE)
 	else:
 		_glow_mesh.visible = false
 

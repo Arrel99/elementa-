@@ -7,69 +7,67 @@ content_margin_left = 14.0
 content_margin_top = 10.0
 content_margin_right = 14.0
 content_margin_bottom = 10.0
-bg_color = Color(0.032, 0.064, 0.112, 0.88)
+bg_color = Color(0.095, 0.115, 0.142, 0.92)
 border_width_left = 3
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.24, 0.86, 0.78, 0.85)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-shadow_color = Color(0.05, 0.35, 0.50, 0.35)
-shadow_size = 10
+border_color = Color(0.32, 0.54, 0.62, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
 content_margin_left = 8.0
 content_margin_top = 3.0
 content_margin_right = 8.0
 content_margin_bottom = 3.0
-bg_color = Color(0.08, 0.16, 0.26, 0.92)
+bg_color = Color(0.14, 0.17, 0.21, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.24, 0.68, 0.90, 0.85)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+border_color = Color(0.25, 0.31, 0.38, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
 content_margin_left = 8.0
 content_margin_top = 3.0
 content_margin_right = 8.0
 content_margin_bottom = 3.0
-bg_color = Color(0.13, 0.26, 0.40, 1)
+bg_color = Color(0.18, 0.22, 0.27, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.38, 0.88, 1.0, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+border_color = Color(0.38, 0.50, 0.62, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
 content_margin_left = 12.0
 content_margin_top = 8.0
 content_margin_right = 12.0
 content_margin_bottom = 8.0
-bg_color = Color(0.045, 0.115, 0.195, 0.92)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.26, 0.90, 0.76, 0.9)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.095, 0.115, 0.142, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.36, 0.44, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
-bg_color = Color(0.22, 0.56, 0.72, 0.35)
+bg_color = Color(0.26, 0.32, 0.39, 0.55)
 
 [node name="TutorialCoach" type="CanvasLayer"]
 layer = 8
@@ -88,8 +86,8 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 14.0
 offset_top = 14.0
-offset_right = 414.0
-offset_bottom = 160.0
+offset_right = 410.0
+offset_bottom = 156.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="V" type="VBoxContainer" parent="Root/Panel"]
@@ -103,7 +101,7 @@ theme_override_constants/separation = 6
 [node name="Badge" type="Label" parent="Root/Panel/V/Top"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.28, 0.94, 0.76, 1)
+theme_override_colors/font_color = Color(0.56, 0.80, 0.74, 1)
 theme_override_font_sizes/font_size = 13
 text = "PANDUAN ADAPTIF"
 vertical_alignment = 1
@@ -126,7 +124,7 @@ text = "—"
 
 [node name="Body" type="Label" parent="Root/Panel/V"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.90, 0.96, 1.0, 1)
+theme_override_colors/font_color = Color(0.88, 0.91, 0.95, 1)
 theme_override_font_sizes/font_size = 14
 text = "Memuat panduan giliran..."
 autowrap_mode = 3
@@ -142,19 +140,19 @@ theme_override_constants/separation = 10
 
 [node name="S1" type="Label" parent="Root/Panel/V/Steps"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.68, 0.80, 0.9)
+theme_override_colors/font_color = Color(0.55, 0.62, 0.70, 0.9)
 theme_override_font_sizes/font_size = 12
 text = "1. Pasang Unsur"
 
 [node name="S2" type="Label" parent="Root/Panel/V/Steps"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.68, 0.80, 0.9)
+theme_override_colors/font_color = Color(0.55, 0.62, 0.70, 0.9)
 theme_override_font_sizes/font_size = 12
 text = "2. Sintesis"
 
 [node name="S3" type="Label" parent="Root/Panel/V/Steps"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.68, 0.80, 0.9)
+theme_override_colors/font_color = Color(0.55, 0.62, 0.70, 0.9)
 theme_override_font_sizes/font_size = 12
 text = "3. Spell / End Turn"
 
@@ -163,8 +161,8 @@ visible = false
 layout_mode = 0
 offset_left = 14.0
 offset_top = 14.0
-offset_right = 152.0
-offset_bottom = 52.0
+offset_right = 148.0
+offset_bottom = 50.0
 mouse_default_cursor_shape = 2
 theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
