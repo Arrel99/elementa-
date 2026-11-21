@@ -21,9 +21,9 @@ const SIZE_SPELL := Vector2(0.98, 1.32)
 const SIZE_TABLE := Vector2(0.86, 1.14)
 const SIZE_PILE := Vector2(0.92, 1.24)
 
-const CAM_LOOK_TARGET := Vector3(0.32, 0.0, 0.05)
-const CAM_DIR := Vector3(0.0, 10.0, 6.0)       # sudut 2.5D dekat & besar, kartu sangat jelas
-const CAM_BASE_DIST := 12.2                    # mengisi penuh seluruh layar tanpa ruang kosong
+const CAM_LOOK_TARGET := Vector3(0.32, -0.05, 0.05)
+const CAM_DIR := Vector3(0.0, 10.0, 6.2)       # sudut 2.5D dekat & besar
+const CAM_BASE_DIST := 13.4                    # seluruh bingkai papan 3D pas memenuhi layar tanpa ruang kosong luar
 
 # Palet matte minimalis: Steel Blue (Pemain), Warm Terracotta (Lawan), Muted Sage (Tengah)
 const COLOR_ME_PAD := Color(0.112, 0.150, 0.198, 1.0)
@@ -153,38 +153,84 @@ func _setup_lights() -> void:
 	rim.rotation_degrees = Vector3(-30.0, -148.0, 0.0)
 	add_child(rim)
 
-# --- Meja & Playmat 3D Penuh Satu Layar (tanpa ruang latar kosong) -----------
+# --- Meja & Playmat 3D Berundak dengan Bingkai Papan Utuh --------------------
 
 func _build_table() -> void:
 	var table := Node3D.new()
 	table.name = "Table"
 	add_child(table)
 
-	# 1) Permukaan playmat sains penuh menutupi seluruh layar (Y = 0)
+	# 1) Meja dasar luar lebih rendah (Y = -0.22) sehingga papan duel timbul secara fisik
 	var mat_plane := MeshInstance3D.new()
 	mat_plane.name = "SciencePlaymat"
 	var pm := PlaneMesh.new()
 	pm.size = Vector2(46.0, 34.0)
 	mat_plane.mesh = pm
-	mat_plane.position = Vector3(0.0, 0.0, 0.0)
+	mat_plane.position = Vector3(0.0, -0.22, 0.0)
 	var sh_mat := ShaderMaterial.new()
 	sh_mat.shader = SCIENCE_SHADER
 	mat_plane.material_override = sh_mat
 	table.add_child(mat_plane)
 
-	# 2) Jembatan & rak reaksi TENGAH yang terangkat (memanjang penuh ke tepi layar)
-	var mid_bridge := _make_box(Vector3(36.0, 0.09, 1.46), COLOR_MID_PAD, 0.68, 0.14, true)
-	mid_bridge.position = Vector3(0.0, 0.032, -0.05)
+	# 2) Plinth / alas papan duel tebal yang timbul di atas meja & melempar bayangan
+	var plinth := _make_box(Vector3(15.3, 0.22, 9.2), Color(0.075, 0.090, 0.112, 1.0), 0.55, 0.28, true)
+	plinth.position = Vector3(-0.15, -0.11, -0.05)
+	table.add_child(plinth)
+
+	# 3) Bingkai tepi 3D menonjol (anodized matte steel) mengelilingi seluruh papan duel
+	var rim_col := Color(0.145, 0.172, 0.210, 1.0)
+	var rim_h := 0.14
+	var rim_w := 0.28
+	var rims := [
+		[Vector3(15.5, rim_h, rim_w), Vector3(-0.15, rim_h * 0.5 - 0.02, -4.55)],
+		[Vector3(15.5, rim_h, rim_w), Vector3(-0.15, rim_h * 0.5 - 0.02, 4.45)],
+		[Vector3(rim_w, rim_h, 9.28), Vector3(-7.76, rim_h * 0.5 - 0.02, -0.05)],
+		[Vector3(rim_w, rim_h, 9.28), Vector3(7.46, rim_h * 0.5 - 0.02, -0.05)],
+	]
+	for r in rims:
+		var m := _make_box(r[0], rim_col, 0.42, 0.42, true)
+		m.position = r[1]
+		table.add_child(m)
+
+	# 4) Blok penjepit sudut 3D (detail fisik meja laboratorium)
+	var corner_col := Color(0.20, 0.24, 0.29, 1.0)
+	for cx in [-7.76, 7.46]:
+		for cz in [-4.55, 4.45]:
+			var cb := _make_box(Vector3(0.46, 0.19, 0.46), corner_col, 0.36, 0.52, true)
+			cb.position = Vector3(cx, 0.075, cz)
+			table.add_child(cb)
+
+	# 5) Panel wilayah LAWAN (matte terakota gelap) & PEMAIN (matte biru baja gelap)
+	var opp_pad := _make_box(Vector3(14.7, 0.024, 3.55), COLOR_OPP_PAD, 0.80, 0.06, false)
+	opp_pad.position = Vector3(-0.15, -0.008, -2.56)
+	table.add_child(opp_pad)
+
+	var me_pad := _make_box(Vector3(14.7, 0.024, 3.55), COLOR_ME_PAD, 0.80, 0.06, false)
+	me_pad.position = Vector3(-0.15, -0.008, 2.46)
+	table.add_child(me_pad)
+
+	# 6) Jembatan & rak reaksi TENGAH yang terangkat (elevated 3D display strip)
+	var mid_bridge := _make_box(Vector3(14.7, 0.09, 1.46), COLOR_MID_PAD, 0.68, 0.14, true)
+	mid_bridge.position = Vector3(-0.15, 0.032, -0.05)
 	table.add_child(mid_bridge)
 
-	# Rel pembatas 3D berprofil di tepi jembatan tengah (memanjang penuh)
-	var rail_top := _make_box(Vector3(36.0, 0.055, 0.075), COLOR_OPP_LINE.lerp(COLOR_MID_LINE, 0.45), 0.45, 0.35, true)
-	rail_top.position = Vector3(0.0, 0.068, -0.78)
+	# Rel pembatas 3D berprofil di tepi jembatan tengah
+	var rail_top := _make_box(Vector3(14.7, 0.055, 0.075), COLOR_OPP_LINE.lerp(COLOR_MID_LINE, 0.45), 0.45, 0.35, true)
+	rail_top.position = Vector3(-0.15, 0.068, -0.78)
 	table.add_child(rail_top)
 
-	var rail_bot := _make_box(Vector3(36.0, 0.055, 0.075), COLOR_ME_LINE.lerp(COLOR_MID_LINE, 0.45), 0.45, 0.35, true)
-	rail_bot.position = Vector3(0.0, 0.068, 0.68)
+	var rail_bot := _make_box(Vector3(14.7, 0.055, 0.075), COLOR_ME_LINE.lerp(COLOR_MID_LINE, 0.45), 0.45, 0.35, true)
+	rail_bot.position = Vector3(-0.15, 0.068, 0.68)
 	table.add_child(rail_bot)
+
+	# Garis tepi wilayah pemain & lawan (bervolume 3D)
+	var me_edge := _make_box(Vector3(14.7, 0.04, 0.05), COLOR_ME_LINE, 0.45, 0.30, true)
+	me_edge.position = Vector3(-0.15, 0.02, 4.24)
+	table.add_child(me_edge)
+
+	var opp_edge := _make_box(Vector3(14.7, 0.04, 0.05), COLOR_OPP_LINE, 0.45, 0.30, true)
+	opp_edge.position = Vector3(-0.15, 0.02, -4.34)
+	table.add_child(opp_edge)
 
 	# Sekat 3D tipis antar kolom zona (melempar bayangan lembut)
 	for x_div in [-3.18, 3.98, 5.28]:
