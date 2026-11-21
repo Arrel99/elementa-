@@ -524,7 +524,7 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		_spawn_card(c, _pos_base(false, slot_idx), SIZE_BASE, true, true, true, "", Color.WHITE,
 			false, false, not _known_uids.has(uid))
 
-	# Kartu Zona Spesial Pemain (maks 8 tampil di grid, jika lebih ditumpuk di slot terakhir)
+	# Kartu Zona Spesial Pemain (maks 8 tampil di grid; 2 kartu dasar menempel di belakangnya)
 	for i in v.me.special.size():
 		var c: Dictionary = v.me.special[i]
 		var uid := int(c.get("uid", -1))
@@ -532,11 +532,12 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		var slot_idx := mini(i, 7)
 		var pos := _pos_special(true, slot_idx)
 		if i >= 8:
-			pos.y += float(i - 7) * 0.045
-		_spawn_card(c, pos, SIZE_SPECIAL, true, true, true, "", Color.WHITE,
+			pos.y += float(i - 7) * 0.095
+		var top_y := _spawn_attached_under(c, pos, SIZE_SPECIAL)
+		_spawn_card(c, Vector3(pos.x, top_y, pos.z), SIZE_SPECIAL, true, true, true, "", Color.WHITE,
 			false, false, not _known_uids.has(uid))
 
-	# Kartu Zona Spesial Lawan
+	# Kartu Zona Spesial Lawan (2 kartu dasar menempel di belakangnya)
 	for i in v.opp.special.size():
 		var c: Dictionary = v.opp.special[i]
 		var uid := int(c.get("uid", -1))
@@ -544,8 +545,9 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		var slot_idx := mini(i, 7)
 		var pos := _pos_special(false, slot_idx)
 		if i >= 8:
-			pos.y += float(i - 7) * 0.045
-		_spawn_card(c, pos, SIZE_SPECIAL, true, true, true, "", Color.WHITE,
+			pos.y += float(i - 7) * 0.095
+		var top_y := _spawn_attached_under(c, pos, SIZE_SPECIAL)
+		_spawn_card(c, Vector3(pos.x, top_y, pos.z), SIZE_SPECIAL, true, true, true, "", Color.WHITE,
 			false, false, not _known_uids.has(uid))
 
 	# Tabel Senyawa di garis tengah (sedikit dimiringkan ke kamera agar resep mudah dibaca)
@@ -561,6 +563,32 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 	_update_shield("me", bool(v.me.shield))
 
 	_known_uids = next_uids
+
+## Menampilkan 2 kartu unsur dasar yang menempel di bawah/belakang kartu senyawa
+## (mirip kartu Energy di belakang Pokemon TCG Live). Mengembalikan posisi Y untuk kartu utama di atasnya.
+func _spawn_attached_under(special_card: Dictionary, base_pos: Vector3, card_sz: Vector2) -> float:
+	var attached: Array = special_card.get("attached", [])
+	if attached.is_empty():
+		var parts: Array = special_card.get("parts", [])
+		for pid in parts:
+			attached.append({"uid": -1, "id": String(pid), "placed_turn": -1})
+	if attached.is_empty():
+		return base_pos.y
+	var offsets := [
+		Vector3(0.095, 0.0, -0.055),
+		Vector3(0.165, 0.034, -0.025),
+	]
+	var rots := [-4.0, -7.5]
+	for idx in mini(attached.size(), 2):
+		var ac: Dictionary = attached[idx]
+		var off: Vector3 = offsets[idx]
+		var node := _spawn_card(
+			ac,
+			base_pos + off,
+			card_sz * 0.96,
+			true, false, false, "", Color(0.86, 0.89, 0.93), false, false, false)
+		node.rotation_degrees.y = rots[idx]
+	return base_pos.y + 0.072
 
 func _render_compound_table(ids: Array, my_base: Array, easy_mode: bool) -> void:
 	var mine := {}

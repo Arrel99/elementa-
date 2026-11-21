@@ -1,7 +1,107 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/library.gd" id="1_library"]
 [ext_resource type="PackedScene" path="res://scenes/ui/card_detail.tscn" id="2_detail"]
+[ext_resource type="Shader" path="res://shaders/science_menu_bg.gdshader" id="3_bgshader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
+shader = ExtResource("3_bgshader")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+content_margin_left = 20.0
+content_margin_top = 14.0
+content_margin_right = 20.0
+content_margin_bottom = 14.0
+bg_color = Color(0.095, 0.115, 0.142, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.27, 0.33, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.135, 0.165, 0.205, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.30, 0.37, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.18, 0.22, 0.27, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.50, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_search"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.08, 0.098, 0.125, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.30, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_search_focus"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.095, 0.118, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.36, 0.64, 0.58, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shelf"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.085, 0.105, 0.130, 0.86)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.20, 0.25, 0.31, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="Library" type="Control"]
 layout_mode = 3
@@ -12,51 +112,144 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_library")
 
-[node name="Back" type="Button" parent="."]
-layout_mode = 1
-anchors_preset = 0
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 120.0
-offset_bottom = 44.0
-text = "Kembali"
-
-[node name="Tabs" type="TabContainer" parent="."]
+[node name="BgShader" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_bg")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 50.0
-offset_right = -10.0
-offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
-[node name="Dasar" type="ScrollContainer" parent="Tabs"]
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 22
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="Grid" type="GridContainer" parent="Tabs/Dasar"]
+[node name="TopBar" type="PanelContainer" parent="Margin/Layout"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
+
+[node name="H" type="HBoxContainer" parent="Margin/Layout/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Back" type="Button" parent="Margin/Layout/TopBar/H"]
+custom_minimum_size = Vector2(140, 46)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.88, 0.92, 0.96, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "<  Kembali"
+
+[node name="TitleBox" type="VBoxContainer" parent="Margin/Layout/TopBar/H"]
 layout_mode = 2
 size_flags_horizontal = 3
-columns = 5
+theme_override_constants/separation = 2
+alignment = 1
 
-[node name="Spell" type="ScrollContainer" parent="Tabs"]
+[node name="Title" type="Label" parent="Margin/Layout/TopBar/H/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.96, 0.98, 1)
+theme_override_font_sizes/font_size = 26
+text = "LIBRARY KARTU ELEMENTA"
+
+[node name="Sub" type="Label" parent="Margin/Layout/TopBar/H/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.74, 1)
+theme_override_font_sizes/font_size = 14
+text = "Klik tombol (i) di sudut kanan atas kartu untuk melihat informasi lengkap"
+
+[node name="Search" type="LineEdit" parent="Margin/Layout/TopBar/H"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_search")
+theme_override_styles/focus = SubResource("StyleBoxFlat_search_focus")
+placeholder_text = "Cari nama, simbol, atau efek..."
+clear_button_enabled = true
+
+[node name="FilterBar" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="All" type="Button" parent="Margin/Layout/FilterBar"]
+custom_minimum_size = Vector2(130, 44)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 16
+text = "Semua"
+
+[node name="Basic" type="Button" parent="Margin/Layout/FilterBar"]
+custom_minimum_size = Vector2(150, 44)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 16
+text = "Kartu Dasar"
+
+[node name="Special" type="Button" parent="Margin/Layout/FilterBar"]
+custom_minimum_size = Vector2(150, 44)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 16
+text = "Senyawa"
+
+[node name="Spell" type="Button" parent="Margin/Layout/FilterBar"]
+custom_minimum_size = Vector2(130, 44)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 16
+text = "Spell"
+
+[node name="Spacer" type="Control" parent="Margin/Layout/FilterBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CountLabel" type="Label" parent="Margin/Layout/FilterBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.60, 0.68, 0.76, 1)
+theme_override_font_sizes/font_size = 15
+text = "Menampilkan 0 kartu"
+vertical_alignment = 1
+
+[node name="Shelf" type="PanelContainer" parent="Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_shelf")
+
+[node name="Scroll" type="ScrollContainer" parent="Margin/Layout/Shelf"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Grid" type="GridContainer" parent="Margin/Layout/Shelf/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
+columns = 6
+
+[node name="EmptyLabel" type="Label" parent="Margin/Layout/Shelf"]
 visible = false
 layout_mode = 2
-
-[node name="Grid" type="GridContainer" parent="Tabs/Spell"]
-layout_mode = 2
-size_flags_horizontal = 3
-columns = 5
-
-[node name="Spesial" type="ScrollContainer" parent="Tabs"]
-visible = false
-layout_mode = 2
-
-[node name="Grid" type="GridContainer" parent="Tabs/Spesial"]
-layout_mode = 2
-size_flags_horizontal = 3
-columns = 5
+theme_override_colors/font_color = Color(0.58, 0.66, 0.74, 1)
+theme_override_font_sizes/font_size = 18
+text = "Tidak ada kartu yang cocok dengan pencarian."
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Detail" parent="." instance=ExtResource("2_detail")]

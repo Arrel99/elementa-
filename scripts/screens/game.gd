@@ -240,6 +240,7 @@ func render(v: Dictionary) -> void:
 			v.me.deck_count, v.me.discard.size(), v.opp.deck_count])
 	_sync_pending(v)
 	_sync_coach()
+	$TurnHistory.update_history(v, local_test)
 	if v.winner != -2:
 		_show_result()
 

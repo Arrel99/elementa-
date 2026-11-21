@@ -29,7 +29,9 @@ const HINT_SPACE := 40.0                # ruang untuk label petunjuk
 @onready var _box: VBoxContainer = $Root/Center/Box
 @onready var _hint: Label = $Root/Center/Box/Hint
 
+var _stack: Control
 var _card: Node
+var _attached_cards: Array[Node] = []
 var _timer: Timer
 var _source: Node = null
 var _data := {}
@@ -43,9 +45,22 @@ func _ready() -> void:
 	_timer.timeout.connect(_on_timer)
 	add_child(_timer)
 
+	# Wadah tumpukan: kartu unsur yang menempel mengintip di belakang/kanan kartu senyawa (gaya Pokemon TCG Live)
+	_stack = Control.new()
+	_stack.name = "CardStack"
+	_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_box.add_child(_stack)
+	_box.move_child(_stack, 0)
+
+	for i in 2:
+		var ac: Control = CARD_SCENE.instantiate()
+		ac.visible = false
+		ac.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_stack.add_child(ac)
+		_attached_cards.append(ac)
+
 	_card = CARD_SCENE.instantiate()
-	_box.add_child(_card)
-	_box.move_child(_card, 0)
+	_stack.add_child(_card)
 
 	_dim.gui_input.connect(_on_dim_input)
 	_root.hide()
@@ -116,13 +131,36 @@ func _show() -> void:
 	_card.setup(_data, true, false, false)
 	_card.tooltip_text = ""             # kartu besar tidak perlu tooltip
 	_card.fit(target)
+	_card.position = Vector2.ZERO
+	_card.size = target
 	_append_recipe()
+	_render_attached_preview(target)
 
 	_dim.visible = _pinned
 	_hint.visible = _pinned
 	_root.show()
 	_open = true
 	set_process(true)
+
+## Menampilkan kartu unsur yang menempel di belakang kartu senyawa (mengintip ke kanan seperti Pokemon TCG Live).
+func _render_attached_preview(target: Vector2) -> void:
+	var attached: Array = _data.get("attached", [])
+	var shown := mini(attached.size(), _attached_cards.size())
+	var extra_w := 0.0
+	for i in _attached_cards.size():
+		var ac: Control = _attached_cards[i]
+		if i < shown:
+			var sub_sz := (target * 0.94).round()
+			ac.setup(attached[i], true, false, false)
+			ac.fit(sub_sz)
+			ac.size = sub_sz
+			ac.position = Vector2(target.x * (0.20 + float(i) * 0.16), target.y * (0.03 + float(i) * 0.02))
+			ac.modulate = Color(0.88, 0.91, 0.95, 1.0)
+			ac.visible = true
+			extra_w = maxf(extra_w, ac.position.x + sub_sz.x - target.x)
+		else:
+			ac.visible = false
+	_stack.custom_minimum_size = Vector2(target.x + extra_w, target.y + (16.0 if shown > 0 else 0.0))
 
 ## Saat hover: tampilkan pratinjau di sisi kiri agar tengah papan tetap terlihat.
 ## Saat dipin (klik kanan): tampilkan di tengah layar dengan latar redup.

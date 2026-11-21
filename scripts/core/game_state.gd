@@ -15,6 +15,7 @@ var countdown: int = -1          # hitungan mundur zona spesial; -1 = belum dipi
 var winner: int = -2             # -2 belum selesai, -1 seri, 0/1 pemenang
 var win_reason: String = ""      # surrender | deck_out | special_full
 var pending: Dictionary = {}     # efek interaktif yang menunggu penyelesaian (Spektrometer)
+var history: Array = []          # riwayat kronologis kartu yang dimainkan per giliran
 
 var _next_uid: int = 1
 var _effects: Dictionary = {}
@@ -64,6 +65,7 @@ func setup(rng_seed: int) -> void:
 	winner = -2
 	win_reason = ""
 	pending = {}
+	history = []
 
 ## Deck 60 kartu: jumlah salinan tiap kartu ada di field deck_copies (Lampiran A/C).
 ## Kartu spesial (senyawa) tidak pernah masuk deck.
@@ -155,6 +157,7 @@ func place_base(p: int, uid: int, slot: int = -1) -> String:
 	c.placed_turn = turn_no      # cooldown 1 giliran (bagian 7)
 	c["slot"] = chosen
 	pl.base.append(c)
+	_record(p, "place", c.id, "Pasang %s (Slot %d)" % [_card_label(c.id), chosen + 1])
 	return ""
 
 ## Membuang kelebihan kartu di akhir giliran (bagian 4 & 6). Pemain memilih sendiri.
@@ -169,6 +172,7 @@ func discard_from_hand(p: int, uid: int) -> String:
 	if c.is_empty():
 		return "Kartu tidak ada di tangan."
 	pl.discard.append(c)
+	_record(p, "discard", c.id, "Buang %s" % _card_label(c.id))
 	return ""
 
 ## Kemudahan untuk bot/pewaktu: buang kartu bernilai terendah sampai batas aman.
@@ -209,18 +213,26 @@ func synthesize(p: int, uid_a: int, uid_b: int) -> String:
 		return "Senyawa itu sudah diambil pemain lain."
 	_take(pl.base, uid_a)
 	_take(pl.base, uid_b)
-	pl.discard.append(a)          # kedua kartu dasar dibuang (bagian 7.4)
-	pl.discard.append(b)
+	# Kedua kartu dasar asli menempel di belakang kartu senyawa (bukan ke discard),
+	# sehingga saat Elektrolisis kartu asli tersebut kembali ke tangan tanpa duplikasi.
+	a.placed_turn = -1
+	b.placed_turn = -1
+	a.erase("slot")
+	b.erase("slot")
 	# Hanya 1 salinan yang diambil; senyawa yang sama masih bisa disintesis
 	# pemain lain selama salinannya di Deck Senyawa masih tersisa.
 	var pile_i := compound_pile.find(result)
 	if pile_i >= 0:
 		compound_pile.remove_at(pile_i)
 	var sc := _new_card(result)
-	sc["parts"] = [a.id, b.id]    # dipakai Elektrolisis / Elektrolisis Paksa
+	sc["attached"] = [a, b]       # 2 kartu dasar asli menempel di belakang senyawa
+	sc["parts"] = [a.id, b.id]    # daftar id bahan untuk kompatibilitas
 	pl.special.append(sc)
-	pl.points += CardDB.get_card(result).points
+	var pts: int = CardDB.get_card(result).points
+	pl.points += pts
 	synth_left -= 1
+	_record(p, "synth", result, "Sintesis %s + %s -> %s (+%d)" % [
+		_card_sym(a.id), _card_sym(b.id), _card_label(result), pts])
 	_check_special_trigger(p)
 	return ""
 
@@ -243,13 +255,62 @@ func play_spell(p: int, uid: int, args: Dictionary) -> String:
 	var fn: Callable = _effects.get(data.spell_effect, Callable())
 	if fn.is_null():
 		return "Efek belum diimplementasi."
+	var spell_detail := _describe_spell_before(p, data, args)
 	var err: String = fn.call(p, args)
 	if err != "":
 		return err
 	pl.discard.append(_take(pl.hand, uid))
 	if not is_katalis:
 		spell_left -= 1           # Katalis tidak mengurangi jatah spell (bagian 8)
+	_record(p, "spell", c.id, spell_detail)
 	return ""
+
+func _describe_spell_before(p: int, data: CardData, args: Dictionary) -> String:
+	var target_uid := int(args.get("target_uid", -1))
+	match data.spell_effect:
+		"katalis":
+			return "Katalis (+1 sintesis)"
+		"perisai_inert":
+			return "Perisai Inert (aktif)"
+		"spektrometer":
+			return "Spektrometer (intip 3 kartu)"
+		"bilas":
+			var tc := _peek(players[p].base, target_uid)
+			return "Bilas -> %s" % (_card_label(tc.id) if not tc.is_empty() else "-")
+		"korosi":
+			if players[1 - p].shield:
+				return "Korosi (ditangkal Perisai)"
+			var tc := _peek(players[1 - p].base, target_uid)
+			return "Korosi -> %s" % (_card_label(tc.id) if not tc.is_empty() else "-")
+		"elektrolisis":
+			var sc := _peek(players[p].special, target_uid)
+			return "Elektrolisis -> %s" % (_card_label(sc.id) if not sc.is_empty() else "-")
+		"elektrolisis_paksa":
+			if players[1 - p].shield:
+				return "Elektrolisis Paksa (ditangkal Perisai)"
+			var sc := _peek(players[1 - p].special, target_uid)
+			return "Elektrolisis Paksa -> %s" % (_card_label(sc.id) if not sc.is_empty() else "-")
+		_:
+			return data.display_name
+
+func _card_label(id: String) -> String:
+	var d := CardDB.get_card(id)
+	if d == null:
+		return id
+	return "%s (%s)" % [d.display_name, d.symbol] if d.symbol != "" else d.display_name
+
+func _card_sym(id: String) -> String:
+	var d := CardDB.get_card(id)
+	return d.symbol if (d != null and d.symbol != "") else id
+
+func _record(p: int, action: String, card_id: String, detail: String) -> void:
+	history.append({
+		"turn": turn_no,
+		"player": p,
+		"action": action,
+		"card_id": card_id,
+		"detail": detail,
+	})
 
 func _fx_katalis(p: int, _a: Dictionary) -> String:
 	synth_left += 1               # aksi sintesis tambahan; tidak membebaskan cooldown
@@ -284,8 +345,7 @@ func _fx_elektrolisis(p: int, a: Dictionary) -> String:
 	_take(pl.special, sc.uid)
 	pl.points -= CardDB.get_card(sc.id).points
 	compound_pile.append(sc.id)          # senyawa kembali ke Tabel Senyawa
-	for part in sc.get("parts", []):
-		pl.hand.append(_new_card(part))  # 2 unsur kembali ke tangan pemilik
+	_return_attached_to_hand(pl, sc)
 	return ""
 
 func _fx_elektrolisis_paksa(p: int, a: Dictionary) -> String:
@@ -297,9 +357,22 @@ func _fx_elektrolisis_paksa(p: int, a: Dictionary) -> String:
 		return "Pilih senyawa milik lawan."
 	opp.points -= CardDB.get_card(sc.id).points
 	compound_pile.append(sc.id)          # senyawa kembali ke Tabel Senyawa
-	for part in sc.get("parts", []):
-		opp.hand.append(_new_card(part)) # 2 unsur kembali ke tangan lawan
+	_return_attached_to_hand(opp, sc)
 	return ""
+
+## Mengembalikan 2 kartu dasar asli yang menempel di belakang senyawa ke tangan
+## pemiliknya tanpa menggandakan jumlah kartu di dalam permainan.
+func _return_attached_to_hand(pl: Dictionary, sc: Dictionary) -> void:
+	var attached: Array = sc.get("attached", [])
+	if not attached.is_empty():
+		for base_card in attached:
+			base_card["placed_turn"] = -1
+			base_card.erase("slot")
+			pl.hand.append(base_card)
+		sc["attached"] = []
+		return
+	for part in sc.get("parts", []):
+		pl.hand.append(_new_card(part))
 
 func _fx_spektrometer(p: int, _a: Dictionary) -> String:
 	var pl = players[p]
@@ -477,6 +550,7 @@ func view_for(p: int) -> Dictionary:
 		},
 		"pending": _pending_view(p),
 		"playable": playable_ids(p),
+		"history": history.duplicate(true),
 		"me": {
 			"hand": me.hand.duplicate(true), "base": me.base.duplicate(true),
 			"special": me.special.duplicate(true), "points": me.points,

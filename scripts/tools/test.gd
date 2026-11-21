@@ -152,18 +152,26 @@ func _ready() -> void:
 	_check(g10.play_spell(0, kor2.uid, {"target_uid": g10.players[1].base[0].uid}) == "", "Korosi terhadap perisai tetap dimainkan")
 	_check(g10.players[1].base.size() == 1, "Perisai Inert menangkal Korosi")
 
-	# --- Elektrolisis (bagian 8) ---
+	# --- Elektrolisis (bagian 8) & kekekalan jumlah kartu (attached, bukan discard) ---
 	var g11 := GameState.new()
 	g11.setup(31)
 	g11.current = 0
-	var sp := _force_special(g11, 0, "H2O", ["H", "O"])
-	g11.players[0].points = 6
+	var total_before_synth: int = g11.players[0].deck.size() + g11.players[0].hand.size() + g11.players[0].base.size() + g11.players[0].discard.size()
+	var b_h := _force_base(g11, 0, "H")
+	var b_o := _force_base(g11, 0, "O")
+	_check(g11.synthesize(0, b_h.uid, b_o.uid) == "", "Sintesis sebelum Elektrolisis sukses")
+	var sp: Dictionary = g11.players[0].special[0]
+	_check(sp.get("attached", []).size() == 2, "2 unsur dasar menempel di belakang kartu senyawa")
+	_check(g11.players[0].discard.is_empty(), "Sintesis tidak membuang 2 unsur ke discard")
 	var hand_before: int = g11.players[0].hand.size()
 	var el := _force_hand(g11, 0, "elektrolisis")
 	_check(g11.play_spell(0, el.uid, {"target_uid": sp.uid}) == "", "Elektrolisis sukses")
 	_check(g11.players[0].hand.size() == hand_before + 2, "2 unsur kembali ke tangan")
 	_check(g11.compound_pile.has("H2O"), "Senyawa kembali ke Tabel Senyawa")
 	_check(g11.players[0].points == 0, "Poin senyawa dikurangi")
+	# Total kartu = total awal + 2 unsur yang dipaksa + 1 spell elektrolisis (tanpa duplikasi!)
+	var total_after_el: int = g11.players[0].deck.size() + g11.players[0].hand.size() + g11.players[0].base.size() + g11.players[0].discard.size()
+	_check(total_after_el == total_before_synth + 3, "Elektrolisis tidak menggandakan jumlah kartu")
 
 	# --- Elektrolisis Paksa (bagian 8) ---
 	var g12 := GameState.new()

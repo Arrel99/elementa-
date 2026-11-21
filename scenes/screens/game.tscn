@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/ui/toast.tscn" id="2_toast"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/ui/board_3d.gd" id="7_board3d"]
 [ext_resource type="PackedScene" path="res://scenes/ui/tutorial_coach.tscn" id="8_coach"]
 [ext_resource type="PackedScene" path="res://scenes/ui/tutorial_modal.tscn" id="9_tutorial"]
+[ext_resource type="PackedScene" path="res://scenes/ui/turn_history.tscn" id="10_history"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 8.0
@@ -217,3 +218,5 @@ text = "Kembali ke Menu"
 [node name="TutorialCoach" parent="." instance=ExtResource("8_coach")]
 
 [node name="TutorialModal" parent="." instance=ExtResource("9_tutorial")]
+
+[node name="TurnHistory" parent="." instance=ExtResource("10_history")]

@@ -10,6 +10,7 @@ extends PanelContainer
 ## CardPreview di layar papan, bukan kartu ini.
 
 signal clicked(uid: int)
+signal info_clicked(card_id: String)
 signal drag_started(uid: int, card_node: Control, global_pos: Vector2)
 signal drag_moved(uid: int, card_node: Control, global_pos: Vector2)
 signal drag_ended(uid: int, card_node: Control, global_pos: Vector2)
@@ -46,6 +47,12 @@ func _ready() -> void:
     mouse_exited.connect(_set_hovered.bind(false))
     mouse_entered.connect(_on_mouse_entered)
     mouse_exited.connect(_on_mouse_exited)
+    var info_btn: Button = get_node_or_null("Overlay/InfoBtn")
+    if info_btn != null:
+        info_btn.pressed.connect(func():
+            var cid := String(_data.get("id", ""))
+            if cid != "":
+                info_clicked.emit(cid))
     # Setelah kartu lama dibuang dan diganti kartu baru (mis. tiap aksi), kursor
     # bisa berada tepat di atas kartu baru tanpa ada gerakan mouse. Tanpa
     # penyegaran ini, hover baru menyala setelah mouse digerakkan.
@@ -182,3 +189,9 @@ func set_playable(on: bool) -> void:
     _play_tween = create_tween().set_loops()
     _play_tween.tween_property(glow, "modulate:a", 0.3, 0.7).set_trans(Tween.TRANS_SINE)
     _play_tween.tween_property(glow, "modulate:a", 1.0, 0.7).set_trans(Tween.TRANS_SINE)
+
+## Menampilkan tombol kecil (i) di sudut kanan atas kartu (dipakai di Library).
+func set_info_button(on: bool) -> void:
+    var info_btn: Button = get_node_or_null("Overlay/InfoBtn")
+    if info_btn != null:
+        info_btn.visible = on

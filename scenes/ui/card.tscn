@@ -1,6 +1,30 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/card_view.gd" id="1_card"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_info_normal"]
+bg_color = Color(0.11, 0.15, 0.20, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.62, 0.76, 0.9)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_info_hover"]
+bg_color = Color(0.18, 0.34, 0.42, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.68, 0.86, 0.96, 1)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playglow"]
 expand_margin_left = 6.0
@@ -79,3 +103,27 @@ modulate = Color(1, 1, 1, 0)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_playglow")
+
+[node name="Overlay" type="Control" parent="."]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="InfoBtn" type="Button" parent="Overlay"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -26.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 26.0
+grow_horizontal = 0
+tooltip_text = "Lihat informasi kartu"
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.88, 0.94, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_info_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_info_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_info_normal")
+text = "i"
