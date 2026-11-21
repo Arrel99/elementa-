@@ -12,7 +12,7 @@ signal preview_pin(data: Dictionary, source: Node)
 
 const CARD_UI_SCENE := preload("res://scenes/ui/card.tscn")
 const CARD_BACK_SCRIPT := preload("res://scripts/ui/card_back_art.gd")
-const CARD_THICKNESS := 0.035
+const CARD_THICKNESS := 0.052
 const TEX_SIZE := Vector2i(240, 320)
 
 const COLOR_EDGE := Color(0.16, 0.19, 0.23, 1.0)
@@ -184,9 +184,9 @@ func _apply_geometry() -> void:
 	_back_mesh.position.y = -0.002
 
 	var glow_quad := QuadMesh.new()
-	glow_quad.size = Vector2(card_size.x + 0.12, card_size.y + 0.12)
+	glow_quad.size = Vector2(card_size.x + 0.24, card_size.y + 0.24)
 	_glow_mesh.mesh = glow_quad
-	_glow_mesh.position.y = 0.008
+	_glow_mesh.position.y = 0.012
 
 	var col: CollisionShape3D = _area.get_node("Shape")
 	var shape := col.shape as BoxShape3D
@@ -215,15 +215,15 @@ func _update_glow_visual() -> void:
 		if _play_tween != null and _play_tween.is_valid():
 			_play_tween.kill()
 		_glow_mesh.visible = true
-		_glow_mat.albedo_color = Color(COLOR_HOVER.r, COLOR_HOVER.g, COLOR_HOVER.b, 0.72)
+		_glow_mat.albedo_color = Color(COLOR_HOVER.r, COLOR_HOVER.g, COLOR_HOVER.b, 0.88)
 		return
 	if _playable:
 		_glow_mesh.visible = true
-		_glow_mat.albedo_color = Color(COLOR_PLAYABLE.r, COLOR_PLAYABLE.g, COLOR_PLAYABLE.b, 0.78)
+		_glow_mat.albedo_color = Color(COLOR_PLAYABLE.r, COLOR_PLAYABLE.g, COLOR_PLAYABLE.b, 0.92)
 		if _play_tween == null or not _play_tween.is_valid():
 			_play_tween = create_tween().set_loops()
-			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.35, 0.75).set_trans(Tween.TRANS_SINE)
-			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.80, 0.75).set_trans(Tween.TRANS_SINE)
+			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.45, 0.65).set_trans(Tween.TRANS_SINE)
+			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.95, 0.65).set_trans(Tween.TRANS_SINE)
 	else:
 		_glow_mesh.visible = false
 

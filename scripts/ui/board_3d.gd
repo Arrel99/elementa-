@@ -21,8 +21,8 @@ const SIZE_SPELL := Vector2(0.94, 1.26)
 const SIZE_TABLE := Vector2(0.80, 1.06)
 const SIZE_PILE := Vector2(0.88, 1.18)
 
-const CAM_BASE_POS := Vector3(0.45, 10.6, 8.2)
-const CAM_LOOK_TARGET := Vector3(0.45, -0.25, 0.15)
+const CAM_BASE_POS := Vector3(0.45, 9.3, 9.5)
+const CAM_LOOK_TARGET := Vector3(0.45, -0.35, 0.05)
 
 # Palet matte minimalis: Steel Blue (Pemain), Warm Terracotta (Lawan), Muted Sage (Tengah)
 const COLOR_ME_PAD := Color(0.112, 0.150, 0.198, 1.0)
@@ -85,11 +85,15 @@ func _process(delta: float) -> void:
 func _setup_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.085, 0.102, 0.125, 1.0)
+	env.background_color = Color(0.068, 0.082, 0.102, 1.0)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.86, 0.88, 0.92, 1.0)
-	env.ambient_light_energy = 0.82
-	env.glow_enabled = false         # tanpa bloom/neon
+	env.ambient_light_color = Color(0.78, 0.82, 0.88, 1.0)
+	env.ambient_light_energy = 0.52
+	env.glow_enabled = false         # tetap minimalis tanpa neon/bloom
+	env.ssao_enabled = true          # bayangan kontak 3D di setiap celah, bingkai, & tumpukan kartu
+	env.ssao_radius = 0.55
+	env.ssao_intensity = 1.85
+	env.ssao_power = 1.4
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 
 	var we := WorldEnvironment.new()
@@ -109,84 +113,113 @@ func _setup_camera() -> void:
 	_camera.current = true
 
 func _setup_lights() -> void:
-	# Cahaya studio utama netral dari atas dengan bayangan halus
+	# Cahaya studio utama bersudut miring (~42 derajat) supaya bingkai 3D, stand tengah,
+	# dan tumpukan deck memunculkan bayangan nyata yang tegas namun lembut
 	var sun := DirectionalLight3D.new()
 	sun.name = "KeyLight"
-	sun.light_color = Color(0.98, 0.97, 0.95, 1.0)
-	sun.light_energy = 1.15
+	sun.light_color = Color(0.99, 0.97, 0.94, 1.0)
+	sun.light_energy = 1.55
 	sun.shadow_enabled = true
-	sun.shadow_blur = 2.2
-	sun.rotation_degrees = Vector3(-62.0, 20.0, 0.0)
+	sun.shadow_blur = 1.6
+	sun.shadow_bias = 0.03
+	sun.rotation_degrees = Vector3(-42.0, 28.0, 0.0)
 	add_child(sun)
 
-	# Cahaya pengisi lembut agar kartu di sisi lawan tetap terbaca jelas
-	var fill := DirectionalLight3D.new()
-	fill.name = "FillLight"
-	fill.light_color = Color(0.88, 0.92, 0.98, 1.0)
-	fill.light_energy = 0.32
-	fill.shadow_enabled = false
-	fill.rotation_degrees = Vector3(-45.0, -145.0, 0.0)
-	add_child(fill)
+	# Cahaya rim/pengisi dari belakang-samping untuk menonjolkan tepian bevel 3D papan
+	var rim := DirectionalLight3D.new()
+	rim.name = "RimLight"
+	rim.light_color = Color(0.76, 0.86, 0.98, 1.0)
+	rim.light_energy = 0.48
+	rim.shadow_enabled = false
+	rim.rotation_degrees = Vector3(-30.0, -148.0, 0.0)
+	add_child(rim)
 
-# --- Meja & Playmat Minimalis ------------------------------------------------
+# --- Meja & Playmat 3D Berundak (Matte Arsitektural) -------------------------
 
 func _build_table() -> void:
 	var table := Node3D.new()
 	table.name = "Table"
 	add_child(table)
 
-	# Permukaan playmat matte penuh memenuhi layar (cetakan heksagon & grafik lab tipis)
+	# 1) Meja dasar luar lebih rendah (Y = -0.22) sehingga papan duel tampak timbul secara fisik
 	var mat_plane := MeshInstance3D.new()
 	mat_plane.name = "SciencePlaymat"
 	var pm := PlaneMesh.new()
-	pm.size = Vector2(40.0, 28.0)
+	pm.size = Vector2(44.0, 32.0)
 	mat_plane.mesh = pm
-	mat_plane.position = Vector3(0.0, -0.008, 0.0)
+	mat_plane.position = Vector3(0.0, -0.22, 0.0)
 	var sh_mat := ShaderMaterial.new()
 	sh_mat.shader = SCIENCE_SHADER
 	mat_plane.material_override = sh_mat
 	table.add_child(mat_plane)
 
-	# Panel wilayah LAWAN (matte terakota gelap)
-	var opp_pad := _make_box(Vector3(14.5, 0.012, 3.42), COLOR_OPP_PAD, 0.82, 0.04)
-	opp_pad.position = Vector3(-0.15, -0.004, -2.52)
+	# 2) Plinth / alas papan duel tebal yang timbul di atas meja & melempar bayangan
+	var plinth := _make_box(Vector3(15.3, 0.22, 9.2), Color(0.075, 0.090, 0.112, 1.0), 0.55, 0.28, true)
+	plinth.position = Vector3(-0.15, -0.11, -0.05)
+	table.add_child(plinth)
+
+	# 3) Bingkai tepi 3D menonjol (anodized matte steel) mengelilingi seluruh papan duel
+	var rim_col := Color(0.145, 0.172, 0.210, 1.0)
+	var rim_h := 0.14
+	var rim_w := 0.28
+	var rims := [
+		[Vector3(15.5, rim_h, rim_w), Vector3(-0.15, rim_h * 0.5 - 0.02, -4.55)],
+		[Vector3(15.5, rim_h, rim_w), Vector3(-0.15, rim_h * 0.5 - 0.02, 4.45)],
+		[Vector3(rim_w, rim_h, 9.28), Vector3(-7.76, rim_h * 0.5 - 0.02, -0.05)],
+		[Vector3(rim_w, rim_h, 9.28), Vector3(7.46, rim_h * 0.5 - 0.02, -0.05)],
+	]
+	for r in rims:
+		var m := _make_box(r[0], rim_col, 0.42, 0.42, true)
+		m.position = r[1]
+		table.add_child(m)
+
+	# 4) Blok penjepit sudut 3D (detail fisik meja laboratorium)
+	var corner_col := Color(0.20, 0.24, 0.29, 1.0)
+	for cx in [-7.76, 7.46]:
+		for cz in [-4.55, 4.45]:
+			var cb := _make_box(Vector3(0.46, 0.19, 0.46), corner_col, 0.36, 0.52, true)
+			cb.position = Vector3(cx, 0.075, cz)
+			table.add_child(cb)
+
+	# 5) Panel wilayah LAWAN (matte terakota gelap) & PEMAIN (matte biru baja gelap)
+	var opp_pad := _make_box(Vector3(14.7, 0.024, 3.55), COLOR_OPP_PAD, 0.80, 0.06, false)
+	opp_pad.position = Vector3(-0.15, -0.008, -2.56)
 	table.add_child(opp_pad)
 
-	# Panel wilayah PEMAIN (matte biru baja gelap)
-	var me_pad := _make_box(Vector3(14.5, 0.012, 3.42), COLOR_ME_PAD, 0.82, 0.04)
-	me_pad.position = Vector3(-0.15, -0.004, 2.42)
+	var me_pad := _make_box(Vector3(14.7, 0.024, 3.55), COLOR_ME_PAD, 0.80, 0.06, false)
+	me_pad.position = Vector3(-0.15, -0.008, 2.46)
 	table.add_child(me_pad)
 
-	# Panel ruang reaksi TENGAH (matte hijau sage gelap)
-	var mid_pad := _make_box(Vector3(14.5, 0.010, 1.44), COLOR_MID_PAD, 0.82, 0.04)
-	mid_pad.position = Vector3(-0.15, -0.003, -0.05)
-	table.add_child(mid_pad)
+	# 6) Jembatan & rak reaksi TENGAH yang sedikit terangkat (elevated 3D display strip)
+	var mid_bridge := _make_box(Vector3(14.7, 0.09, 1.44), COLOR_MID_PAD, 0.68, 0.14, true)
+	mid_bridge.position = Vector3(-0.15, 0.03, -0.05)
+	table.add_child(mid_bridge)
 
-	# Garis pembatas tipis matte (tanpa cahaya neon)
-	var rail_top := _make_flat_bar(Vector3(36.0, 0.008, 0.025), COLOR_OPP_LINE.lerp(COLOR_MID_LINE, 0.5))
-	rail_top.position = Vector3(0.0, 0.004, -0.78)
+	# Rel pembatas 3D berprofil di tepi jembatan tengah (melempar bayangan halus)
+	var rail_top := _make_box(Vector3(14.7, 0.055, 0.07), COLOR_OPP_LINE.lerp(COLOR_MID_LINE, 0.45), 0.45, 0.35, true)
+	rail_top.position = Vector3(-0.15, 0.065, -0.78)
 	table.add_child(rail_top)
 
-	var rail_bot := _make_flat_bar(Vector3(36.0, 0.008, 0.025), COLOR_ME_LINE.lerp(COLOR_MID_LINE, 0.5))
-	rail_bot.position = Vector3(0.0, 0.004, 0.68)
+	var rail_bot := _make_box(Vector3(14.7, 0.055, 0.07), COLOR_ME_LINE.lerp(COLOR_MID_LINE, 0.45), 0.45, 0.35, true)
+	rail_bot.position = Vector3(-0.15, 0.065, 0.68)
 	table.add_child(rail_bot)
 
-	# Garis tepi wilayah pemain & lawan (rapi, tipis)
-	var me_edge := _make_flat_bar(Vector3(14.5, 0.008, 0.03), COLOR_ME_LINE)
-	me_edge.position = Vector3(-0.15, 0.004, 4.16)
+	# Garis tepi wilayah pemain & lawan (bervolume 3D)
+	var me_edge := _make_box(Vector3(14.7, 0.04, 0.05), COLOR_ME_LINE, 0.45, 0.30, true)
+	me_edge.position = Vector3(-0.15, 0.02, 4.24)
 	table.add_child(me_edge)
 
-	var opp_edge := _make_flat_bar(Vector3(14.5, 0.008, 0.03), COLOR_OPP_LINE)
-	opp_edge.position = Vector3(-0.15, 0.004, -4.26)
+	var opp_edge := _make_box(Vector3(14.7, 0.04, 0.05), COLOR_OPP_LINE, 0.45, 0.30, true)
+	opp_edge.position = Vector3(-0.15, 0.02, -4.34)
 	table.add_child(opp_edge)
 
-	# Garis pemisah tipis antar kolom zona
+	# Sekat 3D tipis antar kolom zona (melempar bayangan lembut)
 	for x_div in [-3.18, 3.98, 5.28]:
-		var line_me := _make_flat_bar(Vector3(0.018, 0.008, 3.20), COLOR_ME_LINE * 0.72)
-		line_me.position = Vector3(x_div, 0.004, 2.42)
+		var line_me := _make_box(Vector3(0.042, 0.036, 3.32), COLOR_ME_LINE * 0.78, 0.50, 0.25, true)
+		line_me.position = Vector3(x_div, 0.018, 2.46)
 		table.add_child(line_me)
-		var line_opp := _make_flat_bar(Vector3(0.018, 0.008, 3.20), COLOR_OPP_LINE * 0.72)
-		line_opp.position = Vector3(x_div, 0.004, -2.52)
+		var line_opp := _make_box(Vector3(0.042, 0.036, 3.32), COLOR_OPP_LINE * 0.78, 0.50, 0.25, true)
+		line_opp.position = Vector3(x_div, 0.018, -2.56)
 		table.add_child(line_opp)
 
 # --- Slot Zona Minimalis -----------------------------------------------------
@@ -206,36 +239,38 @@ func _build_all_slots() -> void:
 		_add_slot_frame(slots, _pos_special(false, i), SIZE_SPECIAL, COLOR_OPP_SLOT_BG, COLOR_OPP_LINE)
 		_add_slot_frame(slots, _pos_special(true, i), SIZE_SPECIAL, COLOR_ME_SLOT_BG, COLOR_ME_LINE)
 
-	# Panel dasar Tabel Senyawa di tengah (sage matte)
-	var table_pad := _make_box(Vector3(9.4, 0.010, 1.24), COLOR_MID_SLOT_BG, 0.82, 0.04)
-	table_pad.position = Vector3(-0.35, 0.005, -0.05)
+	# Dudukan 3D rak Tabel Senyawa di atas jembatan tengah
+	var table_pad := _make_box(Vector3(9.4, 0.032, 1.24), COLOR_MID_SLOT_BG, 0.72, 0.10, true)
+	table_pad.position = Vector3(-0.35, 0.088, -0.05)
 	slots.add_child(table_pad)
 
 func _add_slot_frame(parent: Node3D, pos: Vector3, size: Vector2, pad_col: Color, border_col: Color) -> void:
 	var holder := Node3D.new()
-	holder.position = Vector3(pos.x, 0.006, pos.z)
+	holder.position = Vector3(pos.x, pos.y + 0.006, pos.z)
 	parent.add_child(holder)
 
-	# Alas slot cekung matte
-	var pad := _make_box(Vector3(size.x, 0.006, size.y), pad_col, 0.86, 0.03)
+	# Alas baki kartu cekung gelap matte
+	var pad := _make_box(Vector3(size.x, 0.010, size.y), pad_col.darkened(0.18), 0.88, 0.04, false)
 	holder.add_child(pad)
 
-	# 4 garis tepi tipis rapi (tanpa cahaya neon)
-	var t := 0.018
-	var top := _make_flat_bar(Vector3(size.x + t, 0.008, t), border_col * 0.85)
-	top.position = Vector3(0.0, 0.003, -size.y * 0.5)
+	# 4 dinding tepi baki 3D yang timbul & melempar bayangan lembut
+	var t := 0.032
+	var wall_h := 0.044
+	var wall_col := border_col * 0.88
+	var top := _make_box(Vector3(size.x + t, wall_h, t), wall_col, 0.48, 0.25, true)
+	top.position = Vector3(0.0, wall_h * 0.5, -size.y * 0.5)
 	holder.add_child(top)
 
-	var bot := _make_flat_bar(Vector3(size.x + t, 0.008, t), border_col * 0.85)
-	bot.position = Vector3(0.0, 0.003, size.y * 0.5)
+	var bot := _make_box(Vector3(size.x + t, wall_h, t), wall_col, 0.48, 0.25, true)
+	bot.position = Vector3(0.0, wall_h * 0.5, size.y * 0.5)
 	holder.add_child(bot)
 
-	var left := _make_flat_bar(Vector3(t, 0.008, size.y + t), border_col * 0.85)
-	left.position = Vector3(-size.x * 0.5, 0.003, 0.0)
+	var left := _make_box(Vector3(t, wall_h, size.y + t), wall_col, 0.48, 0.25, true)
+	left.position = Vector3(-size.x * 0.5, wall_h * 0.5, 0.0)
 	holder.add_child(left)
 
-	var right := _make_flat_bar(Vector3(t, 0.008, size.y + t), border_col * 0.85)
-	right.position = Vector3(size.x * 0.5, 0.003, 0.0)
+	var right := _make_box(Vector3(t, wall_h, size.y + t), wall_col, 0.48, 0.25, true)
+	right.position = Vector3(size.x * 0.5, wall_h * 0.5, 0.0)
 	holder.add_child(right)
 
 # --- Tumpukan Deck & Discard 3D ----------------------------------------------
@@ -247,7 +282,7 @@ func _build_piles() -> void:
 
 	_create_pile(root, "opp_deck", true, Vector3(5.95, 0.0, -3.05), Color(0.32, 0.16, 0.19), COLOR_OPP_SLOT_BG, COLOR_OPP_LINE, false)
 	_create_pile(root, "opp_discard", false, Vector3(5.95, 0.0, -1.62), Color(0.24, 0.15, 0.17), COLOR_OPP_SLOT_BG, COLOR_OPP_LINE, true)
-	_create_pile(root, "compound_deck", true, Vector3(5.95, 0.0, -0.05), Color(0.14, 0.28, 0.25), COLOR_MID_SLOT_BG, COLOR_MID_LINE, false)
+	_create_pile(root, "compound_deck", true, Vector3(5.95, 0.075, -0.05), Color(0.14, 0.28, 0.25), COLOR_MID_SLOT_BG, COLOR_MID_LINE, false)
 	_create_pile(root, "me_discard", false, Vector3(5.95, 0.0, 1.52), Color(0.15, 0.21, 0.28), COLOR_ME_SLOT_BG, COLOR_ME_LINE, true)
 	_create_pile(root, "me_deck", true, Vector3(5.95, 0.0, 2.95), Color(0.14, 0.24, 0.36), COLOR_ME_SLOT_BG, COLOR_ME_LINE, false)
 
@@ -330,18 +365,18 @@ func _update_pile(key: String, count: int) -> float:
 		mesh.visible = false
 		if top_face != null:
 			top_face.visible = false
-		lbl.position.y = 0.25
-		return 0.01
+		lbl.position.y = base_pos.y + 0.25
+		return base_pos.y + 0.01
 	mesh.visible = true
 	var h := clampf(float(count) * 0.011 + 0.04, 0.05, 0.68)
 	var box := mesh.mesh as BoxMesh
 	box.size.y = h
-	mesh.position = Vector3(base_pos.x, h * 0.5 + 0.01, base_pos.z)
+	mesh.position = Vector3(base_pos.x, base_pos.y + h * 0.5 + 0.01, base_pos.z)
 	if top_face != null:
 		top_face.visible = true
-		top_face.position = Vector3(base_pos.x, h + 0.014, base_pos.z)
-	lbl.position = Vector3(base_pos.x, h + 0.26, base_pos.z)
-	return h + 0.016
+		top_face.position = Vector3(base_pos.x, base_pos.y + h + 0.014, base_pos.z)
+	lbl.position = Vector3(base_pos.x, base_pos.y + h + 0.26, base_pos.z)
+	return base_pos.y + h + 0.016
 
 # --- Slot Spell Khusus (menggantikan slot senyawa terakhir) ------------------
 
@@ -650,12 +685,96 @@ func _animate_new_spells(v: Dictionary) -> void:
 	var me_idx := int(v.get("me_index", 0))
 	for i in range(_last_history_len, hist.size()):
 		var item: Dictionary = hist[i]
-		if String(item.get("action", "")) == "spell":
-			var cid := String(item.get("card_id", ""))
-			var is_me := (int(item.get("player", 0)) == me_idx)
-			if cid != "" and CardDB.cards.has(cid):
-				_play_spell_slot_anim(cid, is_me)
+		var act := String(item.get("action", ""))
+		var cid := String(item.get("card_id", ""))
+		var is_me := (int(item.get("player", 0)) == me_idx)
+		if act == "spell" and cid != "" and CardDB.cards.has(cid):
+			_play_spell_slot_anim(cid, is_me)
+		elif act == "synth" and cid != "" and CardDB.cards.has(cid):
+			var spec_arr: Array = v.me.special if is_me else v.opp.special
+			var target_slot := mini(maxi(spec_arr.size() - 1, 0), 7)
+			_play_synth_anim(cid, is_me, target_slot)
 	_last_history_len = hist.size()
+
+## Animasi sintesis 3D: 2 kartu unsur terbang bergabung di tengah, memunculkan cincin
+## reaksi heksagonal + partikel molekul, lalu senyawa baru meluncur masuk ke Zona Senyawa.
+func _play_synth_anim(result_id: String, is_me: bool, target_slot: int) -> void:
+	var d: CardData = CardDB.get_card(result_id)
+	var parts: Array = d.recipe if (d != null and d.recipe.size() == 2) else []
+	var merge_pos := Vector3(0.35, 1.85, 0.90 if is_me else -0.95)
+	var dest_pos := _pos_special(is_me, target_slot) + Vector3(0.0, 0.08, 0.0)
+	var base_z := 2.35 if is_me else -2.45
+
+	# 1) Dua kartu unsur melayang & menyatu di titik reaksi tengah
+	var starts := [Vector3(-1.1, 0.25, base_z), Vector3(1.8, 0.25, base_z)]
+	for k in mini(parts.size(), 2):
+		var part_card: Node3D = CARD_3D_SCRIPT.new()
+		_fx_root.add_child(part_card)
+		part_card.setup({"uid": -1, "id": String(parts[k]), "placed_turn": -1}, SIZE_BASE * 0.92, true, false, false)
+		part_card.position = starts[k]
+		var tw_p := part_card.create_tween()
+		tw_p.set_parallel(true)
+		tw_p.tween_property(part_card, "position", merge_pos, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		tw_p.tween_property(part_card, "rotation_degrees:y", 180.0 if k == 0 else -180.0, 0.34).set_trans(Tween.TRANS_CUBIC)
+		tw_p.tween_property(part_card, "scale", Vector3(0.25, 0.25, 0.25), 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		tw_p.chain().tween_callback(part_card.queue_free)
+
+	# 2) Cincin reaksi heksagonal + 6 titik ikatan molekul mengembang saat bergabung
+	var burst := Node3D.new()
+	burst.position = merge_pos
+	burst.scale = Vector3(0.05, 0.05, 0.05)
+	_fx_root.add_child(burst)
+
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.88
+	torus.outer_radius = 0.98
+	torus.rings = 6
+	torus.ring_segments = 8
+	ring.mesh = torus
+	var rmat := StandardMaterial3D.new()
+	rmat.albedo_color = Color(0.46, 0.88, 0.72, 0.92)
+	rmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	rmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring.material_override = rmat
+	burst.add_child(ring)
+
+	for i in 6:
+		var ang := float(i) * TAU / 6.0
+		var orb := MeshInstance3D.new()
+		var sp := SphereMesh.new()
+		sp.radius = 0.09
+		sp.height = 0.18
+		orb.mesh = sp
+		orb.material_override = rmat
+		orb.position = Vector3(cos(ang) * 0.94, 0.0, sin(ang) * 0.94)
+		burst.add_child(orb)
+
+	var tw_b := burst.create_tween()
+	tw_b.tween_interval(0.30)
+	tw_b.chain().set_parallel(true)
+	tw_b.tween_property(burst, "scale", Vector3(1.55, 1.55, 1.55), 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw_b.tween_property(burst, "rotation_degrees:y", 75.0, 0.36).set_trans(Tween.TRANS_CUBIC)
+	tw_b.tween_property(rmat, "albedo_color:a", 0.0, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw_b.chain().tween_callback(burst.queue_free)
+
+	# 3) Kartu Senyawa hasil sintesis muncul membesar, lalu meluncur masuk ke Zona Senyawa
+	var res_card: Node3D = CARD_3D_SCRIPT.new()
+	_fx_root.add_child(res_card)
+	res_card.setup({"uid": -1, "id": result_id, "placed_turn": -1}, SIZE_SPECIAL * 1.15, true, false, false)
+	res_card.position = merge_pos
+	res_card.rotation_degrees.x = 22.0
+	res_card.scale = Vector3(0.01, 0.01, 0.01)
+
+	var tw_r := res_card.create_tween()
+	tw_r.tween_interval(0.30)
+	tw_r.chain().tween_property(res_card, "scale", Vector3(1.22, 1.22, 1.22), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw_r.chain().tween_interval(0.35)
+	tw_r.chain().set_parallel(true)
+	tw_r.tween_property(res_card, "position", dest_pos, 0.32).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tw_r.tween_property(res_card, "rotation_degrees:x", 0.0, 0.32).set_trans(Tween.TRANS_CUBIC)
+	tw_r.tween_property(res_card, "scale", Vector3(0.86, 0.86, 0.86), 0.32).set_trans(Tween.TRANS_CUBIC)
+	tw_r.chain().tween_callback(res_card.queue_free)
 
 ## Animasi kartu Spell mendarat ke Slot Spell, tampil sebentar, lalu meluncur ke Discard Pile.
 func _play_spell_slot_anim(card_id: String, is_me: bool) -> void:
@@ -740,11 +859,11 @@ func _render_compound_table(ids: Array, my_base: Array, easy_mode: bool) -> void
 			tint = Color(0.68, 0.96, 0.72)
 		elif have == 1 and easy_mode:
 			tint = Color(0.98, 0.92, 0.65)
-		var pos := Vector3(start_x + float(i) * spacing, 0.04, -0.05)
+		var pos := Vector3(start_x + float(i) * spacing, 0.145, -0.05)
 		var card_node := _spawn_card(
 			{"uid": -1, "id": id, "placed_turn": -1},
 			pos, SIZE_TABLE, true, false, true, recipe_txt, tint, false, false, false)
-		card_node.rotation_degrees.x = 12.0   # sedikit menengadah ke arah kamera
+		card_node.rotation_degrees.x = 18.0   # menengadah jelas di atas rak 3D tengah
 
 func _spawn_card(card: Dictionary, pos: Vector3, size_3d: Vector2,
 		face_up: bool, can_click: bool, can_preview: bool,
@@ -771,11 +890,15 @@ func _spawn_card(card: Dictionary, pos: Vector3, size_3d: Vector2,
 
 # --- Bantuan Mesh & Material Matte -------------------------------------------
 
-func _make_box(size: Vector3, color: Color, roughness: float, metallic: float) -> MeshInstance3D:
+func _make_box(size: Vector3, color: Color, roughness: float, metallic: float,
+		cast_shadows := false) -> MeshInstance3D:
 	var m := MeshInstance3D.new()
 	var b := BoxMesh.new()
 	b.size = size
 	m.mesh = b
+	m.cast_shadow = (
+		GeometryInstance3D.SHADOW_CASTING_SETTING_ON if cast_shadows
+		else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.roughness = roughness
