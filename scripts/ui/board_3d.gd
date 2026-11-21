@@ -21,8 +21,9 @@ const SIZE_SPELL := Vector2(0.94, 1.26)
 const SIZE_TABLE := Vector2(0.80, 1.06)
 const SIZE_PILE := Vector2(0.88, 1.18)
 
-const CAM_BASE_POS := Vector3(0.45, 9.3, 9.5)
-const CAM_LOOK_TARGET := Vector3(0.45, -0.35, 0.05)
+const CAM_LOOK_TARGET := Vector3(0.55, -0.30, 0.05)
+const CAM_DIR := Vector3(0.0, 10.6, 9.8)       # sudut ~47°: terasa 3D tanpa memotong tepi papan
+const CAM_BASE_DIST := 15.8                    # jarak ideal untuk rasio 16:9 agar seluruh 4 sudut muat utuh
 
 # Palet matte minimalis: Steel Blue (Pemain), Warm Terracotta (Lawan), Muted Sage (Tengah)
 const COLOR_ME_PAD := Color(0.112, 0.150, 0.198, 1.0)
@@ -104,13 +105,31 @@ func _setup_environment() -> void:
 func _setup_camera() -> void:
 	_camera = Camera3D.new()
 	_camera.name = "Camera3D"
-	_camera.fov = 40.0
+	_camera.fov = 42.0
 	_camera.near = 0.2
-	_camera.far = 80.0
-	_camera.position = CAM_BASE_POS
+	_camera.far = 90.0
 	add_child(_camera)
-	_camera.look_at(CAM_LOOK_TARGET, Vector3.UP)
 	_camera.current = true
+	if get_viewport() != null:
+		get_viewport().size_changed.connect(_fit_camera_to_board)
+	_fit_camera_to_board()
+
+## Menyesuaikan jarak kamera otomatis mengikuti rasio layar (16:9, 16:10, ultrawide, dll.)
+## agar seluruh 4 sudut papan 3D + HUD tidak pernah terpotong.
+func _fit_camera_to_board() -> void:
+	if _camera == null:
+		return
+	var aspect := 16.0 / 9.0
+	var vp := get_viewport()
+	if vp != null:
+		var sz := vp.get_visible_rect().size
+		if sz.x > 1.0 and sz.y > 1.0:
+			aspect = sz.x / sz.y
+	var dist := CAM_BASE_DIST
+	if aspect < (16.0 / 9.0):
+		dist *= clampf((16.0 / 9.0) / aspect, 1.0, 1.45)
+	_camera.position = CAM_LOOK_TARGET + CAM_DIR.normalized() * dist
+	_camera.look_at(CAM_LOOK_TARGET, Vector3.UP)
 
 func _setup_lights() -> void:
 	# Cahaya studio utama bersudut miring (~42 derajat) supaya bingkai 3D, stand tengah,

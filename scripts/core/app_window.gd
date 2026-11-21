@@ -26,26 +26,13 @@ extends Node
 const MIN_WINDOW := Vector2i(960, 600)
 
 func _ready() -> void:
-    if DisplayServer.get_name() == "headless":
-        return
-    DisplayServer.window_set_min_size(MIN_WINDOW)
-    _fit_window()
+	if DisplayServer.get_name() == "headless":
+		return
+	DisplayServer.window_set_min_size(MIN_WINDOW)
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
-## Hanya memaksimalkan jendela bila memang tidak muat. Tidak pernah mengubah
-## ukuran atau memindahkan jendela sendiri.
-func _fit_window() -> void:
-    if DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_WINDOWED:
-        return
-
-    var screen := DisplayServer.window_get_current_screen()
-    if screen < 0 or screen >= DisplayServer.get_screen_count():
-        screen = DisplayServer.get_primary_screen()
-    var usable := DisplayServer.screen_get_usable_rect(screen)
-    var win := DisplayServer.window_get_size()
-
-    if win.x <= usable.size.x and win.y <= usable.size.y:
-        return   # sudah muat, jangan diubah sama sekali
-
-    print("[GameWindow] jendela %s lebih besar dari layar %s -> dimaksimalkan" % [
-        win, usable.size])
-    DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_F11:
+		var is_fs := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+		DisplayServer.window_set_mode(
+			DisplayServer.WINDOW_MODE_WINDOWED if is_fs else DisplayServer.WINDOW_MODE_FULLSCREEN)
