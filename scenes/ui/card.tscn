@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/card_view.gd" id="1_card"]
+[ext_resource type="Script" path="res://scripts/ui/card_back_art.gd" id="2_back"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_info_normal"]
 bg_color = Color(0.11, 0.15, 0.20, 0.92)
@@ -103,6 +104,12 @@ modulate = Color(1, 1, 1, 0)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_playglow")
+
+[node name="CardBack" type="Control" parent="."]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_back")
 
 [node name="Overlay" type="Control" parent="."]
 layout_mode = 2

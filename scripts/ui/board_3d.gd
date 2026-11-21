@@ -6,11 +6,13 @@ extends Node3D
 ## Dipasang di dalam SubViewport pada scenes/screens/game.tscn.
 
 signal card_clicked(uid: int)
+signal discard_clicked(is_me: bool)
 signal card_preview_hover(data: Dictionary, source: Node)
 signal card_preview_exit(source: Node)
 signal card_preview_pin(data: Dictionary, source: Node)
 
 const CARD_3D_SCRIPT := preload("res://scripts/ui/card_3d.gd")
+const CARD_BACK_SCRIPT := preload("res://scripts/ui/card_back_art.gd")
 const SCIENCE_SHADER := preload("res://shaders/science_board.gdshader")
 
 const SIZE_BASE := Vector2(1.04, 1.38)
@@ -48,6 +50,8 @@ var _piles: Dictionary = {}          # pile_key -> { "mesh": MeshInstance3D, "co
 var _shields: Dictionary = {}        # "me" | "opp" -> { "ring": MeshInstance3D, "label": Label3D }
 
 var _known_uids := {}                # uid yang sudah ada di papan pada render sebelumnya
+var _last_history_len := 0           # untuk mendeteksi kartu spell baru & animasi di slot spell
+var _fx_root: Node3D                 # wadah animasi kartu spell yang sedang aktif di slot spell
 var _time := 0.0
 
 func _ready() -> void:
@@ -63,6 +67,10 @@ func _ready() -> void:
 	_cards_root = Node3D.new()
 	_cards_root.name = "CardsRoot"
 	add_child(_cards_root)
+
+	_fx_root = Node3D.new()
+	_fx_root.name = "FxRoot"
+	add_child(_fx_root)
 
 func _process(delta: float) -> void:
 	_time += delta
@@ -237,14 +245,14 @@ func _build_piles() -> void:
 	root.name = "Piles"
 	add_child(root)
 
-	_create_pile(root, "opp_deck", "DECK", Vector3(5.95, 0.0, -3.05), Color(0.42, 0.22, 0.24), COLOR_OPP_SLOT_BG, COLOR_OPP_LINE)
-	_create_pile(root, "opp_discard", "BUANG", Vector3(5.95, 0.0, -1.62), Color(0.28, 0.18, 0.19), COLOR_OPP_SLOT_BG, COLOR_OPP_LINE)
-	_create_pile(root, "compound_deck", "SENYAWA", Vector3(5.95, 0.0, -0.05), Color(0.20, 0.36, 0.32), COLOR_MID_SLOT_BG, COLOR_MID_LINE)
-	_create_pile(root, "me_discard", "BUANG", Vector3(5.95, 0.0, 1.52), Color(0.18, 0.24, 0.32), COLOR_ME_SLOT_BG, COLOR_ME_LINE)
-	_create_pile(root, "me_deck", "DECK", Vector3(5.95, 0.0, 2.95), Color(0.21, 0.34, 0.46), COLOR_ME_SLOT_BG, COLOR_ME_LINE)
+	_create_pile(root, "opp_deck", true, Vector3(5.95, 0.0, -3.05), Color(0.32, 0.16, 0.19), COLOR_OPP_SLOT_BG, COLOR_OPP_LINE, false)
+	_create_pile(root, "opp_discard", false, Vector3(5.95, 0.0, -1.62), Color(0.24, 0.15, 0.17), COLOR_OPP_SLOT_BG, COLOR_OPP_LINE, true)
+	_create_pile(root, "compound_deck", true, Vector3(5.95, 0.0, -0.05), Color(0.14, 0.28, 0.25), COLOR_MID_SLOT_BG, COLOR_MID_LINE, false)
+	_create_pile(root, "me_discard", false, Vector3(5.95, 0.0, 1.52), Color(0.15, 0.21, 0.28), COLOR_ME_SLOT_BG, COLOR_ME_LINE, true)
+	_create_pile(root, "me_deck", true, Vector3(5.95, 0.0, 2.95), Color(0.14, 0.24, 0.36), COLOR_ME_SLOT_BG, COLOR_ME_LINE, false)
 
-func _create_pile(parent: Node3D, key: String, _title: String, pos: Vector3,
-		stack_col: Color, pad_col: Color, border_col: Color) -> void:
+func _create_pile(parent: Node3D, key: String, show_back_top: bool, pos: Vector3,
+		stack_col: Color, pad_col: Color, border_col: Color, clickable_discard: bool) -> void:
 	_add_slot_frame(parent, pos, SIZE_PILE, pad_col, border_col)
 
 	var stack := MeshInstance3D.new()
@@ -261,6 +269,41 @@ func _create_pile(parent: Node3D, key: String, _title: String, pos: Vector3,
 	stack.position = Vector3(pos.x, 0.125, pos.z)
 	parent.add_child(stack)
 
+	# Bagian atas tumpukan deck menampilkan desain belakang kartu Elementa (bukan kotak polos)
+	var top_face: MeshInstance3D = null
+	if show_back_top:
+		top_face = MeshInstance3D.new()
+		top_face.name = "TopFace_" + key
+		var q := QuadMesh.new()
+		q.size = Vector2(SIZE_PILE.x * 0.90, SIZE_PILE.y * 0.90)
+		top_face.mesh = q
+		top_face.rotation_degrees.x = -90.0
+		var tmat := StandardMaterial3D.new()
+		tmat.albedo_texture = CARD_BACK_SCRIPT.make_back_texture(stack_col, border_col)
+		tmat.roughness = 0.55
+		tmat.metallic = 0.08
+		top_face.material_override = tmat
+		top_face.position = Vector3(pos.x, 0.26, pos.z)
+		parent.add_child(top_face)
+
+	# Area klik pada Discard Pile supaya pemain bebas membuka isi discard keduanya
+	if clickable_discard:
+		var is_me_pile := (key == "me_discard")
+		var area := Area3D.new()
+		area.name = "Click_" + key
+		area.input_ray_pickable = true
+		area.position = Vector3(pos.x, 0.18, pos.z)
+		var col := CollisionShape3D.new()
+		var shp := BoxShape3D.new()
+		shp.size = Vector3(SIZE_PILE.x * 1.05, 0.55, SIZE_PILE.y * 1.05)
+		col.shape = shp
+		area.add_child(col)
+		area.input_event.connect(func(_cam, ev, _p, _n, _idx):
+			if ev is InputEventMouseButton and ev.pressed and (
+				ev.button_index == MOUSE_BUTTON_LEFT or ev.button_index == MOUSE_BUTTON_RIGHT):
+				discard_clicked.emit(is_me_pile))
+		parent.add_child(area)
+
 	var count_lbl := Label3D.new()
 	count_lbl.text = "0"
 	count_lbl.font_size = 52
@@ -272,26 +315,33 @@ func _create_pile(parent: Node3D, key: String, _title: String, pos: Vector3,
 	count_lbl.position = Vector3(pos.x, 0.55, pos.z)
 	parent.add_child(count_lbl)
 
-	_piles[key] = {"mesh": stack, "count": count_lbl, "base_pos": pos}
+	_piles[key] = {"mesh": stack, "top_face": top_face, "count": count_lbl, "base_pos": pos}
 
-func _update_pile(key: String, count: int) -> void:
+func _update_pile(key: String, count: int) -> float:
 	if not _piles.has(key):
-		return
+		return 0.01
 	var info: Dictionary = _piles[key]
 	var mesh: MeshInstance3D = info.mesh
+	var top_face: MeshInstance3D = info.top_face
 	var lbl: Label3D = info.count
 	var base_pos: Vector3 = info.base_pos
 	lbl.text = str(count)
 	if count <= 0:
 		mesh.visible = false
+		if top_face != null:
+			top_face.visible = false
 		lbl.position.y = 0.25
-		return
+		return 0.01
 	mesh.visible = true
 	var h := clampf(float(count) * 0.011 + 0.04, 0.05, 0.68)
 	var box := mesh.mesh as BoxMesh
 	box.size.y = h
 	mesh.position = Vector3(base_pos.x, h * 0.5 + 0.01, base_pos.z)
+	if top_face != null:
+		top_face.visible = true
+		top_face.position = Vector3(base_pos.x, h + 0.014, base_pos.z)
 	lbl.position = Vector3(base_pos.x, h + 0.26, base_pos.z)
+	return h + 0.016
 
 # --- Slot Spell Khusus (menggantikan slot senyawa terakhir) ------------------
 
@@ -553,16 +603,84 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 	# Tabel Senyawa di garis tengah (sedikit dimiringkan ke kamera agar resep mudah dibaca)
 	_render_compound_table(v.compound_pile, v.me.base, easy_mode)
 
-	# Tumpukan 3D & Perisai
+	# Tumpukan 3D & Perisai (kartu buang teratas tampil terbuka menghadap atas!)
 	_update_pile("opp_deck", int(v.opp.deck_count))
-	_update_pile("opp_discard", int(v.opp.discard_count))
+	var opp_disc_cards: Array = v.opp.get("discard", [])
+	var opp_disc_y := _update_pile("opp_discard", int(v.opp.discard_count))
+	if not opp_disc_cards.is_empty():
+		var top_opp: Dictionary = opp_disc_cards[opp_disc_cards.size() - 1]
+		var top_o_node := _spawn_discard_top_card(top_opp, Vector3(5.95, opp_disc_y, -1.62), false)
+		top_o_node.name = "TopOppDiscard"
+
 	_update_pile("compound_deck", v.compound_pile.size())
-	_update_pile("me_discard", v.me.discard.size())
+
+	var me_disc_cards: Array = v.me.get("discard", [])
+	var me_disc_y := _update_pile("me_discard", me_disc_cards.size())
+	if not me_disc_cards.is_empty():
+		var top_me: Dictionary = me_disc_cards[me_disc_cards.size() - 1]
+		var top_m_node := _spawn_discard_top_card(top_me, Vector3(5.95, me_disc_y, 1.52), true)
+		top_m_node.name = "TopMeDiscard"
+
 	_update_pile("me_deck", int(v.me.deck_count))
 	_update_shield("opp", bool(v.opp.shield))
 	_update_shield("me", bool(v.me.shield))
 
+	# Deteksi spell baru dari riwayat -> animasikan masuk ke Slot Spell lalu meluncur ke Discard
+	_animate_new_spells(v)
+
 	_known_uids = next_uids
+
+func _spawn_discard_top_card(card: Dictionary, pos: Vector3, is_me: bool) -> Node3D:
+	var c3d: Node3D = CARD_3D_SCRIPT.new()
+	_cards_root.add_child(c3d)
+	c3d.position = pos
+	c3d.setup(card, SIZE_PILE * 0.94, true, true, true, "", Color.WHITE, false, false)
+	c3d.preview_hover.connect(func(d, s): card_preview_hover.emit(d, s))
+	c3d.preview_exit.connect(func(s): card_preview_exit.emit(s))
+	# Klik kiri maupun klik kanan pada Discard Pile membuka daftar Discard Pile
+	c3d.clicked.connect(func(_u): discard_clicked.emit(is_me))
+	c3d.preview_pin.connect(func(_d, _s): discard_clicked.emit(is_me))
+	return c3d
+
+func _animate_new_spells(v: Dictionary) -> void:
+	var hist: Array = v.get("history", [])
+	if hist.size() < _last_history_len:
+		_last_history_len = hist.size()
+		return
+	var me_idx := int(v.get("me_index", 0))
+	for i in range(_last_history_len, hist.size()):
+		var item: Dictionary = hist[i]
+		if String(item.get("action", "")) == "spell":
+			var cid := String(item.get("card_id", ""))
+			var is_me := (int(item.get("player", 0)) == me_idx)
+			if cid != "" and CardDB.cards.has(cid):
+				_play_spell_slot_anim(cid, is_me)
+	_last_history_len = hist.size()
+
+## Animasi kartu Spell mendarat ke Slot Spell, tampil sebentar, lalu meluncur ke Discard Pile.
+func _play_spell_slot_anim(card_id: String, is_me: bool) -> void:
+	var slot_pos := Vector3(4.60, 0.03, 2.35 if is_me else -2.45)
+	var disc_pos := Vector3(5.95, 0.32, 1.52 if is_me else -1.62)
+	var c3d: Node3D = CARD_3D_SCRIPT.new()
+	_fx_root.add_child(c3d)
+	c3d.setup({"uid": -1, "id": card_id, "placed_turn": -1}, SIZE_SPELL, true, false, false)
+	c3d.position = slot_pos + Vector3(0.0, 1.25, 0.35 if is_me else -0.35)
+	c3d.rotation_degrees.x = -22.0 if is_me else 22.0
+	c3d.scale = Vector3(1.18, 1.18, 1.18)
+
+	var tw := c3d.create_tween()
+	# 1) Mendarat mantap ke Slot Spell
+	tw.set_parallel(true)
+	tw.tween_property(c3d, "position", slot_pos, 0.24).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.24).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c3d, "scale", Vector3(1.03, 1.03, 1.03), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# 2) Tahan sebentar agar pemain melihat kartu Spell terpasang & aktif
+	tw.chain().tween_interval(0.65)
+	# 3) Meluncur masuk ke tumpukan Discard Pile
+	tw.chain().set_parallel(true)
+	tw.tween_property(c3d, "position", disc_pos, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tw.tween_property(c3d, "scale", Vector3(0.75, 0.75, 0.75), 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tw.chain().tween_callback(c3d.queue_free)
 
 ## Menampilkan 2 kartu unsur dasar yang menempel di bawah/belakang kartu senyawa
 ## (mirip kartu Energy di belakang Pokemon TCG Live). Mengembalikan posisi Y untuk kartu utama di atasnya.
@@ -642,11 +760,13 @@ func _spawn_card(card: Dictionary, pos: Vector3, size_3d: Vector2,
 	if can_click:
 		c3d.clicked.connect(func(u): card_clicked.emit(u))
 	if animate_drop:
-		c3d.position.y = pos.y + 0.85
-		c3d.scale = Vector3(1.12, 1.12, 1.12)
+		c3d.position = pos + Vector3(0.0, 1.15, 0.22)
+		c3d.rotation_degrees.x = -18.0
+		c3d.scale = Vector3(1.16, 1.16, 1.16)
 		var tw := c3d.create_tween().set_parallel(true)
-		tw.tween_property(c3d, "position:y", pos.y, 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tw.tween_property(c3d, "scale", Vector3.ONE, 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(c3d, "position", pos, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(c3d, "scale", Vector3.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	return c3d
 
 # --- Bantuan Mesh & Material Matte -------------------------------------------

@@ -64,15 +64,19 @@ func _ready() -> void:
 	_layout()
 
 	board3d.card_clicked.connect(_on_card_clicked)
+	board3d.discard_clicked.connect(_on_discard_clicked)
 	board3d.card_preview_hover.connect(_on_preview_hover)
 	board3d.card_preview_exit.connect(_on_preview_exit)
 	board3d.card_preview_pin.connect(_on_preview_pin)
+
+	$DiscardDrawer.preview_hover.connect(_on_preview_hover)
+	$DiscardDrawer.preview_exit.connect(_on_preview_exit)
+	$DiscardDrawer.preview_pin.connect(_on_preview_pin)
 
 	$Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
 	$BattleLogBtn.pressed.connect(func(): $TurnHistory.toggle())
 	$InGameSettings.give_up_requested.connect($GiveUpDialog.popup_centered)
 	$InGameSettings.back_to_menu_requested.connect(_back_to_menu)
-	$TutorialCoach.open_full_guide_requested.connect(func(): $TutorialModal.open(0))
 	$GiveUpDialog.confirmed.connect(func(): submit({"type": "give_up"}))
 	$RevealPopup.resolved.connect(_on_spektrometer_resolved)
 	multiplayer.peer_disconnected.connect(_on_peer_gone)
@@ -292,8 +296,8 @@ func render(v: Dictionary) -> void:
 		"Deck %d | Buang %d  •  Lawan deck %d" % [
 			v.me.deck_count, v.me.discard.size(), v.opp.deck_count])
 	_sync_pending(v)
-	_sync_coach()
 	$TurnHistory.update_history(v, local_test)
+	$DiscardDrawer.refresh_if_open(v, local_test)
 	if v.winner != -2:
 		_show_result()
 
@@ -499,9 +503,9 @@ func _on_hand_drag_ended(uid: int, _card_node: Control, global_pos: Vector2) -> 
 		submit({"type": "place", "uid": uid, "slot": slot})
 		return
 
-	# Animasi singkat kartu masuk ke papan saat dilepas (kartu Spell)
+	# Kartu Spell: animasi masuk ke zona papan lalu eksekusi spell
 	var tw := ghost.create_tween().set_parallel(true)
-	tw.tween_property(ghost, "scale", Vector2(0.72, 0.72), 0.14).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tw.tween_property(ghost, "scale", Vector2(0.76, 0.76), 0.14).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	tw.tween_property(ghost, "modulate:a", 0.0, 0.14)
 	tw.finished.connect(ghost.queue_free)
 
@@ -559,7 +563,6 @@ func _execute_dropped_card(uid: int, global_pos: Vector2) -> void:
 				pending_spell_uid = uid
 				pending_zone = zone
 				_highlight_zone(zone)
-				_sync_coach()
 
 # --- Interaksi (bab 4.4 / 4.5) ---------------------------------------------
 
@@ -597,7 +600,6 @@ func _on_card_clicked(uid: int) -> void:
 				mode = Mode.PICK_SYNTH
 				synth_first = uid
 				_highlight_zone("my_base")
-				_sync_coach()
 		Mode.PICK_SYNTH:
 			if zone == "my_base" and uid != synth_first:
 				submit({"type": "synth", "a": synth_first, "b": uid})
@@ -632,7 +634,6 @@ func _click_hand(uid: int) -> void:
 			pending_spell_uid = uid
 			pending_zone = zone
 			_highlight_zone(zone)           # sorot zona target (efek, bukan teks)
-			_sync_coach()
 
 func _reset_mode() -> void:
 	mode = Mode.IDLE
@@ -640,14 +641,25 @@ func _reset_mode() -> void:
 	pending_spell_uid = -1
 	pending_zone = ""
 	_clear_glow()
-	_sync_coach()
 
-func _sync_coach() -> void:
-	if is_instance_valid($TutorialCoach) and not view.is_empty():
-		$TutorialCoach.update_state(view, int(mode), synth_first, pending_zone)
+func _on_discard_clicked(is_me: bool) -> void:
+	if view.is_empty():
+		return
+	var cards: Array = view.me.discard if is_me else view.opp.get("discard", [])
+	var me_idx := int(view.get("me_index", 0))
+	var owner_title := ""
+	if local_test:
+		var p := me_idx if is_me else (1 - me_idx)
+		owner_title = "Pemain %d" % (p + 1)
+	else:
+		owner_title = "Kamu" if is_me else "Lawan"
+	$DiscardDrawer.open(cards, owner_title, is_me)
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel"):
+		if $DiscardDrawer.is_open():
+			$DiscardDrawer.close()
+			return
 		if $TurnHistory.is_open():
 			$TurnHistory.close()
 			return

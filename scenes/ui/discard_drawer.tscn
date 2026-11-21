@@ -1,0 +1,180 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/discard_drawer.gd" id="1_discard"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_drawer"]
+bg_color = Color(0.085, 0.104, 0.130, 0.98)
+border_width_right = 1
+border_color = Color(0.24, 0.30, 0.38, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.18, 0.34, 0.54, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.08, 0.10, 0.13, 0.55)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.90, 0.95, 0.55)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_hover"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.08, 0.10, 0.13, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.9)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[node name="DiscardDrawer" type="CanvasLayer"]
+layer = 75
+script = ExtResource("1_discard")
+
+[node name="Root" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.45)
+
+[node name="Drawer" type="PanelContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 446.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_drawer")
+
+[node name="V" type="VBoxContainer" parent="Root/Drawer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="HeaderPanel" type="PanelContainer" parent="Root/Drawer/V"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_header")
+
+[node name="H" type="HBoxContainer" parent="Root/Drawer/V/HeaderPanel"]
+layout_mode = 2
+
+[node name="SpacerL" type="Control" parent="Root/Drawer/V/HeaderPanel/H"]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+
+[node name="Titles" type="VBoxContainer" parent="Root/Drawer/V/HeaderPanel/H"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="Owner" type="Label" parent="Root/Drawer/V/HeaderPanel/H/Titles"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.95, 0.98, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "Kamu"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="Root/Drawer/V/HeaderPanel/H/Titles"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "DISCARD PILE"
+horizontal_alignment = 1
+
+[node name="Close" type="Button" parent="Root/Drawer/V/HeaderPanel/H"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close_hover")
+text = "X"
+
+[node name="FilterBar" type="HBoxContainer" parent="Root/Drawer/V"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="All" type="Button" parent="Root/Drawer/V/FilterBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 13
+text = "SEMUA
+0"
+
+[node name="Basic" type="Button" parent="Root/Drawer/V/FilterBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 13
+text = "DASAR
+0"
+
+[node name="Spell" type="Button" parent="Root/Drawer/V/FilterBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 13
+text = "SPELL
+0"
+
+[node name="Special" type="Button" parent="Root/Drawer/V/FilterBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 13
+text = "SENYAWA
+0"
+
+[node name="Scroll" type="ScrollContainer" parent="Root/Drawer/V"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Grid" type="GridContainer" parent="Root/Drawer/V/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3
+
+[node name="Empty" type="Label" parent="Root/Drawer/V"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.58, 0.66, 0.74, 1)
+theme_override_font_sizes/font_size = 16
+text = "Discard pile masih kosong."
+horizontal_alignment = 1
+vertical_alignment = 1

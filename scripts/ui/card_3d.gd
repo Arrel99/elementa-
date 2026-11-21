@@ -11,6 +11,7 @@ signal preview_exit(source: Node)
 signal preview_pin(data: Dictionary, source: Node)
 
 const CARD_UI_SCENE := preload("res://scenes/ui/card.tscn")
+const CARD_BACK_SCRIPT := preload("res://scripts/ui/card_back_art.gd")
 const CARD_THICKNESS := 0.035
 const TEX_SIZE := Vector2i(240, 320)
 
@@ -33,8 +34,10 @@ var _tint := Color.WHITE
 var _visual: Node3D
 var _body_mesh: MeshInstance3D
 var _front_mesh: MeshInstance3D
+var _back_mesh: MeshInstance3D
 var _glow_mesh: MeshInstance3D
 var _front_mat: StandardMaterial3D
+var _back_mat: StandardMaterial3D
 var _glow_mat: StandardMaterial3D
 var _viewport: SubViewport
 var _card_ui: Node
@@ -72,6 +75,19 @@ func _build_nodes() -> void:
 	_front_mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 	_front_mesh.material_override = _front_mat
 	_visual.add_child(_front_mesh)
+
+	# Sisi belakang kartu 3D (bermotif Elementa agar kartu tidak flat dari belakang/bawah)
+	_back_mesh = MeshInstance3D.new()
+	_back_mesh.name = "Back"
+	_back_mesh.rotation_degrees.x = 90.0
+	_back_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_back_mat = StandardMaterial3D.new()
+	_back_mat.albedo_texture = CARD_BACK_SCRIPT.make_back_texture(
+		Color(0.11, 0.145, 0.195, 1.0), Color(0.38, 0.58, 0.76, 1.0))
+	_back_mat.roughness = 0.52
+	_back_mat.metallic = 0.08
+	_back_mesh.material_override = _back_mat
+	_visual.add_child(_back_mesh)
 
 	# Bingkai penanda bersih (status playable & hover, tanpa neon)
 	_glow_mesh = MeshInstance3D.new()
@@ -161,6 +177,11 @@ func _apply_geometry() -> void:
 	quad.size = Vector2(card_size.x * 0.96, card_size.y * 0.96)
 	_front_mesh.mesh = quad
 	_front_mesh.position.y = CARD_THICKNESS + 0.003
+
+	var back_quad := QuadMesh.new()
+	back_quad.size = Vector2(card_size.x * 0.96, card_size.y * 0.96)
+	_back_mesh.mesh = back_quad
+	_back_mesh.position.y = -0.002
 
 	var glow_quad := QuadMesh.new()
 	glow_quad.size = Vector2(card_size.x + 0.12, card_size.y + 0.12)

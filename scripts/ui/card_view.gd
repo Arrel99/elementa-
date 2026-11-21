@@ -75,13 +75,16 @@ func setup(card: Dictionary, face_up := true, can_click := true,
         CURSOR_POINTING_HAND if can_click else CURSOR_ARROW)
     tooltip_text = ""
 
+    var back_node: Control = get_node_or_null("CardBack")
     if not show_face:
-        $V/Name.text = "?" if id == "back" else id
-        $V/Info.text = ""
-        $V/Desc.text = ""
-        $V/Art.texture = null
+        $V.visible = false
+        if back_node != null:
+            back_node.visible = true
         refresh_hover()
         return
+    $V.visible = true
+    if back_node != null:
+        back_node.visible = false
     var data: CardData = CardDB.get_card(id)
     $V/Name.text = data.display_name
     $V/Info.text = "%s  (%d poin)" % [data.symbol, data.points]

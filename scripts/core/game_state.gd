@@ -577,6 +577,7 @@ func view_for(p: int) -> Dictionary:
 			"hand_backs": _backs(op.hand.size()), "base": op.base.duplicate(true),
 			"special": op.special.duplicate(true), "points": op.points,
 			"deck_count": op.deck.size(), "discard_count": op.discard.size(),
+			"discard": op.discard.duplicate(true),
 			"shield": op.shield, "time_left": float(op.get("time_left", MATCH_CLOCK_SECONDS)),
 		},
 	}
