@@ -258,43 +258,69 @@ func play_spell(p: int, uid: int, args: Dictionary) -> String:
 	var fn: Callable = _effects.get(data.spell_effect, Callable())
 	if fn.is_null():
 		return "Efek belum diimplementasi."
-	var spell_detail := _describe_spell_before(p, data, args)
+	var spell_subs := _build_spell_sub_moves(p, data, args)
 	var err: String = fn.call(p, args)
 	if err != "":
 		return err
 	pl.discard.append(_take(pl.hand, uid))
 	if not is_katalis:
 		spell_left -= 1           # Katalis tidak mengurangi jatah spell (bagian 8)
-	_record(p, "spell", c.id, spell_detail)
+	_record(p, "spell", c.id, "Memainkan Spell %s" % data.display_name, spell_subs)
 	return ""
 
-func _describe_spell_before(p: int, data: CardData, args: Dictionary) -> String:
+func _build_spell_sub_moves(p: int, data: CardData, args: Dictionary) -> Array:
 	var target_uid := int(args.get("target_uid", -1))
 	match data.spell_effect:
 		"katalis":
-			return "Katalis (+1 sintesis)"
+			return [{"text": "Jatah sintesis giliran ini +1", "card_id": ""}]
 		"perisai_inert":
-			return "Perisai Inert (aktif)"
+			return [{"text": "Perisai aktif hingga awal giliran berikutnya", "card_id": ""}]
 		"spektrometer":
-			return "Spektrometer (intip 3 kartu)"
+			return [{"text": "Mengintip 3 kartu teratas Deck...", "card_id": ""}]
 		"bilas":
 			var tc := _peek(players[p].base, target_uid)
-			return "Bilas -> %s" % (_card_label(tc.id) if not tc.is_empty() else "-")
+			var subs: Array = []
+			if not tc.is_empty():
+				subs.append({"text": "Membuang %s dari Zona Dasar ke Discard" % _card_label(tc.id), "card_id": tc.id})
+			subs.append({"text": "Menarik 1 kartu baru dari Deck", "card_id": ""})
+			return subs
 		"korosi":
 			if players[1 - p].shield:
-				return "Korosi (ditangkal Perisai)"
+				return [{"text": "Ditangkal oleh Perisai Inert lawan", "card_id": "perisai_inert"}]
 			var tc := _peek(players[1 - p].base, target_uid)
-			return "Korosi -> %s" % (_card_label(tc.id) if not tc.is_empty() else "-")
+			if not tc.is_empty():
+				return [{"text": "Menghancurkan %s di Zona Dasar lawan ke Discard" % _card_label(tc.id), "card_id": tc.id}]
+			return []
 		"elektrolisis":
 			var sc := _peek(players[p].special, target_uid)
-			return "Elektrolisis -> %s" % (_card_label(sc.id) if not sc.is_empty() else "-")
+			if not sc.is_empty():
+				var pts := CardDB.get_card(sc.id).points
+				var parts_txt := _parts_label(sc)
+				return [
+					{"text": "Memecah %s kembali ke Tabel Senyawa (-%d poin)" % [_card_label(sc.id), pts], "card_id": sc.id},
+					{"text": "Mengembalikan %s ke tangan" % parts_txt, "card_id": ""},
+				]
+			return []
 		"elektrolisis_paksa":
 			if players[1 - p].shield:
-				return "Elektrolisis Paksa (ditangkal Perisai)"
+				return [{"text": "Ditangkal oleh Perisai Inert lawan", "card_id": "perisai_inert"}]
 			var sc := _peek(players[1 - p].special, target_uid)
-			return "Elektrolisis Paksa -> %s" % (_card_label(sc.id) if not sc.is_empty() else "-")
+			if not sc.is_empty():
+				var pts := CardDB.get_card(sc.id).points
+				var parts_txt := _parts_label(sc)
+				return [
+					{"text": "Memecah %s milik lawan ke Tabel Senyawa (-%d poin)" % [_card_label(sc.id), pts], "card_id": sc.id},
+					{"text": "Mengembalikan %s ke tangan lawan" % parts_txt, "card_id": ""},
+				]
+			return []
 		_:
-			return data.display_name
+			return []
+
+func _parts_label(sc: Dictionary) -> String:
+	var parts: Array = sc.get("parts", [])
+	if parts.size() == 2:
+		return "%s & %s" % [_card_sym(String(parts[0])), _card_sym(String(parts[1]))]
+	return "2 unsur"
 
 func _card_label(id: String) -> String:
 	var d := CardDB.get_card(id)
@@ -306,13 +332,14 @@ func _card_sym(id: String) -> String:
 	var d := CardDB.get_card(id)
 	return d.symbol if (d != null and d.symbol != "") else id
 
-func _record(p: int, action: String, card_id: String, detail: String) -> void:
+func _record(p: int, action: String, card_id: String, detail: String, sub_moves: Array = []) -> void:
 	history.append({
 		"turn": turn_no,
 		"player": p,
 		"action": action,
 		"card_id": card_id,
 		"detail": detail,
+		"sub_moves": sub_moves,
 	})
 
 func _fx_katalis(p: int, _a: Dictionary) -> String:
@@ -402,6 +429,20 @@ func resolve_spektrometer(p: int, take_uid: int) -> String:
 	players[p].deck.shuffle()     # deck diacak lagi setelah efek selesai
 	players[p].hand.append(take)
 	pending = {}
+	# Perbarui sub-move pada entri Spektrometer terakhir (kartu pilihan hanya terlihat oleh pemiliknya)
+	for i in range(history.size() - 1, -1, -1):
+		var h: Dictionary = history[i]
+		if int(h.get("player", -1)) == p and String(h.get("card_id", "")) == "spektrometer":
+			h["sub_moves"] = [
+				{
+					"text": "Mengambil %s ke tangan" % _card_label(take.id),
+					"public_text": "Mengambil 1 kartu ke tangan",
+					"card_id": take.id,
+					"secret": true,
+				},
+				{"text": "Mengembalikan 2 kartu lain & mengacak Deck", "card_id": ""},
+			]
+			break
 	return ""
 
 # --- Predikat "bisa dimainkan" untuk UI (bagian 4.4) -------------------------
@@ -566,7 +607,7 @@ func view_for(p: int) -> Dictionary:
 		},
 		"pending": _pending_view(p),
 		"playable": playable_ids(p),
-		"history": history.duplicate(true),
+		"history": _history_view(p),
 		"me": {
 			"hand": me.hand.duplicate(true), "base": me.base.duplicate(true),
 			"special": me.special.duplicate(true), "points": me.points,
@@ -586,6 +627,24 @@ func _pending_view(p: int) -> Dictionary:
 	if pending.is_empty() or int(pending.get("to", -1)) != p:
 		return {}
 	return {"type": pending.get("type", ""), "cards": pending.get("cards", []).duplicate(true)}
+
+## Menyaring sub-move rahasia (seperti pilihan Spektrometer) agar lawan tidak melihat kartunya.
+func _history_view(p: int) -> Array:
+	var out: Array = []
+	for h in history:
+		var item: Dictionary = h.duplicate(true)
+		var owner_p := int(item.get("player", -1))
+		var subs: Array = item.get("sub_moves", [])
+		var clean_subs: Array = []
+		for s in subs:
+			var sc: Dictionary = s.duplicate(true)
+			if bool(sc.get("secret", false)) and owner_p != p:
+				sc["text"] = String(sc.get("public_text", "Memilih 1 kartu"))
+				sc["card_id"] = ""
+			clean_subs.append(sc)
+		item["sub_moves"] = clean_subs
+		out.append(item)
+	return out
 
 func _backs(n: int) -> Array:
 	var arr: Array = []

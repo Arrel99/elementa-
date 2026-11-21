@@ -1,41 +1,237 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/reveal_popup.gd" id="1_reveal"]
 
-[node name="RevealPopup" type="PopupPanel"]
-size = Vector2i(520, 400)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+content_margin_left = 28.0
+content_margin_top = 12.0
+content_margin_right = 28.0
+content_margin_bottom = 12.0
+bg_color = Color(0.14, 0.30, 0.46, 0.96)
+border_width_top = 2
+border_width_bottom = 2
+border_color = Color(0.38, 0.62, 0.82, 0.95)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
+bg_color = Color(0.12, 0.145, 0.18, 0.86)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.32, 0.40, 0.48, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_confirm"]
+content_margin_left = 24.0
+content_margin_top = 10.0
+content_margin_right = 24.0
+content_margin_bottom = 10.0
+bg_color = Color(0.18, 0.44, 0.42, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.36, 0.70, 0.64, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_confirm_hover"]
+content_margin_left = 24.0
+content_margin_top = 10.0
+content_margin_right = 24.0
+content_margin_bottom = 10.0
+bg_color = Color(0.22, 0.54, 0.50, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.48, 0.82, 0.76, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inspect"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.10, 0.13, 0.17, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.30, 0.38, 0.46, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inspect_hover"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.16, 0.21, 0.27, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.45, 0.62, 0.78, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_source_frame"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.16, 0.24, 0.34, 0.65)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.68, 0.85, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="RevealPopup" type="CanvasLayer"]
+layer = 85
+visible = false
 script = ExtResource("1_reveal")
 
-[node name="V" type="VBoxContainer" parent="."]
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = -16.0
-offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+mouse_filter = 2
 
-[node name="Title" type="Label" parent="V"]
-layout_mode = 2
-text = "Spektrometer: 3 kartu teratas deck kamu."
-autowrap_mode = 2
+[node name="Dim" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.04, 0.06, 0.74)
 
-[node name="Hint" type="Label" parent="V"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.760784, 0.827451, 0.890196, 1)
-text = "Klik 1 kartu untuk memilih (klik lagi untuk membatalkan). Lalu tekan Konfirmasi — deck lalu diacak kembali."
-autowrap_mode = 2
-
-[node name="Row" type="HBoxContainer" parent="V"]
-layout_mode = 2
-size_flags_vertical = 3
+[node name="Content" type="VBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
 alignment = 1
-theme_override_constants/separation = 18
 
-[node name="Confirm" type="Button" parent="V"]
-custom_minimum_size = Vector2(0, 48)
+[node name="TopStage" type="HBoxContainer" parent="Root/Content"]
 layout_mode = 2
-text = "Konfirmasi"
+theme_override_constants/separation = 56
+alignment = 1
+
+[node name="Row" type="HBoxContainer" parent="Root/Content/TopStage"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="SourceFrame" type="PanelContainer" parent="Root/Content/TopStage"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_source_frame")
+
+[node name="SourceSlot" type="CenterContainer" parent="Root/Content/TopStage/SourceFrame"]
+layout_mode = 2
+
+[node name="Banner" type="PanelContainer" parent="Root/Content"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="H" type="HBoxContainer" parent="Root/Content/Banner"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="SpacerL" type="Control" parent="Root/Content/Banner/H"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+
+[node name="Texts" type="VBoxContainer" parent="Root/Content/Banner/H"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="Root/Content/Banner/H/Texts"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.98, 1.0, 1)
+theme_override_font_sizes/font_size = 22
+text = "Pilih 1 kartu untuk diambil ke tanganmu."
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Root/Content/Banner/H/Texts"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.86, 0.94, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Sisa 2 kartu akan dikembalikan & diacak ke deck."
+horizontal_alignment = 1
+
+[node name="Confirm" type="Button" parent="Root/Content/Banner/H"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.96, 0.99, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_confirm")
+theme_override_styles/hover = SubResource("StyleBoxFlat_confirm_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_confirm")
+text = "KONFIRMASI"
+
+[node name="PickedWrap" type="CenterContainer" parent="Root/Content"]
+layout_mode = 2
+
+[node name="PickedSlot" type="PanelContainer" parent="Root/Content/PickedWrap"]
+custom_minimum_size = Vector2(166, 222)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Placeholder" type="Label" parent="Root/Content/PickedWrap/PickedSlot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.74, 0.85)
+theme_override_font_sizes/font_size = 16
+text = "PILIHAN"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CardHolder" type="CenterContainer" parent="Root/Content/PickedWrap/PickedSlot"]
+layout_mode = 2
+
+[node name="InspectBtn" type="Button" parent="Root"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 18.0
+offset_top = -24.0
+offset_right = 232.0
+offset_bottom = 24.0
+grow_vertical = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.94, 0.98, 1.0, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_inspect")
+theme_override_styles/hover = SubResource("StyleBoxFlat_inspect_hover")
+text = "LIHAT PAPAN"

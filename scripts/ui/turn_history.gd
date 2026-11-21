@@ -49,7 +49,10 @@ func update_history(v: Dictionary, is_local_test := false) -> void:
 	var me_idx := int(v.get("me_index", 0))
 	var entries: Array = v.get("history", [])
 
-	var sig := "%d:%d:%d:%s" % [turn_no, me_idx, entries.size(), str(is_local_test)]
+	var sub_total := 0
+	for it in entries:
+		sub_total += (it.get("sub_moves", []) as Array).size()
+	var sig := "%d:%d:%d:%d:%s" % [turn_no, me_idx, entries.size(), sub_total, str(is_local_test)]
 	if sig == _last_sig:
 		return
 	_last_sig = sig
@@ -144,7 +147,7 @@ func _make_action_row(item: Dictionary, accent_col: Color, show_divider: bool) -
 	var row_panel := PanelContainer.new()
 	var rsb := StyleBoxFlat.new()
 	rsb.content_margin_left = 10.0
-	rsb.content_margin_right = 12.0
+	rsb.content_margin_right = 10.0
 	rsb.content_margin_top = 8.0
 	rsb.content_margin_bottom = 8.0
 	rsb.bg_color = ROW_BG
@@ -153,9 +156,13 @@ func _make_action_row(item: Dictionary, accent_col: Color, show_divider: bool) -
 	rsb.border_color = accent_col if not show_divider else ROW_BORDER
 	row_panel.add_theme_stylebox_override("panel", rsb)
 
+	var outer_v := VBoxContainer.new()
+	outer_v.add_theme_constant_override("separation", 6)
+	row_panel.add_child(outer_v)
+
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 12)
-	row_panel.add_child(h)
+	outer_v.add_child(h)
 
 	# Miniatur kartu yang dimainkan (seperti di Battle Log Pokemon TCG Live)
 	var cid := String(item.get("card_id", ""))
@@ -175,6 +182,77 @@ func _make_action_row(item: Dictionary, accent_col: Color, show_divider: bool) -
 	detail_lbl.add_theme_color_override("font_color", Color(0.90, 0.93, 0.96, 1.0))
 	detail_lbl.add_theme_font_size_override("font_size", 14)
 	h.add_child(detail_lbl)
+
+	# Dropdown sub-move (khusus Spell / aksi yang memilih atau memengaruhi kartu)
+	var subs: Array = item.get("sub_moves", [])
+	if not subs.is_empty():
+		var toggle_btn := Button.new()
+		toggle_btn.text = "v"
+		toggle_btn.custom_minimum_size = Vector2(28, 28)
+		toggle_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		toggle_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		toggle_btn.tooltip_text = "Lihat detail efek"
+		var bsb := StyleBoxFlat.new()
+		bsb.bg_color = Color(0.11, 0.14, 0.18, 1.0)
+		bsb.border_width_left = 1
+		bsb.border_width_top = 1
+		bsb.border_width_right = 1
+		bsb.border_width_bottom = 1
+		bsb.border_color = Color(0.28, 0.35, 0.44, 1.0)
+		bsb.corner_radius_top_left = 5
+		bsb.corner_radius_top_right = 5
+		bsb.corner_radius_bottom_right = 5
+		bsb.corner_radius_bottom_left = 5
+		toggle_btn.add_theme_stylebox_override("normal", bsb)
+		var bsbh := bsb.duplicate() as StyleBoxFlat
+		bsbh.bg_color = Color(0.18, 0.23, 0.30, 1.0)
+		toggle_btn.add_theme_stylebox_override("hover", bsbh)
+		toggle_btn.add_theme_font_size_override("font_size", 13)
+		h.add_child(toggle_btn)
+
+		var sub_panel := PanelContainer.new()
+		sub_panel.visible = false
+		var ssb := StyleBoxFlat.new()
+		ssb.content_margin_left = 10.0
+		ssb.content_margin_right = 8.0
+		ssb.content_margin_top = 6.0
+		ssb.content_margin_bottom = 6.0
+		ssb.bg_color = Color(0.105, 0.125, 0.155, 1.0)
+		ssb.border_width_left = 2
+		ssb.border_color = accent_col.lightened(0.15)
+		ssb.corner_radius_top_right = 6
+		ssb.corner_radius_bottom_right = 6
+		sub_panel.add_theme_stylebox_override("panel", ssb)
+
+		var sub_v := VBoxContainer.new()
+		sub_v.add_theme_constant_override("separation", 6)
+		sub_panel.add_child(sub_v)
+
+		for s in subs:
+			var sr := HBoxContainer.new()
+			sr.add_theme_constant_override("separation", 8)
+			var scid := String(s.get("card_id", ""))
+			if scid != "" and CardDB.cards.has(scid):
+				var sthumb: Control = CARD_SCENE.instantiate()
+				sthumb.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				sthumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				sr.add_child(sthumb)
+				sthumb.fit(Vector2(34, 46))
+				sthumb.setup({"uid": -1, "id": scid, "placed_turn": -1}, true, false, false)
+			var slbl := Label.new()
+			slbl.text = "• " + String(s.get("text", ""))
+			slbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			slbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			slbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			slbl.add_theme_color_override("font_color", Color(0.76, 0.82, 0.89, 1.0))
+			slbl.add_theme_font_size_override("font_size", 12)
+			sr.add_child(slbl)
+			sub_v.add_child(sr)
+
+		outer_v.add_child(sub_panel)
+		toggle_btn.pressed.connect(func():
+			sub_panel.visible = not sub_panel.visible
+			toggle_btn.text = "^" if sub_panel.visible else "v")
 
 	return row_panel
 
