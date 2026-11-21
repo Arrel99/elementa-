@@ -1,30 +1,30 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/ui/toast.tscn" id="2_toast"]
 [ext_resource type="PackedScene" path="res://scenes/ui/reveal_popup.tscn" id="3_reveal"]
-[ext_resource type="Script" path="res://scripts/ui/octagon_button.gd" id="4_octagon"]
 [ext_resource type="PackedScene" path="res://scenes/ui/in_game_settings.tscn" id="5_settings"]
 [ext_resource type="PackedScene" path="res://scenes/ui/card_preview.tscn" id="6_preview"]
 [ext_resource type="Script" path="res://scripts/ui/board_3d.gd" id="7_board3d"]
 [ext_resource type="PackedScene" path="res://scenes/ui/tutorial_coach.tscn" id="8_coach"]
 [ext_resource type="PackedScene" path="res://scenes/ui/tutorial_modal.tscn" id="9_tutorial"]
 [ext_resource type="PackedScene" path="res://scenes/ui/turn_history.tscn" id="10_history"]
+[ext_resource type="Script" path="res://scripts/ui/hex_log_button.gd" id="11_hexbtn"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 8.0
-content_margin_top = 6.0
+content_margin_top = 8.0
 content_margin_right = 8.0
-content_margin_bottom = 6.0
-bg_color = Color(0.095, 0.115, 0.142, 0.92)
+content_margin_bottom = 8.0
+bg_color = Color(0.088, 0.106, 0.132, 0.94)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.24, 0.30, 0.37, 1)
+border_color = Color(0.24, 0.30, 0.38, 1)
 corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glow"]
@@ -40,36 +40,91 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge_opp"]
-content_margin_left = 8.0
+content_margin_left = 6.0
 content_margin_top = 4.0
-content_margin_right = 8.0
+content_margin_right = 6.0
 content_margin_bottom = 4.0
-bg_color = Color(0.46, 0.21, 0.23, 1)
+bg_color = Color(0.56, 0.20, 0.22, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.68, 0.38, 0.41, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+border_color = Color(0.78, 0.38, 0.40, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge_me"]
-content_margin_left = 8.0
+content_margin_left = 6.0
 content_margin_top = 4.0
-content_margin_right = 8.0
+content_margin_right = 6.0
 content_margin_bottom = 4.0
-bg_color = Color(0.18, 0.31, 0.45, 1)
+bg_color = Color(0.18, 0.34, 0.54, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.36, 0.54, 0.72, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+border_color = Color(0.38, 0.58, 0.80, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_end_normal"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.18, 0.44, 0.42, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.36, 0.68, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_end_hover"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.22, 0.53, 0.50, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.48, 0.80, 0.74, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_end_disabled"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.13, 0.16, 0.20, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.26, 0.32, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_turnbar"]
+bg_color = Color(0.92, 0.78, 0.24, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="Game" type="Control"]
 layout_mode = 3
@@ -127,41 +182,78 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 layout_mode = 1
 anchors_preset = 0
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 alignment = 1
 
+[node name="OppTurnBar" type="Panel" parent="Hud"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_turnbar")
+
+[node name="OppClock" type="Label" parent="Hud"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.97, 1)
+theme_override_font_sizes/font_size = 24
+text = "15:00"
+horizontal_alignment = 1
+
 [node name="OppBadge" type="PanelContainer" parent="Hud"]
-custom_minimum_size = Vector2(0, 92)
+custom_minimum_size = Vector2(0, 74)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge_opp")
 
 [node name="Num" type="Label" parent="Hud/OppBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 52
+theme_override_font_sizes/font_size = 46
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EndTurn" type="Control" parent="Hud"]
-custom_minimum_size = Vector2(0, 74)
+[node name="EndTurn" type="Button" parent="Hud"]
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
-script = ExtResource("4_octagon")
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.96, 0.99, 0.98, 1)
+theme_override_colors/font_disabled_color = Color(0.48, 0.54, 0.62, 0.9)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_end_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_end_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_end_normal")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_end_disabled")
 text = "END TURN"
-font_size = 26
 
 [node name="MyBadge" type="PanelContainer" parent="Hud"]
-custom_minimum_size = Vector2(0, 92)
+custom_minimum_size = Vector2(0, 74)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge_me")
 
 [node name="Num" type="Label" parent="Hud/MyBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 52
+theme_override_font_sizes/font_size = 46
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="MyClock" type="Label" parent="Hud"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.97, 1)
+theme_override_font_sizes/font_size = 24
+text = "15:00"
+horizontal_alignment = 1
+
+[node name="MyTurnBar" type="Panel" parent="Hud"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_turnbar")
+
+[node name="BattleLogBtn" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 0
+script = ExtResource("11_hexbtn")
 
 [node name="Toast" parent="." instance=ExtResource("2_toast")]
 

@@ -1,158 +1,132 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/turn_history.gd" id="1_history"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-content_margin_left = 12.0
-content_margin_top = 10.0
-content_margin_right = 12.0
-content_margin_bottom = 10.0
-bg_color = Color(0.095, 0.115, 0.142, 0.92)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_drawer"]
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+bg_color = Color(0.075, 0.092, 0.118, 0.98)
 border_width_left = 1
-border_width_top = 1
-border_width_right = 3
-border_width_bottom = 1
-border_color = Color(0.32, 0.54, 0.62, 0.9)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+border_color = Color(0.24, 0.30, 0.38, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
-content_margin_left = 8.0
-content_margin_top = 3.0
-content_margin_right = 8.0
-content_margin_bottom = 3.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_accent"]
+bg_color = Color(0.84, 0.72, 0.28, 0.95)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
 bg_color = Color(0.14, 0.17, 0.21, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.25, 0.31, 0.38, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+border_color = Color(0.28, 0.34, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
-content_margin_left = 8.0
-content_margin_top = 3.0
-content_margin_right = 8.0
-content_margin_bottom = 3.0
-bg_color = Color(0.18, 0.22, 0.27, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_hover"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.24, 0.16, 0.18, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.38, 0.50, 0.62, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.095, 0.115, 0.142, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.28, 0.36, 0.44, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
-bg_color = Color(0.26, 0.32, 0.39, 0.55)
+border_color = Color(0.58, 0.34, 0.38, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [node name="TurnHistory" type="CanvasLayer"]
-layer = 8
+layer = 75
 script = ExtResource("1_history")
 
 [node name="Root" type="Control" parent="."]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 
-[node name="Panel" type="PanelContainer" parent="Root"]
+[node name="Dim" type="ColorRect" parent="Root"]
 layout_mode = 1
-anchors_preset = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.52)
+
+[node name="Drawer" type="PanelContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 11
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -346.0
-offset_top = 14.0
-offset_right = -14.0
-offset_bottom = 246.0
+anchor_bottom = 1.0
+offset_left = -430.0
 grow_horizontal = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_drawer")
 
-[node name="V" type="VBoxContainer" parent="Root/Panel"]
+[node name="V" type="VBoxContainer" parent="Root/Drawer"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 12
 
-[node name="Top" type="HBoxContainer" parent="Root/Panel/V"]
+[node name="Header" type="HBoxContainer" parent="Root/Drawer/V"]
 layout_mode = 2
-theme_override_constants/separation = 6
 
-[node name="TurnLabel" type="Label" parent="Root/Panel/V/Top"]
+[node name="SpacerL" type="Control" parent="Root/Drawer/V/Header"]
+custom_minimum_size = Vector2(34, 0)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Root/Drawer/V/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.86, 0.92, 0.96, 1)
-theme_override_font_sizes/font_size = 13
-text = "GILIRAN 1"
+theme_override_colors/font_color = Color(0.95, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 22
+text = "BATTLE LOG"
+horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="HideBtn" type="Button" parent="Root/Panel/V/Top"]
+[node name="Close" type="Button" parent="Root/Drawer/V/Header"]
+custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "—"
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close_hover")
+text = "X"
 
-[node name="Sep" type="Panel" parent="Root/Panel/V"]
-custom_minimum_size = Vector2(0, 1)
+[node name="AccentLine" type="Panel" parent="Root/Drawer/V"]
+custom_minimum_size = Vector2(0, 2)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_sep")
+theme_override_styles/panel = SubResource("StyleBoxFlat_accent")
 
-[node name="Scroll" type="ScrollContainer" parent="Root/Panel/V"]
+[node name="Scroll" type="ScrollContainer" parent="Root/Drawer/V"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="List" type="VBoxContainer" parent="Root/Panel/V/Scroll"]
+[node name="List" type="VBoxContainer" parent="Root/Drawer/V/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 4
+theme_override_constants/separation = 12
 
-[node name="Empty" type="Label" parent="Root/Panel/V/Scroll/List"]
+[node name="Empty" type="Label" parent="Root/Drawer/V/Scroll/List"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.62, 0.70, 0.9)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 15
 text = "Belum ada kartu yang dimainkan."
+horizontal_alignment = 1
 autowrap_mode = 3
-
-[node name="CollapsedBtn" type="Button" parent="Root"]
-visible = false
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -224.0
-offset_top = 14.0
-offset_right = -14.0
-offset_bottom = 50.0
-grow_horizontal = 0
-mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "Giliran 1  •  Riwayat (0)"

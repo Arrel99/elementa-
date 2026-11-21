@@ -5,6 +5,8 @@ extends RefCounted
 ## Tidak tahu apa-apa soal Node/UI/tampilan.
 ## Semua aksi mengembalikan String: kosong = sukses, selain itu pesan error.
 
+const MATCH_CLOCK_SECONDS := 900.0  # 15 menit per pemain
+
 var players: Array = []          # 2 Dictionary pemain
 var compound_pile: Array = []    # id senyawa yang masih tersedia di Tabel Senyawa
 var current: int = 0             # index pemain aktif
@@ -54,6 +56,7 @@ func setup(rng_seed: int) -> void:
 		players.append({
 			"deck": _build_deck(), "hand": [], "base": [], "special": [],
 			"discard": [], "points": 0, "shield": false,
+			"time_left": MATCH_CLOCK_SECONDS,
 		})
 		for k in _rules().start_hand:
 			_draw_one(i)
@@ -519,6 +522,19 @@ func surrender(p: int) -> void:
 	winner = 1 - p
 	win_reason = "surrender"
 
+## Mengurangi sisa waktu pemain aktif (15 menit per pemain). Mengembalikan true jika waktu habis.
+func tick_clock(delta: float) -> bool:
+	if winner != -2 or players.size() < 2:
+		return false
+	var pl: Dictionary = players[current]
+	var t: float = maxf(0.0, float(pl.get("time_left", MATCH_CLOCK_SECONDS)) - delta)
+	pl["time_left"] = t
+	if t <= 0.0:
+		winner = 1 - current
+		win_reason = "timeout"
+		return true
+	return false
+
 ## Poin sama -> kartu spesial terbanyak menang; masih sama -> seri (bagian 9).
 func _finish_by_points() -> void:
 	var a: int = players[0].points
@@ -555,13 +571,13 @@ func view_for(p: int) -> Dictionary:
 			"hand": me.hand.duplicate(true), "base": me.base.duplicate(true),
 			"special": me.special.duplicate(true), "points": me.points,
 			"deck_count": me.deck.size(), "discard": me.discard.duplicate(true),
-			"shield": me.shield,
+			"shield": me.shield, "time_left": float(me.get("time_left", MATCH_CLOCK_SECONDS)),
 		},
 		"opp": {
 			"hand_backs": _backs(op.hand.size()), "base": op.base.duplicate(true),
 			"special": op.special.duplicate(true), "points": op.points,
 			"deck_count": op.deck.size(), "discard_count": op.discard.size(),
-			"shield": op.shield,
+			"shield": op.shield, "time_left": float(op.get("time_left", MATCH_CLOCK_SECONDS)),
 		},
 	}
 

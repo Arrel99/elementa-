@@ -9,8 +9,9 @@ const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 # Ukuran kartu tangan di overlay 2D (skala dasar untuk tinggi jendela 1080)
 const SIZE_HAND := Vector2(114, 152)
 const SIZE_OPP_HAND := Vector2(76, 102)
-const HUD_BASE_SIZE := Vector2(150, 320)
+const HUD_BASE_SIZE := Vector2(142, 376)
 const HUD_PAD := 8.0
+const LOG_BTN_SIZE := Vector2(66, 66)
 
 # efek spell -> zona tempat target dipilih; efek yang tidak ada di sini tanpa target
 const SPELL_TARGET := {
@@ -24,6 +25,7 @@ const REASON_TEXT := {
 	"surrender": "Salah satu pemain menyerah.",
 	"deck_out": "Deck salah satu pemain tidak cukup untuk menarik 2 kartu.",
 	"special_full": "Zona senyawa menyentuh 8 slot; hitungan mundur 3 giliran selesai.",
+	"timeout": "Waktu 15 menit salah satu pemain habis.",
 }
 
 enum Mode { IDLE, PICK_SYNTH, PICK_TARGET }
@@ -44,6 +46,8 @@ var _pending_key := ""          # penanda efek interaktif yang sedang ditampilka
 var _glow_tween: Tween          # denyut glow zona tangan
 var _playable := {}             # uid kartu yang bisa dimainkan (dari state)
 var _ui_scale := 1.0
+var _disp_me_time := 900.0      # tampilan jam lokal pemain (15:00)
+var _disp_opp_time := 900.0     # tampilan jam lokal lawan (15:00)
 
 # Status animasi drag & drop kartu dari tangan
 var _drag_uid := -1
@@ -65,6 +69,7 @@ func _ready() -> void:
 	board3d.card_preview_pin.connect(_on_preview_pin)
 
 	$Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
+	$BattleLogBtn.pressed.connect(func(): $TurnHistory.toggle())
 	$InGameSettings.give_up_requested.connect($GiveUpDialog.popup_centered)
 	$InGameSettings.back_to_menu_requested.connect(_back_to_menu)
 	$TutorialCoach.open_full_guide_requested.connect(func(): $TutorialModal.open(0))
@@ -98,6 +103,39 @@ func _process(delta: float) -> void:
 		_drag_ghost.rotation_degrees = lerpf(_drag_ghost.rotation_degrees, tilt, clampf(delta * 14.0, 0.0, 1.0))
 		_drag_last_pos = _drag_target_pos
 
+	# Sistem jam catur 15 menit per pemain (hanya berjalan untuk pemain aktif)
+	if not view.is_empty() and int(view.winner) == -2:
+		if state != null and (local_test or multiplayer.is_server()):
+			if state.tick_clock(delta):
+				_broadcast()
+				return
+			var my_i := state.current if local_test else 0
+			_disp_me_time = float(state.players[my_i].time_left)
+			_disp_opp_time = float(state.players[1 - my_i].time_left)
+		else:
+			if bool(view.my_turn):
+				_disp_me_time = maxf(0.0, _disp_me_time - delta)
+			else:
+				_disp_opp_time = maxf(0.0, _disp_opp_time - delta)
+		_refresh_clock_labels()
+
+func _refresh_clock_labels() -> void:
+	$Hud/MyClock.text = _fmt_clock(_disp_me_time)
+	$Hud/OppClock.text = _fmt_clock(_disp_opp_time)
+	$Hud/MyClock.add_theme_color_override("font_color", _clock_color(_disp_me_time))
+	$Hud/OppClock.add_theme_color_override("font_color", _clock_color(_disp_opp_time))
+
+func _fmt_clock(sec: float) -> String:
+	var s := maxi(0, int(ceil(sec)))
+	return "%02d:%02d" % [s / 60, s % 60]
+
+func _clock_color(sec: float) -> Color:
+	if sec <= 30.0:
+		return Color(0.96, 0.42, 0.44, 1.0)
+	if sec <= 120.0:
+		return Color(0.96, 0.78, 0.36, 1.0)
+	return Color(0.92, 0.94, 0.97, 1.0)
+
 func start_as_host() -> void:
 	state = GameState.new()
 	state.setup(randi())
@@ -111,11 +149,13 @@ func _layout() -> void:
 	var h := maxf(size.y, 240.0)
 	_ui_scale = clampf(minf(w / 1920.0, h / 1080.0), 0.35, 1.35)
 
-	# HUD di sisi kanan tengah (Skor Lawan + END TURN + Skor Kamu)
+	# HUD di sisi kanan tengah (Jam & Skor Lawan + END TURN + Skor & Jam Kamu)
 	var hud_w := HUD_BASE_SIZE.x * _ui_scale
 	var hud_h := HUD_BASE_SIZE.y * _ui_scale
-	var hud_x := w - hud_w - 18.0 * _ui_scale
-	var hud_y := (h - hud_h) * 0.5
+	var log_h := LOG_BTN_SIZE.y * _ui_scale
+	var total_h := hud_h + 12.0 * _ui_scale + log_h
+	var hud_x := w - hud_w - 14.0 * _ui_scale
+	var hud_y := (h - total_h) * 0.5
 
 	var hudbg: Control = $HudBg
 	hudbg.position = Vector2(hud_x, hud_y)
@@ -126,6 +166,14 @@ func _layout() -> void:
 	hud.position = Vector2(hud_x + HUD_PAD * _ui_scale, hud_y + HUD_PAD * _ui_scale)
 	hud.size = HUD_BASE_SIZE - Vector2(HUD_PAD, HUD_PAD) * 2.0
 	hud.scale = Vector2(_ui_scale, _ui_scale)
+
+	# Tombol heksagonal Battle Log tepat di bawah panel skor & jam
+	var log_btn: Control = $BattleLogBtn
+	log_btn.size = LOG_BTN_SIZE
+	log_btn.scale = Vector2(_ui_scale, _ui_scale)
+	log_btn.position = Vector2(
+		hud_x + (hud_w - LOG_BTN_SIZE.x * _ui_scale) * 0.5,
+		hud_y + hud_h + 12.0 * _ui_scale)
 
 	# Dock tangan pemain (bawah tengah, sedikit melengkung ala Yu-Gi-Oh! / Pokemon)
 	var me_w := minf(w * 0.72, 1080.0 * _ui_scale)
@@ -231,6 +279,11 @@ func render(v: Dictionary) -> void:
 	$Hud/OppBadge/Num.text = str(v.opp.points)
 	$Hud/MyBadge/Num.text = str(v.me.points)
 	$Hud/EndTurn.disabled = (not v.my_turn) or v.winner != -2 or over
+	$Hud/MyTurnBar.modulate.a = 1.0 if (v.my_turn and v.winner == -2) else 0.14
+	$Hud/OppTurnBar.modulate.a = 1.0 if ((not v.my_turn) and v.winner == -2) else 0.14
+	_disp_me_time = float(v.me.get("time_left", GameState.MATCH_CLOCK_SECONDS))
+	_disp_opp_time = float(v.opp.get("time_left", GameState.MATCH_CLOCK_SECONDS))
+	_refresh_clock_labels()
 	if over and v.my_turn and v.winner == -2:
 		_highlight_zone("hand")     # tangan melebihi batas: sorot zona tangan
 	$InGameSettings.set_status(
@@ -595,6 +648,9 @@ func _sync_coach() -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel"):
+		if $TurnHistory.is_open():
+			$TurnHistory.close()
+			return
 		if $TutorialModal.is_open():
 			$TutorialModal.close()
 			return
