@@ -13,7 +13,7 @@ const STEPS := [
 		"bullets": [
 			"Wilayah BIRU (bawah) adalah areamu; wilayah MERAH (atas) adalah area lawan.",
 			"Garis HIJAU di tengah adalah Tabel Reaksi Senyawa yang menunjukkan resep senyawa tersedia.",
-			"Cara Menang: (1) Poin terbanyak saat deck habis, (2) Zona Senyawa mencapai 8 slot lalu hitungan mundur 3 giliran selesai, atau (3) Lawan menyerah."
+			"Cara Menang: (1) Isi 8 senyawa untuk langsung menang, (2) Lawan kehabisan deck (Deck Out) saat menarik kartu, (3) Waktu 15 menit lawan habis, atau (4) Lawan menyerah."
 		],
 		"tip": "Tips: Kamu bisa memainkan berapa pun kartu di tangan tanpa batas maksimal kartu tangan."
 	},

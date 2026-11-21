@@ -23,8 +23,8 @@ const SPELL_TARGET := {
 
 const REASON_TEXT := {
 	"surrender": "Salah satu pemain menyerah.",
-	"deck_out": "Deck salah satu pemain tidak cukup untuk menarik 2 kartu.",
-	"special_full": "Zona senyawa menyentuh 8 slot; hitungan mundur 3 giliran selesai.",
+	"deck_out": "Salah satu pemain tidak bisa menarik kartu dari deck (Deck Out).",
+	"special_full": "Salah satu pemain berhasil mengisi 8 senyawa dan langsung menang!",
 	"timeout": "Waktu 15 menit salah satu pemain habis.",
 }
 

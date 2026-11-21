@@ -92,16 +92,14 @@ func _draw_one(p: int) -> Dictionary:
 	pl.hand.append(c)
 	return c
 
-## Fase menarik kartu (bagian 6). Bila sisa deck kurang dari draw_per_turn,
-## pemain menarik seluruh sisanya lalu permainan berakhir (bagian 9).
+## Fase menarik kartu (bagian 6). Bila pemain tidak bisa menarik kartu yang
+## dibutuhkan dari deck, pemain tersebut langsung deck out dan otomatis kalah.
 func _draw_phase(p: int) -> void:
 	var pl = players[p]
 	var want: int = _rules().draw_per_turn
 	if pl.deck.size() < want:
-		while not pl.deck.is_empty():
-			_draw_one(p)
+		winner = 1 - p
 		win_reason = "deck_out"
-		_finish_by_points()
 		return
 	for i in want:
 		_draw_one(p)
@@ -351,6 +349,10 @@ func _fx_bilas(p: int, a: Dictionary) -> String:
 	if c.is_empty():
 		return "Pilih kartu di zona dasarmu."
 	players[p].discard.append(c)
+	if players[p].deck.is_empty():
+		winner = 1 - p
+		win_reason = "deck_out"
+		return ""
 	_draw_one(p)                  # lalu tarik 1 kartu baru (bagian 8)
 	return ""
 
@@ -532,10 +534,11 @@ func playable_ids(p: int) -> Dictionary:
 
 # --- Giliran dan kondisi menang (bagian 6 & 9) ------------------------------
 
-## Zona spesial menyentuh ambang: mulai hitungan mundur sekali saja (bagian 9.3).
+## Zona spesial mencapai 8 senyawa: pemain tersebut langsung menang!
 func _check_special_trigger(p: int) -> void:
-	if countdown < 0 and players[p].special.size() >= _rules().special_win_threshold:
-		countdown = _rules().special_win_countdown
+	if winner == -2 and players[p].special.size() >= _rules().special_win_threshold:
+		winner = p
+		win_reason = "special_full"
 
 func end_turn(p: int) -> String:
 	var g := _turn_guard(p)

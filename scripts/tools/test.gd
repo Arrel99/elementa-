@@ -220,28 +220,31 @@ func _ready() -> void:
 	g15.surrender(0)
 	_check(g15.winner == 1 and g15.win_reason == "surrender", "Menyerah menentukan pemenang")
 
-	# --- Deck habis (bagian 9.2) ---
+	# --- Deck habis (Deck Out -> otomatis kalah) ---
 	var g16 := GameState.new()
 	g16.setup(61)
 	g16.current = 0
+	g16.players[0].points = 99
 	while g16.players[0].deck.size() > 1:
 		g16.players[0].deck.pop_back()
 	g16._draw_phase(0)
-	_check(g16.win_reason == "deck_out" and g16.winner != -2, "Deck kurang dari 2 mengakhiri permainan")
+	_check(g16.win_reason == "deck_out" and g16.winner == 1, "Deck out membuat pemain yang gagal draw otomatis kalah")
 
-	# --- Hitungan mundur zona spesial (bagian 9.3) ---
+	# --- 8 Senyawa -> langsung menang ---
 	var g17 := GameState.new()
 	g17.setup(71)
 	g17.current = 0
 	for i in 8:
 		_force_special(g17, 0, "H2O", ["H", "O"])
 	g17._check_special_trigger(0)
-	_check(g17.countdown == 3, "Menyentuh 8 slot memicu hitungan mundur 3")
-	_end(g17)
-	_end(g17)
-	_check(g17.winner == -2, "Permainan belum selesai di tengah hitungan mundur")
-	_end(g17)
-	_check(g17.win_reason == "special_full" and g17.winner != -2, "Hitungan mundur selesai mengakhiri permainan")
+	_check(g17.win_reason == "special_full" and g17.winner == 0, "Mengisi 8 senyawa langsung memenangkan pemain")
+
+	# --- Waktu 15 menit habis -> pemain aktif otomatis kalah ---
+	var g17b := GameState.new()
+	g17b.setup(72)
+	g17b.current = 0
+	_check(g17b.tick_clock(900.0), "Waktu 15 menit habis mengakhiri permainan")
+	_check(g17b.win_reason == "timeout" and g17b.winner == 1, "Pemain yang kehabisan waktu otomatis kalah")
 
 	# --- Seri ditentukan oleh jumlah kartu spesial (bagian 9) ---
 	var g18 := GameState.new()
