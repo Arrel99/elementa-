@@ -79,8 +79,17 @@ func _ready() -> void:
 	var bb := _force_base(g3, 0, "O")
 	_check(g3.synthesize(0, a.uid, bb.uid) == "", "Sintesis H + O sukses")
 	_check(g3.players[0].special.size() == 1, "Senyawa masuk zona spesial")
-	_check(g3.players[0].points == 6, "Poin bertambah 6 (H2O)")
+	_check(g3.players[0].points == 8, "Poin H (1) + O (1) + H2O (6) = 8")
 	_check(g3.compound_pile.count("H2O") == 1, "Sintesis mengambil 1 salinan saja (sisa 1)")
+
+	# Contoh Na + Cl -> NaCl: poin Na (3) + Cl (3) tetap dihitung bersama NaCl (10) = 16
+	var g3_nacl := GameState.new()
+	g3_nacl.setup(1001)
+	g3_nacl.current = 0
+	var na_c := _force_base(g3_nacl, 0, "Na")
+	var cl_c := _force_base(g3_nacl, 0, "Cl")
+	_check(g3_nacl.synthesize(0, na_c.uid, cl_c.uid) == "", "Sintesis Na + Cl -> NaCl sukses")
+	_check(g3_nacl.players[0].points == 16, "Poin Na (3) + Cl (3) + NaCl (10) = 16")
 
 	# Dua salinan tiap senyawa: pemain lain masih bisa menyintesis yang sama
 	var g3b := GameState.new()

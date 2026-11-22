@@ -335,7 +335,7 @@ func _build_spell_sub_moves(p: int, data: CardData, args: Dictionary) -> Array:
 		"elektrolisis":
 			var sc := _peek(players[p].special, target_uid)
 			if not sc.is_empty():
-				var pts := CardDB.get_card(sc.id).points
+				var pts := _special_stack_points(sc)
 				var parts_txt := _parts_label(sc)
 				return [
 					{"text": "Memecah %s kembali ke Tabel Senyawa (-%d poin)" % [_card_label(sc.id), pts], "card_id": sc.id},
@@ -347,7 +347,7 @@ func _build_spell_sub_moves(p: int, data: CardData, args: Dictionary) -> Array:
 				return [{"text": "Ditangkal oleh Perisai Inert lawan", "card_id": "perisai_inert"}]
 			var sc := _peek(players[1 - p].special, target_uid)
 			if not sc.is_empty():
-				var pts := CardDB.get_card(sc.id).points
+				var pts := _special_stack_points(sc)
 				var parts_txt := _parts_label(sc)
 				return [
 					{"text": "Memecah %s milik lawan ke Tabel Senyawa (-%d poin)" % [_card_label(sc.id), pts], "card_id": sc.id},
@@ -437,8 +437,27 @@ func _fx_elektrolisis_paksa(p: int, a: Dictionary) -> String:
 	_recalc_points(1 - p)
 	return ""
 
+## Menghitung total poin satu tumpukan senyawa = poin kartu Senyawa + poin 2 unsur dasar yang menempel.
+func _special_stack_points(sc: Dictionary) -> int:
+	var pts := 0
+	var d: CardData = CardDB.get_card(String(sc.get("id", "")))
+	if d != null:
+		pts += d.points
+	var attached: Array = sc.get("attached", [])
+	if not attached.is_empty():
+		for ac in attached:
+			var ad: CardData = CardDB.get_card(String(ac.get("id", "")))
+			if ad != null:
+				pts += ad.points
+	else:
+		for part_id in sc.get("parts", []):
+			var pd: CardData = CardDB.get_card(String(part_id))
+			if pd != null:
+				pts += pd.points
+	return pts
+
 ## Menghitung ulang total poin pemain = jumlah poin semua kartu Dasar (Zona Dasar)
-## + semua kartu Senyawa (Zona Senyawa) yang sedang berada di papan.
+## + semua kartu Senyawa (Zona Senyawa) beserta 2 kartu Dasar yang menempel di belakangnya.
 func _recalc_points(p: int) -> void:
 	var pl = players[p]
 	var total := 0
@@ -447,9 +466,7 @@ func _recalc_points(p: int) -> void:
 		if d != null:
 			total += d.points
 	for c in pl.special:
-		var d: CardData = CardDB.get_card(String(c.get("id", "")))
-		if d != null:
-			total += d.points
+		total += _special_stack_points(c)
 	pl.points = total
 
 ## Mengembalikan 2 kartu dasar asli yang menempel di belakang senyawa ke tangan
