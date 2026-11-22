@@ -73,9 +73,10 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="VolCap" type="Label" parent="Slide/V/VolRow"]
+custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 size_flags_vertical = 4
-text = "Volume"
+text = "Master"
 
 [node name="Volume" type="HSlider" parent="Slide/V/VolRow"]
 layout_mode = 2
@@ -84,6 +85,42 @@ size_flags_vertical = 4
 max_value = 1.0
 step = 0.05
 value = 0.8
+
+[node name="MusicRow" type="HBoxContainer" parent="Slide/V"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MusicCap" type="Label" parent="Slide/V/MusicRow"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Musik"
+
+[node name="MusicVolume" type="HSlider" parent="Slide/V/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 0.6
+
+[node name="SfxRow" type="HBoxContainer" parent="Slide/V"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SfxCap" type="Label" parent="Slide/V/SfxRow"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "SFX"
+
+[node name="SfxVolume" type="HSlider" parent="Slide/V/SfxRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 0.85
 
 [node name="Spacer" type="Control" parent="Slide/V"]
 layout_mode = 2

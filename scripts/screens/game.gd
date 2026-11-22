@@ -46,6 +46,8 @@ var _pending_key := ""          # penanda efek interaktif yang sedang ditampilka
 var _glow_tween: Tween          # denyut glow zona tangan
 var _playable := {}             # uid kartu yang bisa dimainkan (dari state)
 var _prev_hand_uids := {}       # uid kartu di tangan sebelumnya (untuk animasi masuk kartu baru)
+var _last_turn_no := 0          # melacak pergantian giliran untuk bunyi turn_start
+var _result_sfx_played := false # mencegah bunyi hasil diputar berulang
 var _ui_scale := 1.0
 var _disp_me_time := 900.0      # tampilan jam lokal pemain (15:00)
 var _disp_opp_time := 900.0     # tampilan jam lokal lawan (15:00)
@@ -60,6 +62,7 @@ var _drag_last_pos := Vector2.ZERO
 # --- Siklus hidup (bab 4.5 / 6.2) -------------------------------------------
 
 func _ready() -> void:
+	Audio.play_music("game")
 	local_test = Net.local_test
 	resized.connect(_layout)
 	_layout()
@@ -151,6 +154,8 @@ func start_as_host() -> void:
 	state.setup(randi(), true)        # mulai dengan lempar koin sebelum draw kartu pertama
 	my_index = 0
 	_prev_hand_uids.clear()
+	_last_turn_no = 0
+	_result_sfx_played = false
 	_broadcast()
 
 # --- Tata letak responsif (Overlay 2D di atas Arena 3D) ----------------------
@@ -257,6 +262,7 @@ func _handle(sender_id: int, a: Dictionary) -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func show_error(msg: String) -> void:
+	Audio.play_sfx("error", -2.0)
 	$Toast.show_text(msg)
 
 @rpc("authority", "call_remote", "reliable")
@@ -314,6 +320,11 @@ func render(v: Dictionary) -> void:
 	$CoinFlipOverlay.sync(v, local_test)
 	$TurnHistory.update_history(v, local_test)
 	$DiscardDrawer.refresh_if_open(v, local_test)
+	if v.get("coin_phase", {}).is_empty() and int(v.winner) == -2:
+		var tno := int(v.get("turn_no", 1))
+		if _last_turn_no > 0 and tno != _last_turn_no:
+			Audio.play_sfx("turn_start", -3.0)
+		_last_turn_no = tno
 	if v.winner != -2:
 		_show_result()
 
@@ -418,6 +429,8 @@ func _layout_hand_fan(dock: Control, is_me: bool) -> void:
 func _on_hand_card_hover(n: Control, on: bool) -> void:
 	if not is_instance_valid(n) or not n.has_meta("base_y"):
 		return
+	if on:
+		Audio.play_sfx("ui_hover", -9.0, 0.05)
 	var base_y: float = n.get_meta("base_y")
 	var base_rot: float = n.get_meta("base_rot")
 	var base_z: int = n.get_meta("base_z")
@@ -452,6 +465,7 @@ func _on_hand_drag_started(uid: int, card_node: Control, global_pos: Vector2) ->
 		return
 	_cancel_drag_immediate()
 	$CardPreview.hide_preview()
+	Audio.play_sfx("card_draw", -5.0, 0.06)
 
 	_drag_uid = uid
 	_drag_source = card_node
@@ -738,6 +752,13 @@ func _clear_glow() -> void:
 # --- Hasil (bab 4.7) --------------------------------------------------------
 
 func _show_result() -> void:
+	if not _result_sfx_played:
+		_result_sfx_played = true
+		var me_idx := int(view.get("me_index", 0))
+		if local_test or int(view.winner) == me_idx:
+			Audio.play_sfx("win_fanfare", -1.0)
+		else:
+			Audio.play_sfx("lose_jingle", -1.0)
 	$Result.show_result(view, REASON_TEXT.get(view.win_reason, ""), local_test)
 
 func _rematch() -> void:

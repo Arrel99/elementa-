@@ -25,6 +25,7 @@ CardDB="*res://scripts/core/card_db.gd"
 Net="*res://scripts/net/net.gd"
 Lan="*res://scripts/net/lan.gd"
 UiPolish="*res://scripts/core/ui_polish.gd"
+Audio="*res://scripts/core/audio_manager.gd"
 
 [display]
 

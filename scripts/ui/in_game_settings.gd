@@ -21,6 +21,8 @@ const ANIM := 0.22              # durasi geser masuk/keluar (detik)
 @onready var _slide: PanelContainer = $Slide
 @onready var _status: Label = $Slide/V/Status
 @onready var _volume: HSlider = $Slide/V/VolRow/Volume
+@onready var _music_vol: HSlider = $Slide/V/MusicRow/MusicVolume
+@onready var _sfx_vol: HSlider = $Slide/V/SfxRow/SfxVolume
 
 var _open := false
 var _extra := PANEL_W           # geseran tambahan: 0 = terbuka penuh
@@ -35,6 +37,8 @@ func _ready() -> void:
 	_gear.pressed.connect(toggle)
 	_dim.gui_input.connect(_on_dim_input)
 	_volume.value_changed.connect(_on_volume)
+	_music_vol.value_changed.connect(func(v: float): Audio.set_music_volume(v))
+	_sfx_vol.value_changed.connect(func(v: float): Audio.set_sfx_volume(v))
 	$Slide/V/GiveUp.pressed.connect(func() -> void:
 		close()
 		give_up_requested.emit())
@@ -56,7 +60,9 @@ func open() -> void:
 	if _open:
 		return
 	_open = true
-	_volume.set_value_no_signal(Settings.get_value("audio", "master", 0.8))
+	_volume.set_value_no_signal(float(Settings.get_value("audio", "master", 0.8)))
+	_music_vol.set_value_no_signal(float(Settings.get_value("audio", "music", 0.6)))
+	_sfx_vol.set_value_no_signal(float(Settings.get_value("audio", "sfx", 0.85)))
 	_dim.visible = true
 	_slide.visible = true
 	_gear.visible = false
@@ -102,5 +108,4 @@ func _on_dim_input(e: InputEvent) -> void:
 		close()
 
 func _on_volume(v: float) -> void:
-	Settings.set_value("audio", "master", v)
-	AudioServer.set_bus_volume_db(0, linear_to_db(v))
+	Audio.set_master_volume(v)

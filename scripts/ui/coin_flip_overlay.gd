@@ -265,6 +265,7 @@ func _play_flip_animation(result_side: String) -> void:
 	_resting_y = 0.0 if result_side == "heads" else PI
 	_coin_pivot.position = Vector3.ZERO
 	_coin_pivot.rotation = Vector3.ZERO
+	Audio.play_sfx("coin_flip", -1.0)
 
 	var tw := create_tween()
 	tw.set_parallel(true)
@@ -274,6 +275,7 @@ func _play_flip_animation(result_side: String) -> void:
 	tw.chain().set_parallel(true)
 	tw.tween_property(_coin_pivot, "position:y", 0.0, 0.58).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_coin_pivot, "rotation:x", 0.0, 0.58).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_callback(func(): Audio.play_sfx("coin_land", -1.0))
 	tw.chain().tween_interval(0.20)
 	tw.chain().tween_callback(func():
 		_coin_pivot.rotation.y = _resting_y

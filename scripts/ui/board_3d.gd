@@ -757,6 +757,8 @@ func play_shuffle_anim(is_me: bool) -> void:
 	var key := "me_deck" if is_me else "opp_deck"
 	if not _piles.has(key):
 		return
+	if is_me:
+		Audio.play_sfx("card_shuffle", -2.0, 0.05)
 	var base_pos: Vector3 = _piles[key].base_pos
 	var stack_col := Color(0.14, 0.24, 0.36) if is_me else Color(0.32, 0.16, 0.19)
 	var border_col := COLOR_ME_LINE if is_me else COLOR_OPP_LINE
@@ -811,6 +813,8 @@ func _play_draw_anim(is_me: bool, count: int) -> void:
 		var tw := c3d.create_tween()
 		if i > 0:
 			tw.tween_interval(float(i) * 0.14)
+		if is_me:
+			tw.chain().tween_callback(func(): Audio.play_sfx("card_draw", -4.0, 0.08))
 		tw.chain().set_parallel(true)
 		tw.tween_property(c3d, "position", deck_pos + Vector3(-0.35, 0.55, 0.0), 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_property(c3d, "rotation_degrees:x", 18.0 if is_me else -18.0, 0.18)
@@ -841,6 +845,7 @@ func _animate_removed_cards(v: Dictionary, next_uids: Dictionary) -> void:
 		var zone := String(prev.get("zone", "base"))
 
 		if zone == "base":
+			Audio.play_sfx("card_discard", -2.0, 0.06)
 			var disc_pos := Vector3(5.95, 0.36, 1.52 if is_me else -1.62)
 			var c3d: Node3D = CARD_3D_SCRIPT.new()
 			_fx_root.add_child(c3d)
@@ -855,6 +860,7 @@ func _animate_removed_cards(v: Dictionary, next_uids: Dictionary) -> void:
 			tw.tween_property(c3d, "scale", Vector3(0.76, 0.76, 0.76), 0.38)
 			tw.chain().tween_callback(c3d.queue_free)
 		elif zone == "special":
+			Audio.play_sfx("card_discard", -1.5, 0.05)
 			# Senyawa meluncur kembali ke Deck Senyawa di tengah kanan
 			var comp_deck := Vector3(5.95, 0.48, -0.05)
 			var sc3d: Node3D = CARD_3D_SCRIPT.new()
@@ -967,6 +973,7 @@ func _play_synth_anim(result_id: String, is_me: bool, target_slot: int) -> void:
 
 	var tw_b := burst.create_tween()
 	tw_b.tween_interval(0.42)
+	tw_b.chain().tween_callback(func(): Audio.play_sfx("synth_success", -1.0, 0.03))
 	tw_b.chain().set_parallel(true)
 	tw_b.tween_property(burst, "scale", Vector3(1.65, 1.65, 1.65), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw_b.tween_property(burst, "rotation_degrees:y", 85.0, 0.45).set_trans(Tween.TRANS_CUBIC)
@@ -993,6 +1000,7 @@ func _play_synth_anim(result_id: String, is_me: bool, target_slot: int) -> void:
 
 ## Animasi kartu Spell mendarat ke Slot Spell, tampil jelas, lalu meluncur ke Discard Pile.
 func _play_spell_slot_anim(card_id: String, is_me: bool) -> void:
+	Audio.play_sfx("spell_cast", -2.0, 0.04)
 	var slot_pos := Vector3(4.60, 0.04, 2.35 if is_me else -2.45)
 	var disc_pos := Vector3(5.95, 0.36, 1.52 if is_me else -1.62)
 	var c3d: Node3D = CARD_3D_SCRIPT.new()
@@ -1112,6 +1120,7 @@ func _spawn_card(card: Dictionary, pos: Vector3, size_3d: Vector2,
 		tw.tween_property(c3d, "position", pos, 0.42).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.42).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_property(c3d, "scale", Vector3.ONE, 0.44).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.chain().tween_callback(func(): Audio.play_sfx("card_place", -1.5, 0.06))
 	return c3d
 
 # --- Bantuan Mesh & Material Matte -------------------------------------------
