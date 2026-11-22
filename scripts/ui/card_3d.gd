@@ -1,24 +1,20 @@
 class_name Card3D
 extends Node3D
 
-## Kartu 3D di atas arena 2.5D.
-## Memakai scenes/ui/card.tscn di dalam SubViewport (dibekukan setelah 2 frame)
-## agar teks, simbol, poin, dan ilustrasi kartu tetap tajam dengan biaya render 0/frame.
+## Kartu 3D di atas arena 2.5D menggunakan tekstur full-art PNG langsung
+## (tanpa SubViewport sehingga jauh lebih tajam, instan, dan hemat memori).
 
 signal clicked(uid: int)
 signal preview_hover(data: Dictionary, source: Node)
 signal preview_exit(source: Node)
 signal preview_pin(data: Dictionary, source: Node)
 
-const CARD_UI_SCENE := preload("res://scenes/ui/card.tscn")
 const CARD_BACK_SCRIPT := preload("res://scripts/ui/card_back_art.gd")
 const CARD_THICKNESS := 0.052
-const TEX_SIZE := Vector2i(240, 320)
 
-const COLOR_EDGE := Color(0.16, 0.19, 0.23, 1.0)
-const COLOR_BACK := Color(0.12, 0.16, 0.21, 1.0)
-const COLOR_PLAYABLE := Color(0.38, 0.74, 0.56, 1.0)
-const COLOR_HOVER := Color(0.76, 0.84, 0.92, 1.0)
+const COLOR_EDGE := Color(0.14, 0.17, 0.21, 1.0)
+const COLOR_PLAYABLE := Color(0.38, 0.84, 0.60, 1.0)
+const COLOR_HOVER := Color(0.82, 0.90, 0.98, 1.0)
 
 var uid := -1
 var interactive := false
@@ -28,8 +24,6 @@ var card_size := Vector2(1.12, 1.50)
 var _data := {}
 var _hovered := false
 var _playable := false
-var _cooldown := false
-var _tint := Color.WHITE
 
 var _visual: Node3D
 var _body_mesh: MeshInstance3D
@@ -39,8 +33,6 @@ var _glow_mesh: MeshInstance3D
 var _front_mat: StandardMaterial3D
 var _back_mat: StandardMaterial3D
 var _glow_mat: StandardMaterial3D
-var _viewport: SubViewport
-var _card_ui: Node
 var _area: Area3D
 var _hover_tween: Tween
 var _play_tween: Tween
@@ -60,23 +52,25 @@ func _build_nodes() -> void:
 	var body_mat := StandardMaterial3D.new()
 	body_mat.albedo_color = COLOR_EDGE
 	body_mat.roughness = 0.55
-	body_mat.metallic = 0.2
+	body_mat.metallic = 0.16
 	_body_mesh.material_override = body_mat
 	_visual.add_child(_body_mesh)
 
-	# Muka kartu (tekstur dari SubViewport 2D)
+	# Muka depan kartu (langsung memakai tekstur full-art PNG!)
 	_front_mesh = MeshInstance3D.new()
 	_front_mesh.name = "Front"
 	_front_mesh.rotation_degrees.x = -90.0
 	_front_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_front_mat = StandardMaterial3D.new()
-	_front_mat.roughness = 0.42
-	_front_mat.metallic = 0.05
+	_front_mat.roughness = 0.44
+	_front_mat.metallic = 0.04
+	_front_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	_front_mat.alpha_scissor_threshold = 0.25
 	_front_mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 	_front_mesh.material_override = _front_mat
 	_visual.add_child(_front_mesh)
 
-	# Sisi belakang kartu 3D (bermotif Elementa agar kartu tidak flat dari belakang/bawah)
+	# Sisi belakang kartu 3D (bermotif Elementa)
 	_back_mesh = MeshInstance3D.new()
 	_back_mesh.name = "Back"
 	_back_mesh.rotation_degrees.x = 90.0
@@ -89,30 +83,18 @@ func _build_nodes() -> void:
 	_back_mesh.material_override = _back_mat
 	_visual.add_child(_back_mesh)
 
-	# Bingkai penanda bersih (status playable & hover, tanpa neon)
+	# Bingkai penanda bersih (status playable & hover)
 	_glow_mesh = MeshInstance3D.new()
 	_glow_mesh.name = "GlowRim"
 	_glow_mesh.rotation_degrees.x = -90.0
 	_glow_mesh.visible = false
 	_glow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_glow_mat = StandardMaterial3D.new()
-	_glow_mat.albedo_color = Color(COLOR_PLAYABLE.r, COLOR_PLAYABLE.g, COLOR_PLAYABLE.b, 0.78)
+	_glow_mat.albedo_color = Color(COLOR_PLAYABLE.r, COLOR_PLAYABLE.g, COLOR_PLAYABLE.b, 0.90)
 	_glow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_glow_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_glow_mesh.material_override = _glow_mat
 	_visual.add_child(_glow_mesh)
-
-	# SubViewport off-screen untuk merender tampilan kartu 2D
-	_viewport = SubViewport.new()
-	_viewport.name = "CardViewport"
-	_viewport.size = TEX_SIZE
-	_viewport.transparent_bg = false
-	_viewport.gui_disable_input = true
-	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	add_child(_viewport)
-
-	_card_ui = CARD_UI_SCENE.instantiate()
-	_viewport.add_child(_card_ui)
 
 	# Area3D untuk raycast klik & hover mouse
 	_area = Area3D.new()
@@ -129,57 +111,45 @@ func _build_nodes() -> void:
 	_area.input_event.connect(_on_input_event)
 
 func setup(card: Dictionary, size_3d: Vector2, face_up := true, can_click := true,
-		can_preview := true, recipe_text := "", tint := Color.WHITE,
+		can_preview := true, _recipe_text := "", tint := Color.WHITE,
 		is_cooldown := false, is_playable := false) -> void:
 	uid = int(card.get("uid", -1))
 	card_size = size_3d
 	interactive = can_click
-	_data = card.duplicate()
-	_tint = tint
-	_cooldown = is_cooldown
+	_data = card.duplicate(true)
 	var id := String(card.get("id", ""))
 	var show_face := face_up and id != "back" and CardDB.cards.has(id)
 	previewable = can_preview and show_face
 
 	_apply_geometry()
 
-	_card_ui.setup(card, face_up, false, false)
-	_card_ui.fit(Vector2(TEX_SIZE))
-	_card_ui.position = Vector2.ZERO
-	_card_ui.size = Vector2(TEX_SIZE)
-	if recipe_text != "":
-		var desc: Label = _card_ui.get_node("V/Desc")
-		desc.text = recipe_text
-		desc.visible = true
-		desc.add_theme_font_size_override("font_size", 22)
-		desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	if tint != Color.WHITE:
-		_card_ui.modulate = tint
-
-	_front_mat.albedo_texture = _viewport.get_texture()
-	_front_mat.albedo_color = Color(0.55, 0.55, 0.62, 1.0) if is_cooldown else Color.WHITE
-	if not show_face:
-		_front_mat.albedo_color = COLOR_BACK
+	if show_face:
+		var d: CardData = CardDB.get_card(id)
+		_front_mat.albedo_texture = d.art if d != null else null
+		var col := tint
+		if is_cooldown:
+			col = col * Color(0.55, 0.56, 0.62, 1.0)
+		_front_mat.albedo_color = col
+	else:
+		_front_mat.albedo_texture = _back_mat.albedo_texture
+		_front_mat.albedo_color = Color.WHITE
 
 	_area.input_ray_pickable = interactive or previewable
 	set_playable(is_playable)
 
-	# Render 2 frame supaya layout Control di SubViewport beres, lalu bekukan (0 biaya/frame)
-	_freeze_viewport_soon()
-
 func _apply_geometry() -> void:
 	var box := BoxMesh.new()
-	box.size = Vector3(card_size.x, CARD_THICKNESS, card_size.y)
+	box.size = Vector3(card_size.x * 0.96, CARD_THICKNESS, card_size.y * 0.96)
 	_body_mesh.mesh = box
 	_body_mesh.position.y = CARD_THICKNESS * 0.5
 
 	var quad := QuadMesh.new()
-	quad.size = Vector2(card_size.x * 0.96, card_size.y * 0.96)
+	quad.size = Vector2(card_size.x, card_size.y)
 	_front_mesh.mesh = quad
 	_front_mesh.position.y = CARD_THICKNESS + 0.003
 
 	var back_quad := QuadMesh.new()
-	back_quad.size = Vector2(card_size.x * 0.96, card_size.y * 0.96)
+	back_quad.size = Vector2(card_size.x, card_size.y)
 	_back_mesh.mesh = back_quad
 	_back_mesh.position.y = -0.002
 
@@ -190,18 +160,8 @@ func _apply_geometry() -> void:
 
 	var col: CollisionShape3D = _area.get_node("Shape")
 	var shape := col.shape as BoxShape3D
-	shape.size = Vector3(card_size.x, 0.18, card_size.y)
-	col.position.y = 0.09
-
-func _freeze_viewport_soon() -> void:
-	if not is_inside_tree():
-		await tree_entered
-	await get_tree().process_frame
-	if not is_instance_valid(self) or not is_inside_tree():
-		return
-	await get_tree().process_frame
-	if is_instance_valid(_viewport):
-		_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	shape.size = Vector3(card_size.x, 0.20, card_size.y)
+	col.position.y = 0.10
 
 func set_playable(on: bool) -> void:
 	_playable = on

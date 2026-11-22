@@ -60,6 +60,17 @@ func _ready() -> void:
 	var c2 := _force_base(g2, 0, "O", true)
 	_check(g2.synthesize(0, c1.uid, c2.uid) != "", "Cooldown memblokir sintesis kartu baru")
 
+	# --- Pasang kartu dasar menambah poin sesuai angka kiri atas kartu ---
+	var g2b := GameState.new()
+	g2b.setup(12)
+	g2b.current = 0
+	var ne_card := _force_hand(g2b, 0, "Ne")
+	var fe_card := _force_hand(g2b, 0, "Fe")
+	_check(g2b.place_base(0, ne_card.uid) == "", "Pasang Neon sukses")
+	_check(g2b.players[0].points == 6, "Poin Neon (6) langsung masuk ke skor")
+	_check(g2b.place_base(0, fe_card.uid) == "", "Pasang Besi sukses")
+	_check(g2b.players[0].points == 11, "Total poin Zona Dasar = 6 + 5 = 11")
+
 	# --- Sintesis (bagian 7) ---
 	var g3 := GameState.new()
 	g3.setup(999)

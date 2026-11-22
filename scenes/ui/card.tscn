@@ -3,13 +3,40 @@
 [ext_resource type="Script" path="res://scripts/ui/card_view.gd" id="1_card"]
 [ext_resource type="Script" path="res://scripts/ui/card_back_art.gd" id="2_back"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 0
+border_width_top = 0
+border_width_right = 0
+border_width_bottom = 0
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playglow"]
+expand_margin_left = 7.0
+expand_margin_top = 7.0
+expand_margin_right = 7.0
+expand_margin_bottom = 7.0
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.38, 0.88, 0.62, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_info_normal"]
-bg_color = Color(0.11, 0.15, 0.20, 0.92)
+bg_color = Color(0.10, 0.14, 0.19, 0.94)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.42, 0.62, 0.76, 0.9)
+border_color = Color(0.45, 0.68, 0.82, 0.95)
 corner_radius_top_left = 13
 corner_radius_top_right = 13
 corner_radius_bottom_right = 13
@@ -21,82 +48,30 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.68, 0.86, 0.96, 1)
+border_color = Color(0.72, 0.90, 1.0, 1)
 corner_radius_top_left = 13
 corner_radius_top_right = 13
 corner_radius_bottom_right = 13
 corner_radius_bottom_left = 13
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playglow"]
-expand_margin_left = 8.0
-expand_margin_top = 8.0
-expand_margin_right = 8.0
-expand_margin_bottom = 8.0
-bg_color = Color(1, 1, 1, 0)
-border_width_left = 6
-border_width_top = 6
-border_width_right = 6
-border_width_bottom = 6
-border_color = Color(0.38, 0.88, 0.62, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
-content_margin_left = 6.0
-content_margin_top = 6.0
-content_margin_right = 6.0
-content_margin_bottom = 6.0
-bg_color = Color(0.16, 0.19, 0.25, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.4, 0.45, 0.55, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [node name="Card" type="PanelContainer"]
-custom_minimum_size = Vector2(150, 200)
+custom_minimum_size = Vector2(150, 210)
 offset_right = 150.0
-offset_bottom = 200.0
+offset_bottom = 210.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 script = ExtResource("1_card")
 
-[node name="V" type="VBoxContainer" parent="."]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 4
-
-[node name="Name" type="Label" parent="V"]
-layout_mode = 2
-mouse_filter = 2
-text = "Nama"
-autowrap_mode = 2
-horizontal_alignment = 1
-
-[node name="Art" type="TextureRect" parent="V"]
-custom_minimum_size = Vector2(0, 80)
+[node name="Art" type="TextureRect" parent="."]
 layout_mode = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Info" type="Label" parent="V"]
+[node name="CardBack" type="Control" parent="."]
+visible = false
 layout_mode = 2
 mouse_filter = 2
-text = ""
-horizontal_alignment = 1
-
-[node name="Desc" type="Label" parent="V"]
-layout_mode = 2
-mouse_filter = 2
-text = ""
-autowrap_mode = 2
-size_flags_vertical = 3
+script = ExtResource("2_back")
 
 [node name="Glow" type="Panel" parent="."]
 visible = false
@@ -104,12 +79,6 @@ modulate = Color(1, 1, 1, 0)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_playglow")
-
-[node name="CardBack" type="Control" parent="."]
-visible = false
-layout_mode = 2
-mouse_filter = 2
-script = ExtResource("2_back")
 
 [node name="Overlay" type="Control" parent="."]
 layout_mode = 2
@@ -121,14 +90,14 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -26.0
-offset_top = 2.0
-offset_right = -2.0
-offset_bottom = 26.0
+offset_left = -28.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = 28.0
 grow_horizontal = 0
 tooltip_text = "Lihat informasi kartu"
 mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.88, 0.94, 0.98, 1)
+theme_override_colors/font_color = Color(0.92, 0.96, 1.0, 1)
 theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StyleBoxFlat_info_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_info_hover")

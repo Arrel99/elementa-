@@ -77,6 +77,8 @@ func _ready() -> void:
 	$BattleLogBtn.pressed.connect(func(): $TurnHistory.toggle())
 	$InGameSettings.give_up_requested.connect($GiveUpDialog.popup_centered)
 	$InGameSettings.back_to_menu_requested.connect(_back_to_menu)
+	$Result.back_to_menu_requested.connect(_back_to_menu)
+	$Result.rematch_requested.connect(_rematch)
 	$GiveUpDialog.confirmed.connect(func(): submit({"type": "give_up"}))
 	$RevealPopup.resolved.connect(_on_spektrometer_resolved)
 	multiplayer.peer_disconnected.connect(_on_peer_gone)
@@ -699,13 +701,11 @@ func _clear_glow() -> void:
 # --- Hasil (bab 4.7) --------------------------------------------------------
 
 func _show_result() -> void:
-	var w: int = view.winner
-	$Result/Title.text = "Seri!" if w == -1 else ("Kamu menang!" if w == view.me_index else "Kamu kalah.")
-	$Result/Reason.text = REASON_TEXT.get(view.win_reason, "")
-	$Result/Score.text = "Poin kamu %d : %d poin lawan" % [view.me.points, view.opp.points]
-	$Result.show()
-	if not $Result/Back.pressed.is_connected(_back_to_menu):
-		$Result/Back.pressed.connect(_back_to_menu)
+	$Result.show_result(view, REASON_TEXT.get(view.win_reason, ""), local_test)
+
+func _rematch() -> void:
+	$Result.hide()
+	start_as_host()
 
 func _back_to_menu() -> void:
 	multiplayer.multiplayer_peer = null

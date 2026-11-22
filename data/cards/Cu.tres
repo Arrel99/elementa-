@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/card_data.gd" id="1_card"]
+[ext_resource type="Texture2D" path="res://art/cards/Cu.png" id="2_art"]
 
 [resource]
 script = ExtResource("1_card")
@@ -13,7 +14,7 @@ atomic_number = 29
 recipe = Array[String]([])
 spell_effect = ""
 description = "Unsur dasar tembaga."
-art = null
+art = ExtResource("2_art")
 in_deck = true
 deck_copies = 4
 set_id = "dasar"

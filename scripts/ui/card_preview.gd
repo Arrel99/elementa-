@@ -257,7 +257,6 @@ func _render_stack(animate: bool) -> void:
 		slot.z_index = 10 - depth
 		slot.mouse_filter = Control.MOUSE_FILTER_STOP if has_multi else Control.MOUSE_FILTER_IGNORE
 		slot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if (has_multi and not is_front) else Control.CURSOR_ARROW
-		_append_recipe_to(slot, cdata)
 
 		var target_mod := Color.WHITE if is_front else Color(0.82, 0.86, 0.92, 1.0)
 		if animate:
@@ -337,17 +336,6 @@ func _apply_position() -> void:
 		_center.anchor_bottom = 0.96
 		_center.offset_left = 18.0
 		_center.offset_top = 0.0
-
-func _append_recipe_to(card_node: Control, cdata: Dictionary) -> void:
-	var d: CardData = CardDB.get_card(String(cdata.get("id", "")))
-	if d == null or d.type != CardData.Type.SPECIAL or d.recipe.size() != 2:
-		return
-	var a := CardDB.get_card(d.recipe[0])
-	var b := CardDB.get_card(d.recipe[1])
-	if a == null or b == null:
-		return
-	var desc: Label = card_node.get_node("V/Desc")
-	desc.text = "%s\n\nResep: %s + %s" % [d.description, a.symbol, b.symbol]
 
 func _is_mouse_over_preview() -> bool:
 	var mp: Vector2 = _stack.get_global_mouse_position()

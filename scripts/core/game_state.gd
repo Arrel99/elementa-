@@ -158,6 +158,7 @@ func place_base(p: int, uid: int, slot: int = -1) -> String:
 	c.placed_turn = turn_no      # cooldown 1 giliran (bagian 7)
 	c["slot"] = chosen
 	pl.base.append(c)
+	_recalc_points(p)
 	_record(p, "place", c.id, "Pasang %s (Slot %d)" % [_card_label(c.id), chosen + 1])
 	return ""
 
@@ -230,7 +231,7 @@ func synthesize(p: int, uid_a: int, uid_b: int) -> String:
 	sc["parts"] = [a.id, b.id]    # daftar id bahan untuk kompatibilitas
 	pl.special.append(sc)
 	var pts: int = CardDB.get_card(result).points
-	pl.points += pts
+	_recalc_points(p)
 	synth_left -= 1
 	_record(p, "synth", result, "Sintesis %s + %s -> %s (+%d)" % [
 		_card_sym(a.id), _card_sym(b.id), _card_label(result), pts])
@@ -349,6 +350,7 @@ func _fx_bilas(p: int, a: Dictionary) -> String:
 	if c.is_empty():
 		return "Pilih kartu di zona dasarmu."
 	players[p].discard.append(c)
+	_recalc_points(p)
 	if players[p].deck.is_empty():
 		winner = 1 - p
 		win_reason = "deck_out"
@@ -367,6 +369,7 @@ func _fx_korosi(p: int, a: Dictionary) -> String:
 	if c.is_empty():
 		return "Pilih kartu di zona dasar lawan."
 	players[1 - p].discard.append(c)
+	_recalc_points(1 - p)
 	return ""
 
 func _fx_elektrolisis(p: int, a: Dictionary) -> String:
@@ -375,9 +378,9 @@ func _fx_elektrolisis(p: int, a: Dictionary) -> String:
 	if sc.is_empty():
 		return "Pilih senyawa milikmu."
 	_take(pl.special, sc.uid)
-	pl.points -= CardDB.get_card(sc.id).points
 	compound_pile.append(sc.id)          # senyawa kembali ke Tabel Senyawa
 	_return_attached_to_hand(pl, sc)
+	_recalc_points(p)
 	return ""
 
 func _fx_elektrolisis_paksa(p: int, a: Dictionary) -> String:
@@ -387,10 +390,25 @@ func _fx_elektrolisis_paksa(p: int, a: Dictionary) -> String:
 	var sc := _take(opp.special, int(a.get("target_uid", -1)))
 	if sc.is_empty():
 		return "Pilih senyawa milik lawan."
-	opp.points -= CardDB.get_card(sc.id).points
 	compound_pile.append(sc.id)          # senyawa kembali ke Tabel Senyawa
 	_return_attached_to_hand(opp, sc)
+	_recalc_points(1 - p)
 	return ""
+
+## Menghitung ulang total poin pemain = jumlah poin semua kartu Dasar (Zona Dasar)
+## + semua kartu Senyawa (Zona Senyawa) yang sedang berada di papan.
+func _recalc_points(p: int) -> void:
+	var pl = players[p]
+	var total := 0
+	for c in pl.base:
+		var d: CardData = CardDB.get_card(String(c.get("id", "")))
+		if d != null:
+			total += d.points
+	for c in pl.special:
+		var d: CardData = CardDB.get_card(String(c.get("id", "")))
+		if d != null:
+			total += d.points
+	pl.points = total
 
 ## Mengembalikan 2 kartu dasar asli yang menempel di belakang senyawa ke tangan
 ## pemiliknya tanpa menggandakan jumlah kartu di dalam permainan.
