@@ -64,7 +64,7 @@ func setup(card: Dictionary, face_up := true, can_click := true,
 	art_rect.visible = true
 	art_rect.texture = data.art
 	back_node.visible = false
-	tooltip_text = "%s — %s" % [data.display_name, data.description]
+	tooltip_text = ""
 	refresh_hover()
 
 func _gui_input(e: InputEvent) -> void:

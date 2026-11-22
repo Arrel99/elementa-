@@ -1,0 +1,203 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/coin_flip_overlay.gd" id="1_coin"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 30.0
+content_margin_top = 24.0
+content_margin_right = 30.0
+content_margin_bottom = 26.0
+bg_color = Color(0.092, 0.112, 0.140, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.26, 0.32, 0.40, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_heads"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.36, 0.28, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.76, 0.60, 0.28, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_heads_hover"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.46, 0.36, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.92, 0.76, 0.40, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tails"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.27, 0.39, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.58, 0.78, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tails_hover"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.22, 0.36, 0.50, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.56, 0.76, 0.94, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="CoinFlipOverlay" type="CanvasLayer"]
+layer = 92
+visible = false
+script = ExtResource("1_coin")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.035, 0.050, 0.78)
+
+[node name="Center" type="CenterContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Root/Center"]
+custom_minimum_size = Vector2(540, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="V" type="VBoxContainer" parent="Root/Center/Card"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Badge" type="Label" parent="Root/Center/Card/V"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.74, 0.70, 1)
+theme_override_font_sizes/font_size = 13
+text = "PENENTUAN GILIRAN  •  TAHAP 1 / 2"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="Root/Center/Card/V"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.98, 1.0, 1)
+theme_override_font_sizes/font_size = 30
+text = "Pilih Sisi Koin"
+horizontal_alignment = 1
+
+[node name="CoinArea" type="CenterContainer" parent="Root/Center/Card/V"]
+custom_minimum_size = Vector2(0, 210)
+layout_mode = 2
+
+[node name="Coin" type="Control" parent="Root/Center/Card/V/CoinArea"]
+custom_minimum_size = Vector2(210, 210)
+layout_mode = 2
+
+[node name="Status" type="Label" parent="Root/Center/Card/V"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.83, 0.90, 1)
+theme_override_font_sizes/font_size = 15
+text = "Pilih HEADS atau TAILS."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="CallButtons" type="HBoxContainer" parent="Root/Center/Card/V"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="Heads" type="Button" parent="Root/Center/Card/V/CallButtons"]
+custom_minimum_size = Vector2(210, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.98, 0.95, 0.88, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_heads")
+theme_override_styles/hover = SubResource("StyleBoxFlat_heads_hover")
+text = "HEADS"
+
+[node name="Tails" type="Button" parent="Root/Center/Card/V/CallButtons"]
+custom_minimum_size = Vector2(210, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.96, 1.0, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_tails")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tails_hover")
+text = "TAILS"
+
+[node name="OrderButtons" type="HBoxContainer" parent="Root/Center/Card/V"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="First" type="Button" parent="Root/Center/Card/V/OrderButtons"]
+custom_minimum_size = Vector2(210, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.96, 0.99, 0.98, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("StyleBoxFlat_heads")
+theme_override_styles/hover = SubResource("StyleBoxFlat_heads_hover")
+text = "Giliran Pertama"
+
+[node name="Second" type="Button" parent="Root/Center/Card/V/OrderButtons"]
+custom_minimum_size = Vector2(210, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.96, 1.0, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("StyleBoxFlat_tails")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tails_hover")
+text = "Giliran Kedua"

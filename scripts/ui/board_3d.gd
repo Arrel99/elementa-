@@ -51,8 +51,13 @@ var _piles: Dictionary = {}          # pile_key -> { "mesh": MeshInstance3D, "co
 var _shields: Dictionary = {}        # "me" | "opp" -> { "ring": MeshInstance3D, "label": Label3D }
 
 var _known_uids := {}                # uid yang sudah ada di papan pada render sebelumnya
-var _last_history_len := 0           # untuk mendeteksi kartu spell baru & animasi di slot spell
-var _fx_root: Node3D                 # wadah animasi kartu spell yang sedang aktif di slot spell
+var _prev_board_cards := {}          # uid -> {id, pos, size, is_me, zone} untuk animasi asal/pindah
+var _prev_deck_counts := {"me": -1, "opp": -1}
+var _prev_compound_counts := {}      # jumlah salinan tiap senyawa di render sebelumnya (untuk animasi refill dari deck)
+var _last_history_len := 0           # untuk mendeteksi aksi baru di riwayat
+var _last_spektro_resolved := 0      # jumlah Spektrometer yang sudah selesai (picu animasi kocok deck)
+var _did_initial_shuffle := false
+var _fx_root: Node3D                 # wadah animasi kartu (sintesis, spell, draw, shuffle, discard)
 var _time := 0.0
 
 func _ready() -> void:
@@ -136,8 +141,8 @@ func _setup_lights() -> void:
 	# dan tumpukan deck memunculkan bayangan nyata yang tegas namun lembut
 	var sun := DirectionalLight3D.new()
 	sun.name = "KeyLight"
-	sun.light_color = Color(0.99, 0.97, 0.94, 1.0)
-	sun.light_energy = 1.55
+	sun.light_color = Color(0.99, 0.98, 0.96, 1.0)
+	sun.light_energy = 1.08
 	sun.shadow_enabled = true
 	sun.shadow_blur = 1.6
 	sun.shadow_bias = 0.03
@@ -147,8 +152,8 @@ func _setup_lights() -> void:
 	# Cahaya rim/pengisi dari belakang-samping untuk menonjolkan tepian bevel 3D papan
 	var rim := DirectionalLight3D.new()
 	rim.name = "RimLight"
-	rim.light_color = Color(0.76, 0.86, 0.98, 1.0)
-	rim.light_energy = 0.48
+	rim.light_color = Color(0.80, 0.88, 0.96, 1.0)
+	rim.light_energy = 0.32
 	rim.shadow_enabled = false
 	rim.rotation_degrees = Vector3(-30.0, -148.0, 0.0)
 	add_child(rim)
@@ -602,6 +607,7 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		ch.queue_free()
 
 	var next_uids := {}
+	var next_board_cards := {}
 	var playable_base: Array = playable.get("base", [])
 
 	# Kartu Zona Dasar Pemain (mengikuti slot pilihan pemain)
@@ -611,11 +617,13 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		var c: Dictionary = v.me.base[i]
 		var uid := int(c.get("uid", -1))
 		var slot_idx := clampi(int(c.get("slot", i)), 0, 5)
+		var pos := _pos_base(true, slot_idx)
 		next_uids[uid] = true
+		next_board_cards[uid] = {"id": String(c.get("id", "")), "pos": pos, "size": SIZE_BASE, "is_me": true, "zone": "base"}
 		var is_cd := int(c.get("placed_turn", -1)) == int(v.turn_no)
 		var is_play := playable_base.has(uid)
-		_spawn_card(c, _pos_base(true, slot_idx), SIZE_BASE, true, true, true, "", Color.WHITE,
-			is_cd, is_play, not _known_uids.has(uid))
+		_spawn_card(c, pos, SIZE_BASE, true, true, true, "", Color.WHITE,
+			is_cd, is_play, not _known_uids.has(uid), true)
 
 	# Kartu Zona Dasar Lawan (mengikuti slot pilihan lawan)
 	for i in v.opp.base.size():
@@ -624,9 +632,11 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		var c: Dictionary = v.opp.base[i]
 		var uid := int(c.get("uid", -1))
 		var slot_idx := clampi(int(c.get("slot", i)), 0, 5)
+		var pos := _pos_base(false, slot_idx)
 		next_uids[uid] = true
-		_spawn_card(c, _pos_base(false, slot_idx), SIZE_BASE, true, true, true, "", Color.WHITE,
-			false, false, not _known_uids.has(uid))
+		next_board_cards[uid] = {"id": String(c.get("id", "")), "pos": pos, "size": SIZE_BASE, "is_me": false, "zone": "base"}
+		_spawn_card(c, pos, SIZE_BASE, true, true, true, "", Color.WHITE,
+			false, false, not _known_uids.has(uid), false)
 
 	# Kartu Zona Spesial Pemain (maks 8 tampil di grid; 2 kartu dasar menempel di belakangnya)
 	for i in v.me.special.size():
@@ -637,9 +647,10 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		var pos := _pos_special(true, slot_idx)
 		if i >= 8:
 			pos.y += float(i - 7) * 0.095
+		next_board_cards[uid] = {"id": String(c.get("id", "")), "pos": pos, "size": SIZE_SPECIAL, "is_me": true, "zone": "special", "parts": c.get("parts", [])}
 		var top_y := _spawn_attached_under(c, pos, SIZE_SPECIAL)
 		_spawn_card(c, Vector3(pos.x, top_y, pos.z), SIZE_SPECIAL, true, true, true, "", Color.WHITE,
-			false, false, not _known_uids.has(uid))
+			false, false, false, true)
 
 	# Kartu Zona Spesial Lawan (2 kartu dasar menempel di belakangnya)
 	for i in v.opp.special.size():
@@ -650,9 +661,10 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		var pos := _pos_special(false, slot_idx)
 		if i >= 8:
 			pos.y += float(i - 7) * 0.095
+		next_board_cards[uid] = {"id": String(c.get("id", "")), "pos": pos, "size": SIZE_SPECIAL, "is_me": false, "zone": "special", "parts": c.get("parts", [])}
 		var top_y := _spawn_attached_under(c, pos, SIZE_SPECIAL)
 		_spawn_card(c, Vector3(pos.x, top_y, pos.z), SIZE_SPECIAL, true, true, true, "", Color.WHITE,
-			false, false, not _known_uids.has(uid))
+			false, false, false, false)
 
 	# Tabel Senyawa di garis tengah (sedikit dimiringkan ke kamera agar resep mudah dibaca)
 	_render_compound_table(v.compound_pile, v.me.base, easy_mode)
@@ -679,10 +691,13 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 	_update_shield("opp", bool(v.opp.shield))
 	_update_shield("me", bool(v.me.shield))
 
-	# Deteksi spell baru dari riwayat -> animasikan masuk ke Slot Spell lalu meluncur ke Discard
+	# Animasi awal pertandingan (kocok kedua deck) + animasi draw + animasi kartu yang baru keluar/masuk
+	_animate_deck_events(v)
+	_animate_removed_cards(v, next_uids)
 	_animate_new_spells(v)
 
 	_known_uids = next_uids
+	_prev_board_cards = next_board_cards
 
 func _spawn_discard_top_card(card: Dictionary, pos: Vector3, is_me: bool) -> Node3D:
 	var c3d: Node3D = CARD_3D_SCRIPT.new()
@@ -695,6 +710,178 @@ func _spawn_discard_top_card(card: Dictionary, pos: Vector3, is_me: bool) -> Nod
 	c3d.clicked.connect(func(_u): discard_clicked.emit(is_me))
 	c3d.preview_pin.connect(func(_d, _s): discard_clicked.emit(is_me))
 	return c3d
+
+## Animasi kocok deck awal, kocok deck setelah Spektrometer, dan animasi menarik kartu dari deck.
+func _animate_deck_events(v: Dictionary) -> void:
+	if not v.get("coin_phase", {}).is_empty():
+		return
+	var me_dc := int(v.me.deck_count)
+	var opp_dc := int(v.opp.deck_count)
+
+	if not _did_initial_shuffle:
+		_did_initial_shuffle = true
+		play_shuffle_anim(true)
+		play_shuffle_anim(false)
+		_play_draw_anim(true, 5)
+		_play_draw_anim(false, 5)
+		_prev_deck_counts = {"me": me_dc, "opp": opp_dc}
+		return
+
+	# Deteksi draw kartu (saat jumlah deck berkurang, kecuali sedang pending Spektrometer)
+	if v.pending.is_empty():
+		var prev_me := int(_prev_deck_counts.get("me", me_dc))
+		var prev_opp := int(_prev_deck_counts.get("opp", opp_dc))
+		if me_dc < prev_me and (prev_me - me_dc) <= 5:
+			_play_draw_anim(true, prev_me - me_dc)
+		if opp_dc < prev_opp and (prev_opp - opp_dc) <= 5:
+			_play_draw_anim(false, prev_opp - opp_dc)
+
+	# Deteksi Spektrometer baru selesai -> animasi kocok deck pemiliknya!
+	var spektro_done := 0
+	var last_spektro_me := true
+	var me_idx := int(v.get("me_index", 0))
+	for h in v.get("history", []):
+		if String(h.get("card_id", "")) == "spektrometer":
+			var subs: Array = h.get("sub_moves", [])
+			if subs.size() >= 2:
+				spektro_done += 1
+				last_spektro_me = (int(h.get("player", 0)) == me_idx)
+	if spektro_done > _last_spektro_resolved:
+		play_shuffle_anim(last_spektro_me)
+	_last_spektro_resolved = spektro_done
+
+	_prev_deck_counts = {"me": me_dc, "opp": opp_dc}
+
+## Animasi kocok deck 3D (belah tumpukan kiri-kanan lalu satukan kembali 2 kali).
+func play_shuffle_anim(is_me: bool) -> void:
+	var key := "me_deck" if is_me else "opp_deck"
+	if not _piles.has(key):
+		return
+	var base_pos: Vector3 = _piles[key].base_pos
+	var stack_col := Color(0.14, 0.24, 0.36) if is_me else Color(0.32, 0.16, 0.19)
+	var border_col := COLOR_ME_LINE if is_me else COLOR_OPP_LINE
+	var back_tex := CARD_BACK_SCRIPT.make_back_texture(stack_col, border_col)
+
+	var packets: Array[MeshInstance3D] = []
+	for k in 2:
+		var pkt := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(SIZE_PILE.x * 0.90, 0.14, SIZE_PILE.y * 0.90)
+		pkt.mesh = box
+		pkt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		var mat := StandardMaterial3D.new()
+		mat.albedo_texture = back_tex
+		mat.roughness = 0.58
+		pkt.material_override = mat
+		pkt.position = Vector3(base_pos.x, 0.24 + float(k) * 0.16, base_pos.z)
+		_fx_root.add_child(pkt)
+		packets.append(pkt)
+
+	for k in 2:
+		var p: MeshInstance3D = packets[k]
+		var dir := -1.0 if k == 0 else 1.0
+		var home := p.position
+		var split_pos := home + Vector3(dir * 0.62, 0.22, 0.0)
+		var tw := p.create_tween()
+		# Kocokan 1
+		tw.set_parallel(true)
+		tw.tween_property(p, "position", split_pos, 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(p, "rotation_degrees:z", -dir * 12.0, 0.18)
+		tw.chain().set_parallel(true)
+		tw.tween_property(p, "position", home + Vector3(0.0, 0.08, 0.0), 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		tw.tween_property(p, "rotation_degrees:z", 0.0, 0.16)
+		# Kocokan 2
+		tw.chain().set_parallel(true)
+		tw.tween_property(p, "position", split_pos * Vector3(1.0, 1.0, 1.0) - Vector3(dir * 0.12, 0.04, 0.0), 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(p, "rotation_degrees:z", -dir * 9.0, 0.16)
+		tw.chain().set_parallel(true)
+		tw.tween_property(p, "position", home, 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_property(p, "rotation_degrees:z", 0.0, 0.18)
+		tw.chain().tween_callback(p.queue_free)
+
+## Animasi menarik kartu dari puncak Deck 3D meluncur ke tangan pemain.
+func _play_draw_anim(is_me: bool, count: int) -> void:
+	var deck_pos := Vector3(5.95, 0.48, 2.95 if is_me else -3.05)
+	var hand_dest := Vector3(0.35, 1.25, 5.6 if is_me else -5.6)
+	for i in count:
+		var c3d: Node3D = CARD_3D_SCRIPT.new()
+		_fx_root.add_child(c3d)
+		c3d.setup({"uid": -1, "id": "back", "placed_turn": -1}, SIZE_PILE * 0.94, false, false, false)
+		c3d.position = deck_pos
+		var tw := c3d.create_tween()
+		if i > 0:
+			tw.tween_interval(float(i) * 0.14)
+		tw.chain().set_parallel(true)
+		tw.tween_property(c3d, "position", deck_pos + Vector3(-0.35, 0.55, 0.0), 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(c3d, "rotation_degrees:x", 18.0 if is_me else -18.0, 0.18)
+		tw.chain().set_parallel(true)
+		tw.tween_property(c3d, "position", hand_dest, 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_property(c3d, "rotation_degrees:y", 16.0 if is_me else -16.0, 0.36)
+		tw.tween_property(c3d, "scale", Vector3(0.85, 0.85, 0.85), 0.36)
+		tw.chain().tween_callback(c3d.queue_free)
+
+## Animasi kartu yang hilang dari papan karena Korosi / Bilas (meluncur ke Discard)
+## atau Elektrolisis (senyawa kembali ke Deck Senyawa, 2 unsur kembali ke tangan).
+func _animate_removed_cards(v: Dictionary, next_uids: Dictionary) -> void:
+	var hist: Array = v.get("history", [])
+	var latest_action := ""
+	if hist.size() > _last_history_len and not hist.is_empty():
+		latest_action = String(hist[hist.size() - 1].get("action", ""))
+	if latest_action == "synth":
+		return     # sudah ditangani animasi sintesis
+
+	for uid in _prev_board_cards:
+		if next_uids.has(uid):
+			continue
+		var prev: Dictionary = _prev_board_cards[uid]
+		var cid := String(prev.get("id", ""))
+		var start_pos: Vector3 = prev.get("pos", Vector3.ZERO)
+		var sz: Vector2 = prev.get("size", SIZE_BASE)
+		var is_me: bool = bool(prev.get("is_me", true))
+		var zone := String(prev.get("zone", "base"))
+
+		if zone == "base":
+			var disc_pos := Vector3(5.95, 0.36, 1.52 if is_me else -1.62)
+			var c3d: Node3D = CARD_3D_SCRIPT.new()
+			_fx_root.add_child(c3d)
+			c3d.setup({"uid": -1, "id": cid, "placed_turn": -1}, sz, true, false, false)
+			c3d.position = start_pos
+			var tw := c3d.create_tween()
+			tw.set_parallel(true)
+			tw.tween_property(c3d, "position", start_pos + Vector3(0.0, 0.75, 0.0), 0.20).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(c3d, "rotation_degrees:z", 12.0, 0.20)
+			tw.chain().set_parallel(true)
+			tw.tween_property(c3d, "position", disc_pos, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+			tw.tween_property(c3d, "scale", Vector3(0.76, 0.76, 0.76), 0.38)
+			tw.chain().tween_callback(c3d.queue_free)
+		elif zone == "special":
+			# Senyawa meluncur kembali ke Deck Senyawa di tengah kanan
+			var comp_deck := Vector3(5.95, 0.48, -0.05)
+			var sc3d: Node3D = CARD_3D_SCRIPT.new()
+			_fx_root.add_child(sc3d)
+			sc3d.setup({"uid": -1, "id": cid, "placed_turn": -1}, sz, true, false, false)
+			sc3d.position = start_pos
+			var tws := sc3d.create_tween()
+			tws.set_parallel(true)
+			tws.tween_property(sc3d, "position", start_pos + Vector3(0.0, 0.9, 0.0), 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tws.chain().set_parallel(true)
+			tws.tween_property(sc3d, "position", comp_deck, 0.44).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+			tws.tween_property(sc3d, "scale", Vector3(0.75, 0.75, 0.75), 0.44)
+			tws.chain().tween_callback(sc3d.queue_free)
+			# 2 unsur yang menempel terbang kembali ke tangan pemiliknya
+			var parts: Array = prev.get("parts", [])
+			for k in mini(parts.size(), 2):
+				var p3d: Node3D = CARD_3D_SCRIPT.new()
+				_fx_root.add_child(p3d)
+				p3d.setup({"uid": -1, "id": String(parts[k]), "placed_turn": -1}, SIZE_SPECIAL, true, false, false)
+				p3d.position = start_pos + Vector3((float(k) - 0.5) * 0.35, 0.1, 0.0)
+				var hand_pos := Vector3(0.35 + (float(k) - 0.5) * 1.1, 1.3, 5.5 if is_me else -5.5)
+				var twp := p3d.create_tween()
+				twp.tween_interval(0.14 + float(k) * 0.10)
+				twp.chain().set_parallel(true)
+				twp.tween_property(p3d, "position", hand_pos, 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+				twp.tween_property(p3d, "scale", Vector3(0.82, 0.82, 0.82), 0.46)
+				twp.chain().tween_callback(p3d.queue_free)
 
 func _animate_new_spells(v: Dictionary) -> void:
 	var hist: Array = v.get("history", [])
@@ -724,18 +911,27 @@ func _play_synth_anim(result_id: String, is_me: bool, target_slot: int) -> void:
 	var dest_pos := _pos_special(is_me, target_slot) + Vector3(0.0, 0.08, 0.0)
 	var base_z := 2.35 if is_me else -2.45
 
-	# 1) Dua kartu unsur melayang & menyatu di titik reaksi tengah
+	# 1) Dua kartu unsur melayang dari slot asalnya & menyatu di titik reaksi tengah
 	var starts := [Vector3(-1.1, 0.25, base_z), Vector3(1.8, 0.25, base_z)]
+	var found_starts: Array[Vector3] = []
+	for uid in _prev_board_cards:
+		var prev: Dictionary = _prev_board_cards[uid]
+		if bool(prev.get("is_me", true)) == is_me and String(prev.get("zone", "")) == "base":
+			if parts.has(String(prev.get("id", ""))):
+				found_starts.append(prev.get("pos", Vector3.ZERO))
+	if found_starts.size() >= 2:
+		starts = [found_starts[0], found_starts[1]]
+
 	for k in mini(parts.size(), 2):
 		var part_card: Node3D = CARD_3D_SCRIPT.new()
 		_fx_root.add_child(part_card)
-		part_card.setup({"uid": -1, "id": String(parts[k]), "placed_turn": -1}, SIZE_BASE * 0.92, true, false, false)
+		part_card.setup({"uid": -1, "id": String(parts[k]), "placed_turn": -1}, SIZE_BASE * 0.94, true, false, false)
 		part_card.position = starts[k]
 		var tw_p := part_card.create_tween()
 		tw_p.set_parallel(true)
-		tw_p.tween_property(part_card, "position", merge_pos, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-		tw_p.tween_property(part_card, "rotation_degrees:y", 180.0 if k == 0 else -180.0, 0.34).set_trans(Tween.TRANS_CUBIC)
-		tw_p.tween_property(part_card, "scale", Vector3(0.25, 0.25, 0.25), 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		tw_p.tween_property(part_card, "position", merge_pos, 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		tw_p.tween_property(part_card, "rotation_degrees:y", 180.0 if k == 0 else -180.0, 0.46).set_trans(Tween.TRANS_CUBIC)
+		tw_p.tween_property(part_card, "scale", Vector3(0.28, 0.28, 0.28), 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 		tw_p.chain().tween_callback(part_card.queue_free)
 
 	# 2) Cincin reaksi heksagonal + 6 titik ikatan molekul mengembang saat bergabung
@@ -770,54 +966,54 @@ func _play_synth_anim(result_id: String, is_me: bool, target_slot: int) -> void:
 		burst.add_child(orb)
 
 	var tw_b := burst.create_tween()
-	tw_b.tween_interval(0.30)
+	tw_b.tween_interval(0.42)
 	tw_b.chain().set_parallel(true)
-	tw_b.tween_property(burst, "scale", Vector3(1.55, 1.55, 1.55), 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw_b.tween_property(burst, "rotation_degrees:y", 75.0, 0.36).set_trans(Tween.TRANS_CUBIC)
-	tw_b.tween_property(rmat, "albedo_color:a", 0.0, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw_b.tween_property(burst, "scale", Vector3(1.65, 1.65, 1.65), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw_b.tween_property(burst, "rotation_degrees:y", 85.0, 0.45).set_trans(Tween.TRANS_CUBIC)
+	tw_b.tween_property(rmat, "albedo_color:a", 0.0, 0.48).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw_b.chain().tween_callback(burst.queue_free)
 
 	# 3) Kartu Senyawa hasil sintesis muncul membesar, lalu meluncur masuk ke Zona Senyawa
 	var res_card: Node3D = CARD_3D_SCRIPT.new()
 	_fx_root.add_child(res_card)
-	res_card.setup({"uid": -1, "id": result_id, "placed_turn": -1}, SIZE_SPECIAL * 1.15, true, false, false)
+	res_card.setup({"uid": -1, "id": result_id, "placed_turn": -1}, SIZE_SPECIAL * 1.18, true, false, false)
 	res_card.position = merge_pos
 	res_card.rotation_degrees.x = 22.0
 	res_card.scale = Vector3(0.01, 0.01, 0.01)
 
 	var tw_r := res_card.create_tween()
-	tw_r.tween_interval(0.30)
-	tw_r.chain().tween_property(res_card, "scale", Vector3(1.22, 1.22, 1.22), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw_r.chain().tween_interval(0.35)
+	tw_r.tween_interval(0.42)
+	tw_r.chain().tween_property(res_card, "scale", Vector3(1.25, 1.25, 1.25), 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw_r.chain().tween_interval(0.45)
 	tw_r.chain().set_parallel(true)
-	tw_r.tween_property(res_card, "position", dest_pos, 0.32).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	tw_r.tween_property(res_card, "rotation_degrees:x", 0.0, 0.32).set_trans(Tween.TRANS_CUBIC)
-	tw_r.tween_property(res_card, "scale", Vector3(0.86, 0.86, 0.86), 0.32).set_trans(Tween.TRANS_CUBIC)
+	tw_r.tween_property(res_card, "position", dest_pos, 0.42).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tw_r.tween_property(res_card, "rotation_degrees:x", 0.0, 0.42).set_trans(Tween.TRANS_CUBIC)
+	tw_r.tween_property(res_card, "scale", Vector3(0.86, 0.86, 0.86), 0.42).set_trans(Tween.TRANS_CUBIC)
 	tw_r.chain().tween_callback(res_card.queue_free)
 
-## Animasi kartu Spell mendarat ke Slot Spell, tampil sebentar, lalu meluncur ke Discard Pile.
+## Animasi kartu Spell mendarat ke Slot Spell, tampil jelas, lalu meluncur ke Discard Pile.
 func _play_spell_slot_anim(card_id: String, is_me: bool) -> void:
-	var slot_pos := Vector3(4.60, 0.03, 2.35 if is_me else -2.45)
-	var disc_pos := Vector3(5.95, 0.32, 1.52 if is_me else -1.62)
+	var slot_pos := Vector3(4.60, 0.04, 2.35 if is_me else -2.45)
+	var disc_pos := Vector3(5.95, 0.36, 1.52 if is_me else -1.62)
 	var c3d: Node3D = CARD_3D_SCRIPT.new()
 	_fx_root.add_child(c3d)
 	c3d.setup({"uid": -1, "id": card_id, "placed_turn": -1}, SIZE_SPELL, true, false, false)
-	c3d.position = slot_pos + Vector3(0.0, 1.25, 0.35 if is_me else -0.35)
-	c3d.rotation_degrees.x = -22.0 if is_me else 22.0
+	c3d.position = Vector3(2.2, 1.45, 4.8 if is_me else -4.8)
+	c3d.rotation_degrees.x = -24.0 if is_me else 24.0
 	c3d.scale = Vector3(1.18, 1.18, 1.18)
 
 	var tw := c3d.create_tween()
-	# 1) Mendarat mantap ke Slot Spell
+	# 1) Meluncur & mendarat mantap ke Slot Spell
 	tw.set_parallel(true)
-	tw.tween_property(c3d, "position", slot_pos, 0.24).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.24).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(c3d, "scale", Vector3(1.03, 1.03, 1.03), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	# 2) Tahan sebentar agar pemain melihat kartu Spell terpasang & aktif
-	tw.chain().tween_interval(0.65)
-	# 3) Meluncur masuk ke tumpukan Discard Pile
+	tw.tween_property(c3d, "position", slot_pos, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c3d, "scale", Vector3(1.04, 1.04, 1.04), 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# 2) Tahan agar pemain jelas melihat kartu Spell aktif di Slot Spell
+	tw.chain().tween_interval(0.78)
+	# 3) Meluncur halus masuk ke tumpukan Discard Pile
 	tw.chain().set_parallel(true)
-	tw.tween_property(c3d, "position", disc_pos, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	tw.tween_property(c3d, "scale", Vector3(0.75, 0.75, 0.75), 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tw.tween_property(c3d, "position", disc_pos, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(c3d, "scale", Vector3(0.76, 0.76, 0.76), 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	tw.chain().tween_callback(c3d.queue_free)
 
 ## Menampilkan 2 kartu unsur dasar yang menempel di bawah/belakang kartu senyawa
@@ -850,44 +1046,55 @@ func _render_compound_table(ids: Array, my_base: Array, easy_mode: bool) -> void
 	var mine := {}
 	for c in my_base:
 		mine[c.id] = true
-	var seen := {}
-	var kinds: Array = []
-	for id in ids:
-		if seen.has(id):
-			continue
-		seen[id] = true
-		kinds.append(id)
+	var counts := {}
+	var kinds: Array[String] = []
+	for raw_id in ids:
+		var sid := String(raw_id)
+		counts[sid] = int(counts.get(sid, 0)) + 1
+		if not kinds.has(sid):
+			kinds.append(sid)
 	var n := kinds.size()
 	if n == 0:
+		_prev_compound_counts = {}
 		return
-	var spacing := minf(0.96, 8.6 / float(maxi(n, 1)))
+	var spacing := minf(1.02, 8.8 / float(maxi(n, 1)))
 	var start_x := -0.35 - (float(n - 1) * spacing) * 0.5
+	var deck_origin := Vector3(5.95, 0.42, -0.05)
+
 	for i in n:
 		var id: String = kinds[i]
 		var d: CardData = CardDB.get_card(id)
 		if d == null or d.recipe.size() != 2:
 			continue
-		var a: CardData = CardDB.get_card(d.recipe[0])
-		var b: CardData = CardDB.get_card(d.recipe[1])
-		if a == null or b == null:
-			continue
-		var recipe_txt := "%s + %s" % [a.symbol, b.symbol]
 		var have := int(mine.has(d.recipe[0])) + int(mine.has(d.recipe[1]))
-		var tint := Color.WHITE
-		if have == 2:
-			tint = Color(0.68, 0.96, 0.72)
-		elif have == 1 and easy_mode:
-			tint = Color(0.98, 0.92, 0.65)
-		var pos := Vector3(start_x + float(i) * spacing, 0.145, -0.05)
+		var pos := Vector3(start_x + float(i) * spacing, 0.25, -0.05)
 		var card_node := _spawn_card(
 			{"uid": -1, "id": id, "placed_turn": -1},
-			pos, SIZE_TABLE, true, false, true, recipe_txt, tint, false, false, false)
-		card_node.rotation_degrees.x = 18.0   # menengadah jelas di atas rak 3D tengah
+			pos, SIZE_TABLE, true, false, true, "", Color.WHITE, false, false, false)
+		card_node.rotation_degrees.x = 18.0   # menengadah jelas di atas rak 3D tanpa terpotong
+
+		# Animasi bingkai pinggiran berdenyut seperti kartu di tangan (tanpa menimpa warna gambar)
+		if have == 2:
+			card_node.set_border_pulse(true, Color(0.32, 0.90, 0.58, 1.0))
+		elif have == 1 and easy_mode:
+			card_node.set_border_pulse(true, Color(0.95, 0.80, 0.30, 1.0))
+
+		# Jika jumlah salinan senyawa ini baru berkurang (diambil sintesis) dan masih ada stok di deck,
+		# animasikan kartu pengganti langsung meluncur keluar dari Deck Senyawa ke slot tengah!
+		var prev_c := int(_prev_compound_counts.get(id, counts[id]))
+		if int(counts[id]) < prev_c:
+			card_node.position = deck_origin
+			card_node.scale = Vector3(0.85, 0.85, 0.85)
+			var tw := card_node.create_tween().set_parallel(true)
+			tw.tween_property(card_node, "position", pos, 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(card_node, "scale", Vector3.ONE, 0.36).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	_prev_compound_counts = counts
 
 func _spawn_card(card: Dictionary, pos: Vector3, size_3d: Vector2,
 		face_up: bool, can_click: bool, can_preview: bool,
 		recipe_text: String, tint: Color, is_cd: bool, is_play: bool,
-		animate_drop: bool) -> Node3D:
+		animate_drop: bool, from_me := true) -> Node3D:
 	var c3d: Node3D = CARD_3D_SCRIPT.new()
 	_cards_root.add_child(c3d)
 	c3d.position = pos
@@ -898,13 +1105,13 @@ func _spawn_card(card: Dictionary, pos: Vector3, size_3d: Vector2,
 	if can_click:
 		c3d.clicked.connect(func(u): card_clicked.emit(u))
 	if animate_drop:
-		c3d.position = pos + Vector3(0.0, 1.15, 0.22)
-		c3d.rotation_degrees.x = -18.0
-		c3d.scale = Vector3(1.16, 1.16, 1.16)
+		c3d.position = Vector3(pos.x, pos.y + 1.15, pos.z + (2.2 if from_me else -2.2))
+		c3d.rotation_degrees.x = -24.0 if from_me else 24.0
+		c3d.scale = Vector3(1.14, 1.14, 1.14)
 		var tw := c3d.create_tween().set_parallel(true)
-		tw.tween_property(c3d, "position", pos, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tw.tween_property(c3d, "scale", Vector3.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(c3d, "position", pos, 0.42).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.42).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(c3d, "scale", Vector3.ONE, 0.44).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	return c3d
 
 # --- Bantuan Mesh & Material Matte -------------------------------------------

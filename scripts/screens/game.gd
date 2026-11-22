@@ -45,6 +45,7 @@ var turn_timer := Timer.new()
 var _pending_key := ""          # penanda efek interaktif yang sedang ditampilkan
 var _glow_tween: Tween          # denyut glow zona tangan
 var _playable := {}             # uid kartu yang bisa dimainkan (dari state)
+var _prev_hand_uids := {}       # uid kartu di tangan sebelumnya (untuk animasi masuk kartu baru)
 var _ui_scale := 1.0
 var _disp_me_time := 900.0      # tampilan jam lokal pemain (15:00)
 var _disp_opp_time := 900.0     # tampilan jam lokal lawan (15:00)
@@ -79,6 +80,8 @@ func _ready() -> void:
 	$InGameSettings.back_to_menu_requested.connect(_back_to_menu)
 	$Result.back_to_menu_requested.connect(_back_to_menu)
 	$Result.rematch_requested.connect(_rematch)
+	$CoinFlipOverlay.coin_call_chosen.connect(func(side: String): submit({"type": "coin_call", "side": side}))
+	$CoinFlipOverlay.turn_order_chosen.connect(func(first: bool): submit({"type": "coin_order", "first": first}))
 	$GiveUpDialog.confirmed.connect(func(): submit({"type": "give_up"}))
 	$RevealPopup.resolved.connect(_on_spektrometer_resolved)
 	multiplayer.peer_disconnected.connect(_on_peer_gone)
@@ -109,8 +112,9 @@ func _process(delta: float) -> void:
 		_drag_ghost.rotation_degrees = lerpf(_drag_ghost.rotation_degrees, tilt, clampf(delta * 14.0, 0.0, 1.0))
 		_drag_last_pos = _drag_target_pos
 
-	# Sistem jam catur 15 menit per pemain (hanya berjalan untuk pemain aktif)
-	if not view.is_empty() and int(view.winner) == -2:
+	# Sistem jam catur 15 menit per pemain (hanya berjalan setelah koin flip selesai)
+	var in_coin: bool = not view.get("coin_phase", {}).is_empty()
+	if not view.is_empty() and int(view.winner) == -2 and not in_coin:
 		if state != null and (local_test or multiplayer.is_server()):
 			if state.tick_clock(delta):
 				_broadcast()
@@ -144,8 +148,9 @@ func _clock_color(sec: float) -> Color:
 
 func start_as_host() -> void:
 	state = GameState.new()
-	state.setup(randi())
+	state.setup(randi(), true)        # mulai dengan lempar koin sebelum draw kartu pertama
 	my_index = 0
+	_prev_hand_uids.clear()
 	_broadcast()
 
 # --- Tata letak responsif (Overlay 2D di atas Arena 3D) ----------------------
@@ -207,7 +212,13 @@ func _layout() -> void:
 
 func submit(action: Dictionary) -> void:
 	if local_test:
-		_handle(1 if state.current == 0 else 2, action)   # pemain aktif yang bertindak
+		var actor := state.current
+		if not state.coin_phase.is_empty():
+			if String(state.coin_phase.get("stage", "")) == "pick_call":
+				actor = int(state.coin_phase.get("caller", 0))
+			elif String(state.coin_phase.get("stage", "")) == "pick_order":
+				actor = int(state.coin_phase.get("winner", 0))
+		_handle(1 if actor == 0 else 2, action)
 	elif multiplayer.is_server():
 		_handle(1, action)
 	else:
@@ -223,6 +234,8 @@ func _handle(sender_id: int, a: Dictionary) -> void:
 	var p := 0 if sender_id == 1 else 1
 	var err := ""
 	match a.get("type", ""):
+		"coin_call":  err = state.choose_coin_call(p, String(a.get("side", "")))
+		"coin_order": err = state.choose_first_player(p, bool(a.get("first", true)))
 		"place":   err = state.place_base(p, int(a.get("uid", -1)), int(a.get("slot", -1)))
 		"synth":   err = state.synthesize(p, int(a.get("a", -1)), int(a.get("b", -1)))
 		"spell":   err = state.play_spell(p, int(a.get("uid", -1)), a.get("args", {}))
@@ -298,6 +311,7 @@ func render(v: Dictionary) -> void:
 		"Deck %d | Buang %d  •  Lawan deck %d" % [
 			v.me.deck_count, v.me.discard.size(), v.opp.deck_count])
 	_sync_pending(v)
+	$CoinFlipOverlay.sync(v, local_test)
 	$TurnHistory.update_history(v, local_test)
 	$DiscardDrawer.refresh_if_open(v, local_test)
 	if v.winner != -2:
@@ -347,6 +361,29 @@ func _fill_hand(dock: Control, cards: Array, face_up: bool, base_size: Vector2,
 		if playable.has(int(c.get("uid", -1))):
 			n.set_playable(true)
 	_layout_hand_fan(dock, face_up)
+
+	# Animasi masuk halus untuk kartu baru yang baru ditarik ke tangan pemain
+	if face_up:
+		var next_hand_uids := {}
+		var new_idx := 0
+		for n in dock.get_children():
+			var u := int(n.uid)
+			next_hand_uids[u] = true
+			if not _prev_hand_uids.is_empty() and not _prev_hand_uids.has(u):
+				var dest_pos: Vector2 = n.position
+				var dest_rot: float = n.rotation_degrees
+				n.position = dest_pos + Vector2(90.0 * _ui_scale, 75.0 * _ui_scale)
+				n.rotation_degrees = dest_rot + 14.0
+				n.modulate.a = 0.0
+				var tw := n.create_tween()
+				if new_idx > 0:
+					tw.tween_interval(float(new_idx) * 0.10)
+				tw.chain().set_parallel(true)
+				tw.tween_property(n, "position", dest_pos, 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+				tw.tween_property(n, "rotation_degrees", dest_rot, 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+				tw.tween_property(n, "modulate:a", 1.0, 0.28)
+				new_idx += 1
+		_prev_hand_uids = next_hand_uids
 
 func _layout_hand_fan(dock: Control, is_me: bool) -> void:
 	var cards := dock.get_children()

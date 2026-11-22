@@ -24,6 +24,7 @@ var card_size := Vector2(1.12, 1.50)
 var _data := {}
 var _hovered := false
 var _playable := false
+var _pulse_color := COLOR_PLAYABLE
 
 var _visual: Node3D
 var _body_mesh: MeshInstance3D
@@ -62,8 +63,9 @@ func _build_nodes() -> void:
 	_front_mesh.rotation_degrees.x = -90.0
 	_front_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_front_mat = StandardMaterial3D.new()
-	_front_mat.roughness = 0.44
-	_front_mat.metallic = 0.04
+	_front_mat.roughness = 0.72
+	_front_mat.metallic = 0.02
+	_front_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	_front_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 	_front_mat.alpha_scissor_threshold = 0.25
 	_front_mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
@@ -164,7 +166,12 @@ func _apply_geometry() -> void:
 	col.position.y = 0.10
 
 func set_playable(on: bool) -> void:
+	set_border_pulse(on, COLOR_PLAYABLE)
+
+## Animasi bingkai pinggiran kartu berdenyut (hijau untuk siap main/sintesis, kuning/amber untuk 1/2 bahan).
+func set_border_pulse(on: bool, col: Color = COLOR_PLAYABLE) -> void:
 	_playable = on
+	_pulse_color = col
 	if _play_tween != null and _play_tween.is_valid():
 		_play_tween.kill()
 	_play_tween = null
@@ -179,10 +186,10 @@ func _update_glow_visual() -> void:
 		return
 	if _playable:
 		_glow_mesh.visible = true
-		_glow_mat.albedo_color = Color(COLOR_PLAYABLE.r, COLOR_PLAYABLE.g, COLOR_PLAYABLE.b, 0.92)
+		_glow_mat.albedo_color = Color(_pulse_color.r, _pulse_color.g, _pulse_color.b, 0.92)
 		if _play_tween == null or not _play_tween.is_valid():
 			_play_tween = create_tween().set_loops()
-			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.45, 0.65).set_trans(Tween.TRANS_SINE)
+			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.35, 0.65).set_trans(Tween.TRANS_SINE)
 			_play_tween.tween_property(_glow_mat, "albedo_color:a", 0.95, 0.65).set_trans(Tween.TRANS_SINE)
 	else:
 		_glow_mesh.visible = false

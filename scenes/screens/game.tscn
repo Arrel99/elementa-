@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/ui/toast.tscn" id="2_toast"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/ui/hex_log_button.gd" id="11_hexbtn"]
 [ext_resource type="PackedScene" path="res://scenes/ui/discard_drawer.tscn" id="12_discard"]
 [ext_resource type="PackedScene" path="res://scenes/ui/result_modal.tscn" id="13_result"]
+[ext_resource type="PackedScene" path="res://scenes/ui/coin_flip_overlay.tscn" id="14_coin"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 8.0
@@ -279,3 +280,5 @@ cancel_button_text = "Batal"
 [node name="TurnHistory" parent="." instance=ExtResource("10_history")]
 
 [node name="DiscardDrawer" parent="." instance=ExtResource("12_discard")]
+
+[node name="CoinFlipOverlay" parent="." instance=ExtResource("14_coin")]

@@ -17,6 +17,7 @@ var countdown: int = -1          # hitungan mundur zona spesial; -1 = belum dipi
 var winner: int = -2             # -2 belum selesai, -1 seri, 0/1 pemenang
 var win_reason: String = ""      # surrender | deck_out | special_full
 var pending: Dictionary = {}     # efek interaktif yang menunggu penyelesaian (Spektrometer)
+var coin_phase: Dictionary = {}  # fase lempar koin awal sebelum draw kartu pertama
 var history: Array = []          # riwayat kronologis kartu yang dimainkan per giliran
 
 var _next_uid: int = 1
@@ -43,7 +44,7 @@ func _new_card(id: String) -> Dictionary:
 
 # --- Setup (bagian 5) -------------------------------------------------------
 
-func setup(rng_seed: int) -> void:
+func setup(rng_seed: int, with_coin_flip := false) -> void:
 	seed(rng_seed)
 	players.clear()
 	# Deck Senyawa bersama: tiap senyawa punya beberapa salinan (aturan
@@ -58,9 +59,10 @@ func setup(rng_seed: int) -> void:
 			"discard": [], "points": 0, "shield": false,
 			"time_left": MATCH_CLOCK_SECONDS,
 		})
-		for k in _rules().start_hand:
-			_draw_one(i)
-	current = randi() % 2        # pemain pertama ditentukan acak (bagian 5)
+		if not with_coin_flip:
+			for k in _rules().start_hand:
+				_draw_one(i)
+	current = randi() % 2        # pemain pertama ditentukan acak (atau dari koin flip)
 	turn_no = 1
 	synth_left = 1
 	spell_left = 1
@@ -69,6 +71,44 @@ func setup(rng_seed: int) -> void:
 	win_reason = ""
 	pending = {}
 	history = []
+	if with_coin_flip:
+		coin_phase = {
+			"stage": "pick_call",
+			"caller": randi() % 2,
+			"call": "",
+			"result": "",
+			"winner": -1,
+		}
+	else:
+		coin_phase = {}
+
+## Tahap 1 koin flip: pemain pemilih menentukan Heads / Tails, lalu koin dilempar 50/50.
+func choose_coin_call(p: int, side: String) -> String:
+	if coin_phase.is_empty() or String(coin_phase.get("stage", "")) != "pick_call":
+		return "Bukan fase memilih sisi koin."
+	if p != int(coin_phase.get("caller", -1)):
+		return "Menunggu pemain lain memilih sisi koin."
+	if side != "heads" and side != "tails":
+		return "Pilihan koin tidak valid."
+	var res := "heads" if (randi() % 2 == 0) else "tails"
+	coin_phase["call"] = side
+	coin_phase["result"] = res
+	coin_phase["winner"] = p if res == side else (1 - p)
+	coin_phase["stage"] = "pick_order"
+	return ""
+
+## Tahap 2 koin flip: pemenang koin memilih giliran pertama atau kedua, lalu kartu awal ditarik.
+func choose_first_player(p: int, go_first: bool) -> String:
+	if coin_phase.is_empty() or String(coin_phase.get("stage", "")) != "pick_order":
+		return "Bukan fase memilih urutan giliran."
+	if p != int(coin_phase.get("winner", -1)):
+		return "Menunggu pemenang koin memilih urutan giliran."
+	current = p if go_first else (1 - p)
+	coin_phase = {}
+	for i in 2:
+		for k in _rules().start_hand:
+			_draw_one(i)
+	return ""
 
 ## Deck 60 kartu: jumlah salinan tiap kartu ada di field deck_copies (Lampiran A/C).
 ## Kartu spesial (senyawa) tidak pernah masuk deck.
@@ -117,6 +157,8 @@ func _peek(arr: Array, uid: int) -> Dictionary:
 	return {}
 
 func _turn_guard(p: int) -> String:
+	if not coin_phase.is_empty():
+		return "Selesaikan lempar koin awal dulu."
 	if p != current:
 		return "Bukan giliranmu."
 	if winner != -2:
@@ -586,7 +628,7 @@ func surrender(p: int) -> void:
 
 ## Mengurangi sisa waktu pemain aktif (15 menit per pemain). Mengembalikan true jika waktu habis.
 func tick_clock(delta: float) -> bool:
-	if winner != -2 or players.size() < 2:
+	if winner != -2 or not coin_phase.is_empty() or players.size() < 2:
 		return false
 	var pl: Dictionary = players[current]
 	var t: float = maxf(0.0, float(pl.get("time_left", MATCH_CLOCK_SECONDS)) - delta)
@@ -627,6 +669,7 @@ func view_for(p: int) -> Dictionary:
 			"special_win_threshold": _rules().special_win_threshold,
 		},
 		"pending": _pending_view(p),
+		"coin_phase": coin_phase.duplicate(true),
 		"playable": playable_ids(p),
 		"history": _history_view(p),
 		"me": {
