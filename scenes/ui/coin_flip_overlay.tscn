@@ -3,9 +3,9 @@
 [ext_resource type="Script" path="res://scripts/ui/coin_flip_overlay.gd" id="1_coin"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
-content_margin_left = 30.0
+content_margin_left = 32.0
 content_margin_top = 24.0
-content_margin_right = 30.0
+content_margin_right = 32.0
 content_margin_bottom = 26.0
 bg_color = Color(0.092, 0.112, 0.140, 0.98)
 border_width_left = 1
@@ -113,7 +113,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Card" type="PanelContainer" parent="Root/Center"]
-custom_minimum_size = Vector2(540, 0)
+custom_minimum_size = Vector2(560, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -121,57 +121,53 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Badge" type="Label" parent="Root/Center/Card/V"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.58, 0.74, 0.70, 1)
-theme_override_font_sizes/font_size = 13
-text = "PENENTUAN GILIRAN  •  TAHAP 1 / 2"
-horizontal_alignment = 1
-
 [node name="Title" type="Label" parent="Root/Center/Card/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.98, 1.0, 1)
-theme_override_font_sizes/font_size = 30
-text = "Pilih Sisi Koin"
+theme_override_font_sizes/font_size = 28
+text = "Heads atau Tails?"
 horizontal_alignment = 1
 
 [node name="CoinArea" type="CenterContainer" parent="Root/Center/Card/V"]
-custom_minimum_size = Vector2(0, 210)
+custom_minimum_size = Vector2(0, 320)
 layout_mode = 2
 
-[node name="Coin" type="Control" parent="Root/Center/Card/V/CoinArea"]
-custom_minimum_size = Vector2(210, 210)
+[node name="CoinViewport" type="SubViewportContainer" parent="Root/Center/Card/V/CoinArea"]
+custom_minimum_size = Vector2(360, 320)
 layout_mode = 2
+stretch = true
 
-[node name="Status" type="Label" parent="Root/Center/Card/V"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.76, 0.83, 0.90, 1)
-theme_override_font_sizes/font_size = 15
-text = "Pilih HEADS atau TAILS."
-horizontal_alignment = 1
-autowrap_mode = 3
+[node name="SubViewport" type="SubViewport" parent="Root/Center/Card/V/CoinArea/CoinViewport"]
+own_world_3d = true
+transparent_bg = true
+handle_input_locally = false
+msaa_3d = 2
+size = Vector2i(360, 320)
+render_target_update_mode = 4
+
+[node name="CoinWorld" type="Node3D" parent="Root/Center/Card/V/CoinArea/CoinViewport/SubViewport"]
 
 [node name="CallButtons" type="HBoxContainer" parent="Root/Center/Card/V"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="Heads" type="Button" parent="Root/Center/Card/V/CallButtons"]
-custom_minimum_size = Vector2(210, 56)
+custom_minimum_size = Vector2(215, 58)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.98, 0.95, 0.88, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBoxFlat_heads")
 theme_override_styles/hover = SubResource("StyleBoxFlat_heads_hover")
 text = "HEADS"
 
 [node name="Tails" type="Button" parent="Root/Center/Card/V/CallButtons"]
-custom_minimum_size = Vector2(210, 56)
+custom_minimum_size = Vector2(215, 58)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.92, 0.96, 1.0, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBoxFlat_tails")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tails_hover")
 text = "TAILS"
@@ -179,11 +175,11 @@ text = "TAILS"
 [node name="OrderButtons" type="HBoxContainer" parent="Root/Center/Card/V"]
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="First" type="Button" parent="Root/Center/Card/V/OrderButtons"]
-custom_minimum_size = Vector2(210, 56)
+custom_minimum_size = Vector2(215, 58)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.96, 0.99, 0.98, 1)
@@ -193,7 +189,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_heads_hover")
 text = "Giliran Pertama"
 
 [node name="Second" type="Button" parent="Root/Center/Card/V/OrderButtons"]
-custom_minimum_size = Vector2(210, 56)
+custom_minimum_size = Vector2(215, 58)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.92, 0.96, 1.0, 1)
