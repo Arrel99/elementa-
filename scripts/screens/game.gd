@@ -166,6 +166,7 @@ func _clock_color(sec: float) -> Color:
 	return Color(0.92, 0.94, 0.97, 1.0)
 
 func start_as_host() -> void:
+	randomize()                       # pastikan seed acak murni di setiap pertandingan (tidak rigged)
 	state = GameState.new()
 	if tutorial_mode:
 		state.setup_tutorial()
