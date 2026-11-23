@@ -86,7 +86,6 @@ func _ready() -> void:
 	$Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
 	$BattleLogBtn.pressed.connect(func(): $TurnHistory.toggle())
 	$InGameSettings.give_up_requested.connect($GiveUpDialog.popup_centered)
-	$InGameSettings.back_to_menu_requested.connect(_back_to_menu)
 	$Result.back_to_menu_requested.connect(_back_to_menu)
 	$Result.rematch_requested.connect(_rematch)
 	$CoinFlipOverlay.coin_call_chosen.connect(func(side: String): submit({"type": "coin_call", "side": side}))

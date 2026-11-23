@@ -127,11 +127,6 @@ layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="ToMenu" type="Button" parent="Slide/V"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-text = "Kembali ke Menu"
-
 [node name="Close" type="Button" parent="Slide/V"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2

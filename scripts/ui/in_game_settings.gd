@@ -11,7 +11,6 @@ extends CanvasLayer
 ## supaya aturan permainan tidak ikut di sini.
 
 signal give_up_requested
-signal back_to_menu_requested
 
 const PANEL_W := 360.0          # lebar panel (harus sama dengan offset di .tscn)
 const ANIM := 0.22              # durasi geser masuk/keluar (detik)
@@ -42,9 +41,6 @@ func _ready() -> void:
 	$Slide/V/GiveUp.pressed.connect(func() -> void:
 		close()
 		give_up_requested.emit())
-	$Slide/V/ToMenu.pressed.connect(func() -> void:
-		close()
-		back_to_menu_requested.emit())
 	$Slide/V/Close.pressed.connect(close)
 
 func is_open() -> bool:
