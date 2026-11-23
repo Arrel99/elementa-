@@ -5,6 +5,7 @@ extends Control
 ## Host = pemain 0 (menjalankan GameState), klien = pemain 1.
 
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
+const AI_SCRIPT := preload("res://scripts/core/ai_player.gd")
 
 # Ukuran kartu tangan di overlay 2D (skala dasar untuk tinggi jendela 1080)
 const SIZE_HAND := Vector2(114, 152)
@@ -40,8 +41,11 @@ var synth_first := -1
 var pending_spell_uid := -1
 var pending_zone := ""
 var local_test := false
+var vs_ai := false
+var ai_difficulty := "normal"
 var easy_mode := true
 var turn_timer := Timer.new()
+var _ai_timer := Timer.new()
 var _pending_key := ""          # penanda efek interaktif yang sedang ditampilkan
 var _glow_tween: Tween          # denyut glow zona tangan
 var _playable := {}             # uid kartu yang bisa dimainkan (dari state)
@@ -64,6 +68,8 @@ var _drag_last_pos := Vector2.ZERO
 func _ready() -> void:
 	Audio.play_music("game")
 	local_test = Net.local_test
+	vs_ai = Net.vs_ai
+	ai_difficulty = Net.ai_difficulty
 	resized.connect(_layout)
 	_layout()
 
@@ -90,13 +96,21 @@ func _ready() -> void:
 	multiplayer.peer_disconnected.connect(_on_peer_gone)
 	multiplayer.server_disconnected.connect(_on_server_gone)
 	_setup_timer()
+	_ai_timer.one_shot = true
+	_ai_timer.timeout.connect(_on_ai_step)
+	add_child(_ai_timer)
 
 	# Godot memakai OfflineMultiplayerPeer saat tidak ada jaringan, dan peer
 	# itu melaporkan is_server() = true. Deteksi tipe peer-nya lebih dulu.
 	var offline := multiplayer.multiplayer_peer is OfflineMultiplayerPeer
-	if local_test or offline:
-		# Mode uji lokal satu layar (bab 4.8): dua pemain bergantian.
-		local_test = true
+	if vs_ai or (offline and not local_test):
+		# Mode VS. AI: Pemain 0 = Kamu, Pemain 1 = AI.
+		vs_ai = true
+		Net.vs_ai = true
+		local_test = false
+		start_as_host()
+	elif local_test:
+		# Mode uji lokal satu layar: dua pemain bergantian.
 		Net.local_test = true
 		start_as_host()
 	elif multiplayer.is_server():
@@ -118,7 +132,7 @@ func _process(delta: float) -> void:
 	# Sistem jam catur 15 menit per pemain (hanya berjalan setelah koin flip selesai)
 	var in_coin: bool = not view.get("coin_phase", {}).is_empty()
 	if not view.is_empty() and int(view.winner) == -2 and not in_coin:
-		if state != null and (local_test or multiplayer.is_server()):
+		if state != null and (vs_ai or local_test or multiplayer.is_server()):
 			if state.tick_clock(delta):
 				_broadcast()
 				return
@@ -216,7 +230,9 @@ func _layout() -> void:
 # --- Aksi (bab 4.8 / 6.2) ---------------------------------------------------
 
 func submit(action: Dictionary) -> void:
-	if local_test:
+	if vs_ai:
+		_handle(1, action)
+	elif local_test:
 		var actor := state.current
 		if not state.coin_phase.is_empty():
 			if String(state.coin_phase.get("stage", "")) == "pick_call":
@@ -258,7 +274,7 @@ func _handle(sender_id: int, a: Dictionary) -> void:
 			show_error.rpc_id(sender_id, err)
 		return
 	_broadcast()
-	if not local_test and multiplayer.is_server() and state.winner == -2:
+	if not local_test and not vs_ai and multiplayer.is_server() and state.winner == -2:
 		turn_timer.start(60)
 
 @rpc("authority", "call_remote", "reliable")
@@ -274,12 +290,48 @@ func _on_spektrometer_resolved(take_uid: int) -> void:
 	submit({"type": "spektro", "take": take_uid})
 
 func _broadcast() -> void:
+	if vs_ai:
+		render(state.view_for(0))   # sudut pandang selalu Kamu (Pemain 0) vs AI (Pemain 1)
+		_schedule_ai_if_needed()
+		return
 	if local_test:
 		render(state.view_for(state.current))   # layar menampilkan sudut pandang pemain aktif
 		return
 	render(state.view_for(0))
 	for id in multiplayer.get_peers():
 		receive_view.rpc_id(id, state.view_for(1))
+
+func _schedule_ai_if_needed() -> void:
+	if not vs_ai or state == null or state.winner != -2:
+		_ai_timer.stop()
+		return
+	var delay := -1.0
+	if not state.coin_phase.is_empty():
+		var stage := String(state.coin_phase.get("stage", ""))
+		if stage == "pick_call" and int(state.coin_phase.get("caller", -1)) == 1:
+			delay = 0.95
+		elif stage == "pick_order" and int(state.coin_phase.get("winner", -1)) == 1:
+			delay = 2.20   # tunggu animasi koin 3D selesai berputar
+	elif not state.pending.is_empty():
+		if int(state.pending.get("to", -1)) == 1:
+			delay = 0.90
+	elif state.current == 1:
+		match ai_difficulty:
+			"easy": delay = 1.05
+			"hard": delay = 0.78
+			"extreme": delay = 0.68
+			_: delay = 0.90
+	if delay > 0.0:
+		_ai_timer.start(delay)
+	else:
+		_ai_timer.stop()
+
+func _on_ai_step() -> void:
+	if not vs_ai or state == null or state.winner != -2:
+		return
+	var act: Dictionary = AI_SCRIPT.choose_action(state, 1, ai_difficulty)
+	if not act.is_empty():
+		_handle(2, act)
 
 # --- Render (Arena 3D + Tangan 2D + HUD) ------------------------------------
 
@@ -769,7 +821,7 @@ func _show_result() -> void:
 			Audio.play_sfx("win_fanfare", -1.0)
 		else:
 			Audio.play_sfx("lose_jingle", -1.0)
-	$Result.show_result(view, REASON_TEXT.get(view.win_reason, ""), local_test)
+	$Result.show_result(view, REASON_TEXT.get(view.win_reason, ""), local_test, vs_ai, ai_difficulty)
 
 func _rematch() -> void:
 	$Result.hide()

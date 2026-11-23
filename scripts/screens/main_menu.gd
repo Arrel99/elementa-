@@ -54,10 +54,10 @@ func _ready() -> void:
 			_sfx_lbl.text = "Efek Suara: %d%%" % int(round(v * 100.0))
 	)
 
-	# tombol uji lokal (bab 4.8) hanya ada di build debug
-	var local_btn: Button = _v.get_node("LocalTest")
-	local_btn.visible = OS.is_debug_build()
-	local_btn.pressed.connect(_start_practice)
+	# Mode VS. AI tersedia di semua build (debug maupun release) -> buka pilih level AI
+	var ai_btn: Button = _v.get_node("LocalTest")
+	ai_btn.visible = true
+	ai_btn.pressed.connect(_go.bind("ai_select"))
 
 	# Pasang animasi hover/tekan taktil pada semua tombol menu
 	_setup_button_motion()
@@ -144,7 +144,8 @@ func _close_settings() -> void:
 
 func _start_practice() -> void:
 	Settings.set_value("ui", "show_coach", true)
-	Net.local_test = true
+	Net.local_test = false
+	Net.vs_ai = true
 	_go("game")
 
 func _unhandled_input(e: InputEvent) -> void:

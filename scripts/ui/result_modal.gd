@@ -24,7 +24,7 @@ func _ready() -> void:
 	_back_btn.pressed.connect(func(): back_to_menu_requested.emit())
 	_rematch_btn.pressed.connect(func(): rematch_requested.emit())
 
-func show_result(v: Dictionary, reason_text: String, is_local_test: bool) -> void:
+func show_result(v: Dictionary, reason_text: String, is_local_test: bool, is_vs_ai := false, ai_diff := "normal") -> void:
 	var w := int(v.winner)
 	var me_idx := int(v.me_index)
 	var accent_col := Color(0.36, 0.56, 0.72, 1.0)
@@ -57,12 +57,13 @@ func show_result(v: Dictionary, reason_text: String, is_local_test: bool) -> voi
 
 	_reason.text = reason_text
 	_me_who.text = ("PEMAIN %d" % (me_idx + 1)) if is_local_test else "KAMU"
-	_opp_who.text = ("PEMAIN %d" % ((1 - me_idx) + 1)) if is_local_test else "LAWAN"
+	_opp_who.text = ("PEMAIN %d" % ((1 - me_idx) + 1)) if is_local_test else (
+		("AI (%s)" % ai_diff.to_upper()) if is_vs_ai else "LAWAN")
 	_me_pts.text = str(v.me.points)
 	_opp_pts.text = str(v.opp.points)
 	_me_meta.text = "%d Senyawa  •  %s" % [v.me.special.size(), _fmt_clock(float(v.me.get("time_left", 0.0)))]
 	_opp_meta.text = "%d Senyawa  •  %s" % [v.opp.special.size(), _fmt_clock(float(v.opp.get("time_left", 0.0)))]
-	_rematch_btn.visible = is_local_test
+	_rematch_btn.visible = is_local_test or is_vs_ai
 
 	if not visible:
 		show()

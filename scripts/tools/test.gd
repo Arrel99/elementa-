@@ -255,6 +255,33 @@ func _ready() -> void:
 	_check(g14b.players[0].discard.size() == 1, "Korosi masuk Discard setelah efek selesai")
 	_check(g14b.players[1].base.is_empty(), "Target Korosi hancur ke Discard lawan")
 
+	# --- AI Player (VS. AI) ---
+	var ai_script = load("res://scripts/core/ai_player.gd")
+	var gai := GameState.new()
+	gai.setup(777)
+	gai.current = 1
+	_force_base(gai, 1, "Na")
+	_force_base(gai, 1, "Cl")
+	var ai_steps := 0
+	var ai_ok := true
+	while gai.current == 1 and gai.winner == -2 and ai_steps < 20:
+		var act: Dictionary = ai_script.choose_action(gai, 1)
+		var aerr := ""
+		match String(act.get("type", "")):
+			"place": aerr = gai.place_base(1, int(act.get("uid", -1)), int(act.get("slot", -1)))
+			"synth": aerr = gai.synthesize(1, int(act.get("a", -1)), int(act.get("b", -1)))
+			"spell": aerr = gai.play_spell(1, int(act.get("uid", -1)), act.get("args", {}))
+			"spell_target": aerr = gai.resolve_spell_target(1, int(act.get("target_uid", -1)))
+			"spektro": aerr = gai.resolve_spektrometer(1, int(act.get("take", -1)))
+			"end": aerr = gai.end_turn(1)
+		if aerr != "":
+			ai_ok = false
+			break
+		ai_steps += 1
+	_check(ai_ok, "AI menyelesaikan gilirannya tanpa aksi error")
+	_check(gai.players[1].special.size() >= 1, "AI otomatis menyintesis Na + Cl -> NaCl")
+	_check(gai.current == 0, "AI mengakhiri gilirannya dan menyerahkan ke pemain")
+
 	# --- Menyerah (bagian 9.1) ---
 	var g15 := GameState.new()
 	g15.setup(1)
