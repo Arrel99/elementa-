@@ -369,15 +369,30 @@ func _create_pile(parent: Node3D, key: String, show_back_top: bool, pos: Vector3
 				discard_clicked.emit(is_me_pile))
 		parent.add_child(area)
 
+	# Lencana angka solid (penuh, tidak berongga) menyatu di pojok kiri bawah luar border deck
+	var badge_w := 0.44
+	var badge_d := 0.34
+	var badge_x := pos.x - SIZE_PILE.x * 0.5 - badge_w * 0.44
+	var badge_z := pos.z + SIZE_PILE.y * 0.5 - badge_d * 0.44
+
+	var badge_pad := _make_box(
+		Vector3(badge_w, 0.048, badge_d),
+		border_col.darkened(0.16),
+		0.55,
+		0.08,
+		true)
+	badge_pad.position = Vector3(badge_x, pos.y + 0.024, badge_z)
+	parent.add_child(badge_pad)
+
 	var count_lbl := Label3D.new()
 	count_lbl.text = "0"
-	count_lbl.font_size = 52
-	count_lbl.pixel_size = 0.0085
-	count_lbl.modulate = Color(0.94, 0.95, 0.97, 1.0)
-	count_lbl.outline_size = 8
-	count_lbl.outline_modulate = Color(0.06, 0.07, 0.09, 0.95)
-	count_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	count_lbl.position = Vector3(pos.x, 0.55, pos.z)
+	count_lbl.font_size = 44
+	count_lbl.pixel_size = 0.0050
+	count_lbl.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	count_lbl.outline_size = 4
+	count_lbl.outline_modulate = Color(0.05, 0.06, 0.08, 0.85)
+	count_lbl.rotation_degrees.x = -90.0
+	count_lbl.position = Vector3(badge_x, pos.y + 0.054, badge_z)
 	parent.add_child(count_lbl)
 
 	_piles[key] = {"mesh": stack, "top_face": top_face, "count": count_lbl, "base_pos": pos}
@@ -395,7 +410,6 @@ func _update_pile(key: String, count: int) -> float:
 		mesh.visible = false
 		if top_face != null:
 			top_face.visible = false
-		lbl.position.y = base_pos.y + 0.25
 		return base_pos.y + 0.01
 	mesh.visible = true
 	var h := clampf(float(count) * 0.011 + 0.04, 0.05, 0.68)
@@ -405,7 +419,6 @@ func _update_pile(key: String, count: int) -> float:
 	if top_face != null:
 		top_face.visible = true
 		top_face.position = Vector3(base_pos.x, base_pos.y + h + 0.014, base_pos.z)
-	lbl.position = Vector3(base_pos.x, base_pos.y + h + 0.26, base_pos.z)
 	return base_pos.y + h + 0.016
 
 # --- Slot Spell Khusus (menggantikan slot senyawa terakhir) ------------------
