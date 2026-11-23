@@ -14,6 +14,8 @@ const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 @onready var _desc_lbl: Label = $Root/Center/Card/V/Body/Info/DescPanel/Desc
 @onready var _recipe_panel: PanelContainer = $Root/Center/Card/V/Body/Info/RecipePanel
 @onready var _recipe_lbl: Label = $Root/Center/Card/V/Body/Info/RecipePanel/Recipe
+@onready var _ct_panel: PanelContainer = $Root/Center/Card/V/Body/Info/CTPanel
+@onready var _ct_title: Label = $Root/Center/Card/V/Body/Info/CTPanel/V/CTTitle
 @onready var _ct_lbl: Label = $Root/Center/Card/V/Body/Info/CTPanel/V/CT
 
 var _preview_card: Control
@@ -51,7 +53,10 @@ func show_card(id: String) -> void:
 			_type_badge.add_theme_color_override("font_color", Color(0.84, 0.56, 0.58, 1))
 
 	_name_lbl.text = d.display_name
-	_desc_lbl.text = d.description if d.description != "" else "Tidak ada deskripsi."
+	if d.type == CardData.Type.SPELL:
+		_desc_lbl.text = "Ability: %s" % d.description if d.description != "" else "Tidak ada deskripsi."
+	else:
+		_desc_lbl.text = d.description if d.description != "" else "Tidak ada deskripsi."
 
 	_build_stats(d)
 
@@ -64,13 +69,15 @@ func show_card(id: String) -> void:
 		else:
 			_recipe_lbl.text = "Resep Sintesis: %s + %s" % [d.recipe[0], d.recipe[1]]
 		_recipe_panel.visible = true
-	elif d.type == CardData.Type.SPELL and d.spell_effect != "":
-		_recipe_lbl.text = "Efek Spell: %s" % d.spell_effect.replace("_", " ").capitalize()
-		_recipe_panel.visible = true
 	else:
 		_recipe_panel.visible = false
 
-	_ct_lbl.text = d.ct_note if d.ct_note != "" else "Belum ada catatan tambahan untuk kartu ini."
+	if d.ct_note != "":
+		_ct_title.text = "PENJELASAN ALAT" if d.type == CardData.Type.SPELL else "CATATAN SAINS"
+		_ct_lbl.text = d.ct_note
+		_ct_panel.visible = true
+	else:
+		_ct_panel.visible = false
 	_resize_modal()
 	_root.show()
 
