@@ -238,6 +238,23 @@ func _ready() -> void:
 	_check(g14.players[0].hand.size() == hand_before3, "Bilas menambah 1 kartu setelah dibuang")
 	_check(g14.players[0].deck.size() == deck_before2 - 1, "Bilas menarik 1 kartu dari deck")
 
+	# --- Spell bertarget masuk Zona Spell terkunci (tidak bisa kembali ke tangan) ---
+	var g14b := GameState.new()
+	g14b.setup(52)
+	g14b.current = 0
+	var opp_b := _force_base(g14b, 1, "Fe")
+	var kor_c := _force_hand(g14b, 0, "korosi")
+	var h_before_kor: int = g14b.players[0].hand.size()
+	_check(g14b.play_spell(0, kor_c.uid, {}) == "", "Korosi masuk Zona Spell tanpa target_uid")
+	_check(g14b.players[0].hand.size() == h_before_kor - 1, "Korosi sudah keluar dari tangan (tidak kembali ke tangan)")
+	_check(g14b.players[0].active_spells.size() == 1, "Korosi terdiam di Zona Spell sambil menunggu target")
+	_check(g14b.players[0].discard.is_empty(), "Korosi belum masuk Discard sebelum target dipilih")
+	_check(g14b.end_turn(0) != "", "Tidak bisa mengakhiri giliran sebelum target Spell dipilih")
+	_check(g14b.resolve_spell_target(0, opp_b.uid) == "", "Memilih target Korosi sukses")
+	_check(g14b.players[0].active_spells.is_empty(), "Korosi keluar dari Zona Spell setelah efek selesai")
+	_check(g14b.players[0].discard.size() == 1, "Korosi masuk Discard setelah efek selesai")
+	_check(g14b.players[1].base.is_empty(), "Target Korosi hancur ke Discard lawan")
+
 	# --- Menyerah (bagian 9.1) ---
 	var g15 := GameState.new()
 	g15.setup(1)

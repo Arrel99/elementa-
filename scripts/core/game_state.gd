@@ -7,6 +7,13 @@ extends RefCounted
 
 const MATCH_CLOCK_SECONDS := 900.0  # 15 menit per pemain
 
+const SPELL_TARGET_ZONE := {
+	"bilas": "my_base",
+	"korosi": "opp_base",
+	"elektrolisis": "my_special",
+	"elektrolisis_paksa": "opp_special",
+}
+
 var players: Array = []          # 2 Dictionary pemain
 var compound_pile: Array = []    # id senyawa yang masih tersedia di Tabel Senyawa
 var current: int = 0             # index pemain aktif
@@ -165,6 +172,8 @@ func _turn_guard(p: int) -> String:
 	if winner != -2:
 		return "Game sudah selesai."
 	if not pending.is_empty():
+		if String(pending.get("type", "")) == "spell_target":
+			return "Pilih target untuk kartu Spell di Zona Spell dulu."
 		return "Selesaikan efek Spektrometer dulu."
 	return ""
 
@@ -303,6 +312,27 @@ func play_spell(p: int, uid: int, args: Dictionary) -> String:
 	var fn: Callable = _effects.get(data.spell_effect, Callable())
 	if fn.is_null():
 		return "Efek belum diimplementasi."
+
+	# Spell bertarget yang dimainkan tanpa target_uid langsung masuk & terkunci di Zona Spell
+	# (tidak bisa kembali ke tangan) sambil menunggu pemain memilih target yang sah.
+	var target_zone: String = SPELL_TARGET_ZONE.get(String(data.spell_effect), "")
+	if target_zone != "" and not args.has("target_uid"):
+		if not _spell_has_target(p, String(data.spell_effect)):
+			return "Tidak ada target yang sah untuk spell ini."
+		var committed := _take(pl.hand, uid)
+		pl.active_spells.append(committed)
+		if not is_katalis:
+			spell_left -= 1
+		pending = {
+			"type": "spell_target",
+			"to": p,
+			"uid": committed.uid,
+			"card_id": committed.id,
+			"effect": String(data.spell_effect),
+			"zone": target_zone,
+		}
+		return ""
+
 	var spell_subs := _build_spell_sub_moves(p, data, args)
 	var err: String = fn.call(p, args)
 	if err != "":
@@ -317,6 +347,33 @@ func play_spell(p: int, uid: int, args: Dictionary) -> String:
 	if not is_katalis:
 		spell_left -= 1           # Katalis tidak mengurangi jatah spell (bagian 8)
 	_record(p, "spell", c.id, "Memainkan Spell %s" % data.display_name, spell_subs)
+	return ""
+
+## Menyelesaikan pemilihan target untuk kartu Spell yang sudah masuk Zona Spell.
+## Setelah masuk Zona Spell, kartu tidak dapat dikembalikan ke tangan.
+func resolve_spell_target(p: int, target_uid: int) -> String:
+	if pending.is_empty() or String(pending.get("type", "")) != "spell_target":
+		return "Tidak ada spell yang menunggu target."
+	if int(pending.get("to", -1)) != p:
+		return "Bukan efek milikmu."
+	var cid := String(pending.get("card_id", ""))
+	var effect := String(pending.get("effect", ""))
+	var spell_uid := int(pending.get("uid", -1))
+	var data := CardDB.get_card(cid)
+	var fn: Callable = _effects.get(effect, Callable())
+	if data == null or fn.is_null():
+		return "Efek tidak dikenal."
+	var args := {"target_uid": target_uid}
+	var spell_subs := _build_spell_sub_moves(p, data, args)
+	var err: String = fn.call(p, args)
+	if err != "":
+		return err
+	pending = {}
+	var pl = players[p]
+	var sc := _take(pl.active_spells, spell_uid)
+	if not sc.is_empty():
+		pl.discard.append(sc)
+	_record(p, "spell", cid, "Memainkan Spell %s" % data.display_name, spell_subs)
 	return ""
 
 ## Memindahkan kartu spell aktif dengan id tertentu dari Zona Spell ke Discard Pile.
@@ -735,6 +792,13 @@ func view_for(p: int) -> Dictionary:
 func _pending_view(p: int) -> Dictionary:
 	if pending.is_empty() or int(pending.get("to", -1)) != p:
 		return {}
+	if String(pending.get("type", "")) == "spell_target":
+		return {
+			"type": "spell_target",
+			"uid": int(pending.get("uid", -1)),
+			"card_id": String(pending.get("card_id", "")),
+			"zone": String(pending.get("zone", "")),
+		}
 	return {"type": pending.get("type", ""), "cards": pending.get("cards", []).duplicate(true)}
 
 ## Menyaring sub-move rahasia (seperti pilihan Spektrometer) agar lawan tidak melihat kartunya.

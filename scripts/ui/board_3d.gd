@@ -703,13 +703,13 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 	var next_active_spells := {}
 	_render_active_spells(v.me.get("active_spells", []), true, next_active_spells)
 	_render_active_spells(v.opp.get("active_spells", []), false, next_active_spells)
-	_animate_finished_active_spells(next_active_spells, top_m_node, top_o_node)
+	var finished_active_ids := _animate_finished_active_spells(next_active_spells, top_m_node, top_o_node)
 	_prev_active_spells = next_active_spells
 
 	# Animasi awal pertandingan (kocok kedua deck) + animasi draw + animasi kartu yang baru keluar/masuk
 	_animate_deck_events(v)
 	_animate_removed_cards(v, next_uids)
-	_animate_new_spells(v, top_m_node, top_o_node)
+	_animate_new_spells(v, top_m_node, top_o_node, finished_active_ids)
 
 	_known_uids = next_uids
 	_prev_board_cards = next_board_cards
@@ -763,27 +763,31 @@ func _render_active_spells(cards: Array, is_me: bool, out_map: Dictionary) -> vo
 			tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			tw.tween_property(c3d, "scale", Vector3.ONE, 0.40).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-## Saat spell aktif (Spektrometer / Perisai Inert / Katalis) selesai dipakai,
-## luncurkan kartu tersebut dari Zona Spell menuju Discard Pile.
-func _animate_finished_active_spells(next_map: Dictionary, top_m: Node3D, top_o: Node3D) -> void:
+## Saat spell aktif di Zona Spell selesai dipakai, luncurkan kartu tersebut ke Discard Pile.
+func _animate_finished_active_spells(next_map: Dictionary, top_m: Node3D, top_o: Node3D) -> Dictionary:
+	var finished_ids := {}
 	for uid in _prev_active_spells:
 		if next_map.has(uid):
 			continue
 		var prev: Dictionary = _prev_active_spells[uid]
 		var cid := String(prev.get("id", ""))
+		finished_ids[cid] = true
 		var start_pos: Vector3 = prev.get("pos", Vector3(4.60, 0.03, 2.35))
 		var is_me := bool(prev.get("is_me", true))
 		var disc_pos := Vector3(5.95, 0.36, 1.52 if is_me else -1.62)
 		var top_node: Node3D = top_m if is_me else top_o
 		if is_instance_valid(top_node):
 			top_node.visible = false
-		Audio.play_sfx("card_discard", -2.0, 0.05)
 		var c3d: Node3D = CARD_3D_SCRIPT.new()
 		_fx_root.add_child(c3d)
 		c3d.setup({"uid": -1, "id": cid, "placed_turn": -1}, SIZE_SPELL, true, false, false)
 		c3d.position = start_pos
+		var hold_sec := 0.72 if (cid in ["bilas", "korosi", "elektrolisis", "elektrolisis_paksa"]) else 0.08
 		var tw := c3d.create_tween()
-		tw.set_parallel(true)
+		if hold_sec > 0.0:
+			tw.tween_interval(hold_sec)
+		tw.chain().tween_callback(func(): Audio.play_sfx("card_discard", -2.0, 0.05))
+		tw.chain().set_parallel(true)
 		tw.tween_property(c3d, "position", start_pos + Vector3(0.0, 0.45, 0.0), 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.chain().set_parallel(true)
 		tw.tween_property(c3d, "position", disc_pos, 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
@@ -792,6 +796,7 @@ func _animate_finished_active_spells(next_map: Dictionary, top_m: Node3D, top_o:
 			if is_instance_valid(top_node):
 				top_node.visible = true
 			c3d.queue_free())
+	return finished_ids
 
 func _spawn_discard_top_card(card: Dictionary, pos: Vector3, is_me: bool) -> Node3D:
 	var c3d: Node3D = CARD_3D_SCRIPT.new()
@@ -983,7 +988,7 @@ func _animate_removed_cards(v: Dictionary, next_uids: Dictionary) -> void:
 				twp.tween_property(p3d, "scale", Vector3(0.82, 0.82, 0.82), 0.46)
 				twp.chain().tween_callback(p3d.queue_free)
 
-func _animate_new_spells(v: Dictionary, top_m: Node3D, top_o: Node3D) -> void:
+func _animate_new_spells(v: Dictionary, top_m: Node3D, top_o: Node3D, finished_active_ids: Dictionary = {}) -> void:
 	var hist: Array = v.get("history", [])
 	if hist.size() < _last_history_len:
 		_last_history_len = hist.size()
@@ -995,8 +1000,8 @@ func _animate_new_spells(v: Dictionary, top_m: Node3D, top_o: Node3D) -> void:
 		var cid := String(item.get("card_id", ""))
 		var is_me := (int(item.get("player", 0)) == me_idx)
 		if act == "spell" and cid != "" and CardDB.cards.has(cid):
-			# Spektrometer, Perisai Inert, dan Katalis menetap di Zona Spell lewat active_spells
-			if not (cid in ["spektrometer", "perisai_inert", "katalis"]):
+			# Spell yang sudah melewati active_spells sudah dianimasikan di _animate_finished_active_spells
+			if not (cid in ["spektrometer", "perisai_inert", "katalis"]) and not finished_active_ids.has(cid):
 				_play_spell_slot_anim(cid, is_me, top_m if is_me else top_o)
 		elif act == "synth" and cid != "" and CardDB.cards.has(cid):
 			var spec_arr: Array = v.me.special if is_me else v.opp.special

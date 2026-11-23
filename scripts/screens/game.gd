@@ -241,11 +241,12 @@ func _handle(sender_id: int, a: Dictionary) -> void:
 	match a.get("type", ""):
 		"coin_call":  err = state.choose_coin_call(p, String(a.get("side", "")))
 		"coin_order": err = state.choose_first_player(p, bool(a.get("first", true)))
-		"place":   err = state.place_base(p, int(a.get("uid", -1)), int(a.get("slot", -1)))
-		"synth":   err = state.synthesize(p, int(a.get("a", -1)), int(a.get("b", -1)))
-		"spell":   err = state.play_spell(p, int(a.get("uid", -1)), a.get("args", {}))
-		"discard": err = state.discard_from_hand(p, int(a.get("uid", -1)))
-		"spektro": err = state.resolve_spektrometer(p, int(a.get("take", -1)))
+		"place":        err = state.place_base(p, int(a.get("uid", -1)), int(a.get("slot", -1)))
+		"synth":        err = state.synthesize(p, int(a.get("a", -1)), int(a.get("b", -1)))
+		"spell":        err = state.play_spell(p, int(a.get("uid", -1)), a.get("args", {}))
+		"spell_target": err = state.resolve_spell_target(p, int(a.get("target_uid", -1)))
+		"discard":      err = state.discard_from_hand(p, int(a.get("uid", -1)))
+		"spektro":      err = state.resolve_spektrometer(p, int(a.get("take", -1)))
 		"end":     err = state.end_turn(p)
 		"give_up": state.surrender(p)
 		_:         err = "Aksi tidak dikenal."
@@ -328,10 +329,19 @@ func render(v: Dictionary) -> void:
 	if v.winner != -2:
 		_show_result()
 
-## Menampilkan efek interaktif (Spektrometer) hanya untuk pemiliknya.
+## Menampilkan efek interaktif (Spektrometer atau pemilihan target Spell di Zona Spell).
 func _sync_pending(v: Dictionary) -> void:
+	var ptype := String(v.pending.get("type", ""))
+	if ptype == "spell_target":
+		if $RevealPopup.visible:
+			$RevealPopup.hide()
+		_pending_key = ""
+		var z := String(v.pending.get("zone", ""))
+		if z != "":
+			_highlight_zone(z)
+		return
 	var key := ""
-	if not v.pending.is_empty():
+	if ptype == "spektrometer":
 		for c in v.pending.cards:
 			key += "%s," % c.uid
 	if key == "":
@@ -608,11 +618,12 @@ func _execute_dropped_card(uid: int, global_pos: Vector2) -> void:
 		else:
 			# Cek apakah dijatuhkan langsung di atas kartu target 3D yang sah
 			var hit_uid: int = board3d.pick_card_uid_at(global_pos)
+			_clear_glow()
 			if hit_uid != -1 and _zone_of(hit_uid) == zone:
-				_clear_glow()
 				submit({"type": "spell", "uid": uid, "args": {"target_uid": hit_uid}})
 			else:
-				_enter_pick_target(uid, card, zone)
+				# Masukkan & kunci Spell ke Zona Spell (tidak bisa kembali ke tangan), lalu pilih target
+				submit({"type": "spell", "uid": uid, "args": {}})
 
 # --- Interaksi (bab 4.4 / 4.5) ---------------------------------------------
 
@@ -637,7 +648,13 @@ func _on_card_clicked(uid: int) -> void:
 	if view.is_empty() or view.winner != -2:
 		return
 	if not view.pending.is_empty():
-		return                      # efek Spektrometer harus diselesaikan dulu
+		if String(view.pending.get("type", "")) == "spell_target":
+			var req_zone := String(view.pending.get("zone", ""))
+			if _zone_of(uid) == req_zone:
+				submit({"type": "spell_target", "target_uid": uid})
+			else:
+				$Toast.show_text("Pilih kartu di zona yang disorot.")
+		return                      # efek pending harus diselesaikan dulu
 	if not view.my_turn:
 		$Toast.show_text("Bukan giliranmu.")
 		return
@@ -676,23 +693,8 @@ func _click_hand(uid: int) -> void:
 	if data.type == CardData.Type.BASIC:
 		submit({"type": "place", "uid": uid})
 	elif data.type == CardData.Type.SPELL:
-		var zone: String = SPELL_TARGET.get(String(data.spell_effect), "")
-		if zone == "":
-			submit({"type": "spell", "uid": uid, "args": {}})
-		else:
-			_enter_pick_target(uid, card, zone)
-
-func _enter_pick_target(uid: int, card: Dictionary, zone: String) -> void:
-	mode = Mode.PICK_TARGET
-	pending_spell_uid = uid
-	pending_zone = zone
-	_highlight_zone(zone)
-	# Letakkan kartu spell sementara di Zona Spell 3D selama pemain memilih targetnya
-	if is_instance_valid(board3d):
-		board3d.set_staged_spell(card)
-	for ch in $MeHandDock.get_children():
-		if "uid" in ch and int(ch.uid) == uid:
-			ch.modulate.a = 0.25
+		# Semua Spell langsung masuk & terkunci di Zona Spell (jika butuh target, lanjut pilih target)
+		submit({"type": "spell", "uid": uid, "args": {}})
 
 func _reset_mode() -> void:
 	mode = Mode.IDLE
@@ -700,10 +702,6 @@ func _reset_mode() -> void:
 	pending_spell_uid = -1
 	pending_zone = ""
 	_clear_glow()
-	if is_instance_valid(board3d):
-		board3d.clear_staged_spell()
-	for ch in $MeHandDock.get_children():
-		ch.modulate.a = 1.0
 
 func _on_discard_clicked(is_me: bool) -> void:
 	if view.is_empty():
@@ -735,6 +733,8 @@ func _unhandled_input(e: InputEvent) -> void:
 		if $CardPreview.is_open():
 			$CardPreview.hide_preview()     # lalu pratinjau kartu
 			return
+		if String(view.get("pending", {}).get("type", "")) == "spell_target":
+			return                          # spell yang sudah di Zona Spell tidak bisa dibatalkan ke tangan
 		_reset_mode()
 
 # --- Efek zona (2D untuk tangan, 3D untuk zona arena) ------------------------
@@ -788,8 +788,22 @@ func _setup_timer() -> void:
 		if state and state.winner == -2:
 			# Selesaikan efek yang menunggu dan buang kelebihan sebelum habis waktu.
 			if not state.pending.is_empty():
-				var cs: Array = state.pending.get("cards", [])
-				state.resolve_spektrometer(state.current, int(cs[0].uid) if not cs.is_empty() else -1)
+				var ptype := String(state.pending.get("type", ""))
+				if ptype == "spektrometer":
+					var cs: Array = state.pending.get("cards", [])
+					state.resolve_spektrometer(state.current, int(cs[0].uid) if not cs.is_empty() else -1)
+				elif ptype == "spell_target":
+					var z := String(state.pending.get("zone", ""))
+					var arr: Array = []
+					match z:
+						"my_base": arr = state.players[state.current].base
+						"opp_base": arr = state.players[1 - state.current].base
+						"my_special": arr = state.players[state.current].special
+						"opp_special": arr = state.players[1 - state.current].special
+					if not arr.is_empty():
+						state.resolve_spell_target(state.current, int(arr[0].uid))
+					else:
+						state.pending = {}
 			state.auto_discard_excess(state.current)
 			state.end_turn(state.current)
 			_broadcast())
