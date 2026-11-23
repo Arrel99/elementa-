@@ -87,6 +87,7 @@ func _ready() -> void:
 	_mask_root.hide()
 	_banner.hide()
 	_banner.custom_minimum_size = Vector2(BANNER_W, 0.0)
+	_body.custom_minimum_size = Vector2(BANNER_W - 36.0, 0.0)
 
 	# Gaya bingkai spotlight matte teal
 	var fsb := StyleBoxFlat.new()
@@ -248,7 +249,7 @@ func _apply_step(animate: bool) -> void:
 	_menu_btn.visible = is_final
 	_next_btn.text = "Lanjut Main"
 
-	_banner.reset_size()
+	_banner.size = Vector2(BANNER_W, 156.0 if is_final else 118.0)
 	call_deferred("_place_banner", animate)
 	call_deferred("_apply_spotlight", animate)
 
@@ -322,12 +323,12 @@ func _place_banner(animate: bool) -> void:
 		return
 	var vp := get_viewport().get_visible_rect().size
 	var info: Dictionary = STEPS[_step]
+	var is_final: bool = bool(info.get("is_final", false))
 	var norm: Vector2 = info.pos
 	if _step == 3 and _spell_targeting:
 		norm = Vector2(0.50, 0.47)
-	var bsz := _banner.size
-	if bsz.x < 10.0:
-		bsz = Vector2(BANNER_W, 112.0)
+	var bsz := Vector2(BANNER_W, 156.0 if is_final else 118.0)
+	_banner.size = bsz
 	var target := Vector2(
 		clampf(vp.x * norm.x - bsz.x * 0.5, 16.0, vp.x - bsz.x - 16.0),
 		clampf(vp.y * norm.y - bsz.y * 0.5, 16.0, vp.y - bsz.y - 16.0)

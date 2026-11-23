@@ -23,10 +23,10 @@ const SPELL_TARGET := {
 }
 
 const REASON_TEXT := {
-	"surrender": "Salah satu pemain menyerah.",
-	"deck_out": "Salah satu pemain tidak bisa menarik kartu dari deck (Deck Out).",
-	"special_full": "Salah satu pemain berhasil mengisi 8 senyawa dan langsung menang!",
-	"timeout": "Waktu 15 menit salah satu pemain habis.",
+	"surrender": "Menyerah",
+	"deck_out": "Deck Out",
+	"special_full": "8 Senyawa Tercapai",
+	"timeout": "Waktu Habis",
 }
 
 enum Mode { IDLE, PICK_SYNTH, PICK_TARGET }

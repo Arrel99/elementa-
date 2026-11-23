@@ -60,6 +60,7 @@ func setup(rng_seed: int, with_coin_flip := false) -> void:
 	for id in CardDB.ids_of(CardData.Type.SPECIAL):
 		for i in _rules().compound_copies:
 			compound_pile.append(id)
+	compound_pile.shuffle()          # acak urutan Deck Senyawa secara alami (boleh ada >1 senyawa sejenis di meja)
 	for i in 2:
 		players.append({
 			"deck": _build_deck(), "hand": [], "base": [], "special": [],
@@ -116,6 +117,13 @@ func setup_tutorial() -> void:
 		players[0].hand.append(_pull_from_deck_or_new(0, cid))
 	for cid in ["C", "O", "H", "N", "Ca"]:
 		players[1].hand.append(_pull_from_deck_or_new(1, cid))
+
+	# Pastikan H2O selalu tampil di 8 kartu pertama Tabel Senyawa saat tutorial
+	var h2o_i := compound_pile.find("H2O")
+	if h2o_i >= 8:
+		var tmp = compound_pile[2]
+		compound_pile[2] = compound_pile[h2o_i]
+		compound_pile[h2o_i] = tmp
 
 	# Pasang 1 unsur Fe di papan AI agar pemain punya target Korosi yang siap
 	var opp_fe := _pull_from_deck_or_new(1, "Fe")
@@ -315,11 +323,14 @@ func synthesize(p: int, uid_a: int, uid_b: int) -> String:
 	b.placed_turn = -1
 	a.erase("slot")
 	b.erase("slot")
-	# Hanya 1 salinan yang diambil; senyawa yang sama masih bisa disintesis
-	# pemain lain selama salinannya di Deck Senyawa masih tersisa.
+	# Ambil 1 salinan dari Tabel Senyawa; jika berasal dari 8 slot meja & deck masih punya sisa,
+	# langsung isi slot kosong itu dengan kartu teratas Deck Senyawa tanpa menggeser kartu lain.
 	var pile_i := compound_pile.find(result)
 	if pile_i >= 0:
-		compound_pile.remove_at(pile_i)
+		if pile_i < 8 and compound_pile.size() > 8:
+			compound_pile[pile_i] = compound_pile.pop_back()
+		else:
+			compound_pile.remove_at(pile_i)
 	var sc := _new_card(result)
 	sc["attached"] = [a, b]       # 2 kartu dasar asli menempel di belakang senyawa
 	sc["parts"] = [a.id, b.id]    # daftar id bahan untuk kompatibilitas

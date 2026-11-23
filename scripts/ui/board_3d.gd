@@ -54,7 +54,8 @@ var _known_uids := {}                # uid yang sudah ada di papan pada render s
 var _prev_board_cards := {}          # uid -> {id, pos, size, is_me, zone} untuk animasi asal/pindah
 var _prev_active_spells := {}        # uid -> {id, pos, is_me} untuk animasi spell aktif -> discard
 var _prev_deck_counts := {"me": -1, "opp": -1}
-var _prev_compound_counts := {}      # jumlah salinan tiap senyawa di render sebelumnya (untuk animasi refill dari deck)
+var _prev_table_slots: Array[String] = []   # isi 8 slot Tabel Senyawa di render sebelumnya (untuk animasi refill)
+var _prev_compound_total := -1
 var _last_history_len := 0           # untuk mendeteksi aksi baru di riwayat
 var _last_spektro_resolved := 0      # jumlah Spektrometer yang sudah selesai (picu animasi kocok deck)
 var _did_initial_shuffle := false
@@ -685,8 +686,8 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		_spawn_card(c, Vector3(pos.x, top_y, pos.z), SIZE_SPECIAL, true, true, true, "", Color.WHITE,
 			false, false, false, false)
 
-	# Tabel Senyawa di garis tengah (sedikit dimiringkan ke kamera agar resep mudah dibaca)
-	_render_compound_table(v.compound_pile, v.me.base, easy_mode)
+	# Tabel Senyawa di garis tengah (maks 8 kartu tampil; sisanya ada di tumpukan Deck Senyawa)
+	var shown_table_count := _render_compound_table(v.compound_pile, v.me.base, easy_mode)
 
 	# Tumpukan 3D & Perisai (kartu buang teratas tampil terbuka menghadap atas!)
 	_update_pile("opp_deck", int(v.opp.deck_count))
@@ -698,7 +699,7 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		top_o_node = _spawn_discard_top_card(top_opp, Vector3(5.95, opp_disc_y, -1.62), false)
 		top_o_node.name = "TopOppDiscard"
 
-	_update_pile("compound_deck", v.compound_pile.size())
+	_update_pile("compound_deck", maxi(0, v.compound_pile.size() - shown_table_count))
 
 	var me_disc_cards: Array = v.me.get("discard", [])
 	var me_disc_y := _update_pile("me_discard", me_disc_cards.size())
@@ -1172,27 +1173,31 @@ func _spawn_attached_under(special_card: Dictionary, base_pos: Vector3, card_sz:
 		node.rotation_degrees.y = rots[idx]
 	return base_pos.y + 0.072
 
-func _render_compound_table(ids: Array, my_base: Array, easy_mode: bool) -> void:
+func _render_compound_table(ids: Array, my_base: Array, easy_mode: bool) -> int:
+	const MAX_TABLE_SLOTS := 8
 	var mine := {}
 	for c in my_base:
 		mine[c.id] = true
-	var counts := {}
-	var kinds: Array[String] = []
-	for raw_id in ids:
-		var sid := String(raw_id)
-		counts[sid] = int(counts.get(sid, 0)) + 1
-		if not kinds.has(sid):
-			kinds.append(sid)
-	var n := kinds.size()
+
+	# Ambil langsung hingga 8 kartu pertama dari Deck Senyawa yang sudah diacak
+	# (tetap random — boleh ada lebih dari 1 senyawa sejenis yang tampil bersamaan)
+	var n := mini(MAX_TABLE_SLOTS, ids.size())
 	if n == 0:
-		_prev_compound_counts = {}
-		return
+		_prev_table_slots.clear()
+		_prev_compound_total = 0
+		return 0
+
+	var shown: Array[String] = []
+	for i in n:
+		shown.append(String(ids[i]))
+
 	var spacing := minf(1.02, 8.8 / float(maxi(n, 1)))
 	var start_x := -0.35 - (float(n - 1) * spacing) * 0.5
 	var deck_origin := Vector3(5.95, 0.42, -0.05)
+	var took_from_pile := (_prev_compound_total > 0 and ids.size() < _prev_compound_total)
 
 	for i in n:
-		var id: String = kinds[i]
+		var id: String = shown[i]
 		var d: CardData = CardDB.get_card(id)
 		if d == null or d.recipe.size() != 2:
 			continue
@@ -1203,23 +1208,25 @@ func _render_compound_table(ids: Array, my_base: Array, easy_mode: bool) -> void
 			pos, SIZE_TABLE, true, false, true, "", Color.WHITE, false, false, false)
 		card_node.rotation_degrees.x = 18.0   # menengadah jelas di atas rak 3D tanpa terpotong
 
-		# Animasi bingkai pinggiran berdenyut seperti kartu di tangan (tanpa menimpa warna gambar)
+		# Animasi bingkai pinggiran berdenyut seperti kartu di tangan
 		if have == 2:
 			card_node.set_border_pulse(true, Color(0.32, 0.90, 0.58, 1.0))
 		elif have == 1 and easy_mode:
 			card_node.set_border_pulse(true, Color(0.95, 0.80, 0.30, 1.0))
 
-		# Jika jumlah salinan senyawa ini baru berkurang (diambil sintesis) dan masih ada stok di deck,
-		# animasikan kartu pengganti langsung meluncur keluar dari Deck Senyawa ke slot tengah!
-		var prev_c := int(_prev_compound_counts.get(id, counts[id]))
-		if int(counts[id]) < prev_c:
+		# Jika slot ini baru terisi ulang dari Deck Senyawa, luncurkan halus dari deck ke slotnya!
+		var slot_changed := (i < _prev_table_slots.size() and _prev_table_slots[i] != id)
+		var slot_added := (i >= _prev_table_slots.size() and not _prev_table_slots.is_empty())
+		if (took_from_pile and slot_changed) or slot_added:
 			card_node.position = deck_origin
 			card_node.scale = Vector3(0.85, 0.85, 0.85)
 			var tw := card_node.create_tween().set_parallel(true)
-			tw.tween_property(card_node, "position", pos, 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			tw.tween_property(card_node, "scale", Vector3.ONE, 0.36).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw.tween_property(card_node, "position", pos, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(card_node, "scale", Vector3.ONE, 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-	_prev_compound_counts = counts
+	_prev_table_slots = shown
+	_prev_compound_total = ids.size()
+	return n
 
 func _spawn_card(card: Dictionary, pos: Vector3, size_3d: Vector2,
 		face_up: bool, can_click: bool, can_preview: bool,
