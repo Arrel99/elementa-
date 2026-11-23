@@ -282,6 +282,31 @@ func _ready() -> void:
 	_check(gai.players[1].special.size() >= 1, "AI otomatis menyintesis Na + Cl -> NaCl")
 	_check(gai.current == 0, "AI mengakhiri gilirannya dan menyerahkan ke pemain")
 
+	# Simulasi multi-giliran AI Extreme vs AI Easy (verifikasi tidak pernah error / macet)
+	var gsim := GameState.new()
+	gsim.setup(2026)
+	var sim_ok := true
+	var sim_steps := 0
+	while gsim.winner == -2 and gsim.turn_no <= 12 and sim_steps < 120:
+		var actor := gsim.current
+		var d_name := "extreme" if actor == 0 else "easy"
+		var act2: Dictionary = ai_script.choose_action(gsim, actor, d_name)
+		var aerr2 := ""
+		match String(act2.get("type", "")):
+			"place": aerr2 = gsim.place_base(actor, int(act2.get("uid", -1)), int(act2.get("slot", -1)))
+			"synth": aerr2 = gsim.synthesize(actor, int(act2.get("a", -1)), int(act2.get("b", -1)))
+			"spell": aerr2 = gsim.play_spell(actor, int(act2.get("uid", -1)), act2.get("args", {}))
+			"spell_target": aerr2 = gsim.resolve_spell_target(actor, int(act2.get("target_uid", -1)))
+			"spektro": aerr2 = gsim.resolve_spektrometer(actor, int(act2.get("take", -1)))
+			"end": aerr2 = gsim.end_turn(actor)
+			_: aerr2 = "aksi kosong"
+		if aerr2 != "":
+			sim_ok = false
+			break
+		sim_steps += 1
+	_check(sim_ok and gsim.turn_no >= 6, "Simulasi multi-giliran AI Extreme vs Easy lancar tanpa error")
+	_check(gsim.players[0].points > 0, "AI Extreme berhasil mengumpulkan poin dari unsur/senyawa")
+
 	# --- Menyerah (bagian 9.1) ---
 	var g15 := GameState.new()
 	g15.setup(1)

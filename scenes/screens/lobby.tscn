@@ -1,6 +1,189 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/lobby.gd" id="1_lobby"]
+[ext_resource type="Shader" path="res://shaders/science_menu_bg.gdshader" id="2_bgshader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
+shader = ExtResource("2_bgshader")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_divider"]
+bg_color = Color(0.32, 0.40, 0.48, 0.65)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 22.0
+content_margin_top = 20.0
+content_margin_right = 22.0
+content_margin_bottom = 20.0
+bg_color = Color(0.095, 0.115, 0.142, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.27, 0.33, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_recessed"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.068, 0.084, 0.106, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.19, 0.24, 0.30, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_play_normal"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.18, 0.44, 0.42, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.64, 0.59, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_play_hover"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.22, 0.52, 0.49, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.76, 0.70, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_play_pressed"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.14, 0.36, 0.34, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.26, 0.56, 0.52, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.135, 0.165, 0.205, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.30, 0.37, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.175, 0.215, 0.265, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.50, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.105, 0.13, 0.165, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.30, 0.37, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.068, 0.084, 0.106, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.31, 0.39, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input_focus"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.078, 0.098, 0.125, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.36, 0.66, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.085, 0.105, 0.132, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.20, 0.25, 0.31, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="Lobby" type="Control"]
 layout_mode = 3
@@ -11,169 +194,242 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_lobby")
 
-[node name="V" type="VBoxContainer" parent="."]
+[node name="BgShader" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_bg")
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -360.0
-offset_top = -310.0
-offset_right = 360.0
-offset_bottom = 310.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+mouse_filter = 2
 
-[node name="Title" type="Label" parent="V"]
+[node name="CenterWrap" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="V" type="VBoxContainer" parent="CenterWrap"]
+custom_minimum_size = Vector2(820, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
-text = "Main Berdua"
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Header" type="VBoxContainer" parent="CenterWrap/V"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Title" type="Label" parent="CenterWrap/V/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.95, 0.97, 1)
+theme_override_font_sizes/font_size = 50
+text = "MAIN BERDUA"
 horizontal_alignment = 1
 
-[node name="Hint" type="Label" parent="V"]
+[node name="Hint" type="Label" parent="CenterWrap/V/Header"]
 layout_mode = 2
-text = "Kedua pemain harus di WiFi/hotspot yang sama. Tidak perlu tahu IP."
+theme_override_colors/font_color = Color(0.60, 0.69, 0.77, 1)
+theme_override_font_sizes/font_size = 15
+text = "WIFI / HOTSPOT YANG SAMA"
 horizontal_alignment = 1
-autowrap_mode = 2
 
-[node name="Panels" type="HBoxContainer" parent="V"]
+[node name="Divider" type="Panel" parent="CenterWrap/V/Header"]
+custom_minimum_size = Vector2(220, 1)
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 16
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_divider")
 
-[node name="HostBox" type="PanelContainer" parent="V/Panels"]
-custom_minimum_size = Vector2(320, 0)
+[node name="Panels" type="HBoxContainer" parent="CenterWrap/V"]
+custom_minimum_size = Vector2(0, 390)
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="HostBox" type="PanelContainer" parent="CenterWrap/V/Panels"]
+custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="Margin" type="MarginContainer" parent="V/Panels/HostBox"]
+[node name="HostV" type="VBoxContainer" parent="CenterWrap/V/Panels/HostBox"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/separation = 14
 
-[node name="HostV" type="VBoxContainer" parent="V/Panels/HostBox/Margin"]
+[node name="H1" type="Label" parent="CenterWrap/V/Panels/HostBox/HostV"]
 layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="H1" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "Jadi Host"
-
-[node name="BtnHost" type="Button" parent="V/Panels/HostBox/Margin/HostV"]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-text = "Buat Room"
-
-[node name="CodeCaption" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.57, 0.69, 0.8, 1)
-text = "Kode room"
+theme_override_colors/font_color = Color(0.88, 0.93, 0.97, 1)
+theme_override_font_sizes/font_size = 21
+text = "JADI HOST"
 horizontal_alignment = 1
 
-[node name="Code" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
+[node name="BtnHost" type="Button" parent="CenterWrap/V/Panels/HostBox/HostV"]
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.86, 0.72, 1)
-theme_override_font_sizes/font_size = 56
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.96, 0.98, 0.98, 1)
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleBoxFlat_play_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_play_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_play_pressed")
+text = "Buat Room"
+
+[node name="CodePanel" type="PanelContainer" parent="CenterWrap/V/Panels/HostBox/HostV"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_recessed")
+
+[node name="CodeBox" type="VBoxContainer" parent="CenterWrap/V/Panels/HostBox/HostV/CodePanel"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="CodeCaption" type="Label" parent="CenterWrap/V/Panels/HostBox/HostV/CodePanel/CodeBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.68, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+text = "KODE ROOM"
+horizontal_alignment = 1
+
+[node name="Code" type="Label" parent="CenterWrap/V/Panels/HostBox/HostV/CodePanel/CodeBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.84, 0.72, 1)
+theme_override_font_sizes/font_size = 54
 text = "----"
 horizontal_alignment = 1
 
-[node name="CodeHint" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
+[node name="CodeHint" type="Label" parent="CenterWrap/V/Panels/HostBox/HostV"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.70, 0.76, 0.83, 1)
+theme_override_font_sizes/font_size = 14
 text = "Tekan \"Buat Room\", lalu bagikan kodenya."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="IpLabel" type="Label" parent="V/Panels/HostBox/Margin/HostV"]
+[node name="IpLabel" type="Label" parent="CenterWrap/V/Panels/HostBox/HostV"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.58, 0.66, 1)
+theme_override_colors/font_color = Color(0.50, 0.58, 0.66, 1)
 theme_override_font_sizes/font_size = 12
 text = ""
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="JoinBox" type="PanelContainer" parent="V/Panels"]
-custom_minimum_size = Vector2(320, 0)
+[node name="JoinBox" type="PanelContainer" parent="CenterWrap/V/Panels"]
+custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="Margin" type="MarginContainer" parent="V/Panels/JoinBox"]
+[node name="JoinV" type="VBoxContainer" parent="CenterWrap/V/Panels/JoinBox"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/separation = 12
 
-[node name="JoinV" type="VBoxContainer" parent="V/Panels/JoinBox/Margin"]
+[node name="H2" type="Label" parent="CenterWrap/V/Panels/JoinBox/JoinV"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.93, 0.97, 1)
+theme_override_font_sizes/font_size = 21
+text = "GABUNG ROOM"
+horizontal_alignment = 1
+
+[node name="Rooms" type="ItemList" parent="CenterWrap/V/Panels/JoinBox/JoinV"]
+custom_minimum_size = Vector2(0, 175)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.86, 0.91, 0.96, 1)
+theme_override_styles/panel = SubResource("StyleBoxFlat_recessed")
+allow_reselect = true
+
+[node name="Row" type="HBoxContainer" parent="CenterWrap/V/Panels/JoinBox/JoinV"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="H2" type="Label" parent="V/Panels/JoinBox/Margin/JoinV"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "Gabung"
-
-[node name="Rooms" type="ItemList" parent="V/Panels/JoinBox/Margin/JoinV"]
-custom_minimum_size = Vector2(0, 150)
-layout_mode = 2
-size_flags_vertical = 3
-allow_reselect = true
-
-[node name="Row" type="HBoxContainer" parent="V/Panels/JoinBox/Margin/JoinV"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="CodeEdit" type="LineEdit" parent="V/Panels/JoinBox/Margin/JoinV/Row"]
-custom_minimum_size = Vector2(0, 36)
+[node name="CodeEdit" type="LineEdit" parent="CenterWrap/V/Panels/JoinBox/JoinV/Row"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
 placeholder_text = "Kode, mis. 4821"
 max_length = 8
 
-[node name="BtnCode" type="Button" parent="V/Panels/JoinBox/Margin/JoinV/Row"]
-custom_minimum_size = Vector2(0, 36)
+[node name="BtnCode" type="Button" parent="CenterWrap/V/Panels/JoinBox/JoinV/Row"]
+custom_minimum_size = Vector2(110, 44)
 layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.96, 0.98, 0.98, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_play_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_play_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_play_pressed")
 text = "Gabung"
 
-[node name="BtnRefresh" type="Button" parent="V/Panels/JoinBox/Margin/JoinV"]
-custom_minimum_size = Vector2(0, 32)
+[node name="BtnRefresh" type="Button" parent="CenterWrap/V/Panels/JoinBox/JoinV"]
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-text = "Cari ulang room"
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.84, 0.89, 0.94, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Cari Ulang Room"
 
-[node name="Status" type="Label" parent="V"]
-custom_minimum_size = Vector2(0, 46)
+[node name="StatusPanel" type="PanelContainer" parent="CenterWrap/V"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_status")
+
+[node name="Status" type="Label" parent="CenterWrap/V/StatusPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.85, 0.91, 1)
+theme_override_font_sizes/font_size = 15
 text = "Mencari room di WiFi ini..."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="BtnManual" type="Button" parent="V"]
-layout_mode = 2
-toggle_mode = true
-text = "Koneksi manual (IP)"
-
-[node name="ManualRow" type="HBoxContainer" parent="V"]
+[node name="ManualRow" type="HBoxContainer" parent="CenterWrap/V"]
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
-[node name="IpEdit" type="LineEdit" parent="V/ManualRow"]
-custom_minimum_size = Vector2(0, 36)
+[node name="IpEdit" type="LineEdit" parent="CenterWrap/V/ManualRow"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
 placeholder_text = "IP host, misal 192.168.1.10"
 
-[node name="BtnIp" type="Button" parent="V/ManualRow"]
-custom_minimum_size = Vector2(0, 36)
+[node name="BtnIp" type="Button" parent="CenterWrap/V/ManualRow"]
+custom_minimum_size = Vector2(130, 44)
 layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.96, 0.98, 0.98, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_play_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_play_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_play_pressed")
 text = "Sambung"
 
-[node name="BtnBack" type="Button" parent="V"]
-custom_minimum_size = Vector2(0, 40)
+[node name="Footer" type="HBoxContainer" parent="CenterWrap/V"]
 layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="BtnManual" type="Button" parent="CenterWrap/V/Footer"]
+custom_minimum_size = Vector2(220, 46)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+toggle_mode = true
+theme_override_colors/font_color = Color(0.84, 0.89, 0.94, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Koneksi Manual (IP)"
+
+[node name="BtnBack" type="Button" parent="CenterWrap/V/Footer"]
+custom_minimum_size = Vector2(220, 46)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.88, 0.91, 0.95, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 text = "Kembali"

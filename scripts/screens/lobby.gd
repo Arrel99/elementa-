@@ -5,20 +5,25 @@ extends Control
 
 const CONNECT_TIMEOUT := 8.0
 
-@onready var _btn_host: Button = $V/Panels/HostBox/Margin/HostV/BtnHost
-@onready var _code: Label = $V/Panels/HostBox/Margin/HostV/Code
-@onready var _code_hint: Label = $V/Panels/HostBox/Margin/HostV/CodeHint
-@onready var _ip_label: Label = $V/Panels/HostBox/Margin/HostV/IpLabel
-@onready var _rooms: ItemList = $V/Panels/JoinBox/Margin/JoinV/Rooms
-@onready var _code_edit: LineEdit = $V/Panels/JoinBox/Margin/JoinV/Row/CodeEdit
-@onready var _btn_code: Button = $V/Panels/JoinBox/Margin/JoinV/Row/BtnCode
-@onready var _btn_refresh: Button = $V/Panels/JoinBox/Margin/JoinV/BtnRefresh
-@onready var _status: Label = $V/Status
-@onready var _btn_manual: Button = $V/BtnManual
-@onready var _manual_row: HBoxContainer = $V/ManualRow
-@onready var _ip_edit: LineEdit = $V/ManualRow/IpEdit
-@onready var _btn_ip: Button = $V/ManualRow/BtnIp
-@onready var _btn_back: Button = $V/BtnBack
+@onready var _title: Label = $CenterWrap/V/Header/Title
+@onready var _hint: Label = $CenterWrap/V/Header/Hint
+@onready var _divider: Panel = $CenterWrap/V/Header/Divider
+@onready var _host_box: PanelContainer = $CenterWrap/V/Panels/HostBox
+@onready var _join_box: PanelContainer = $CenterWrap/V/Panels/JoinBox
+@onready var _btn_host: Button = $CenterWrap/V/Panels/HostBox/HostV/BtnHost
+@onready var _code: Label = $CenterWrap/V/Panels/HostBox/HostV/CodePanel/CodeBox/Code
+@onready var _code_hint: Label = $CenterWrap/V/Panels/HostBox/HostV/CodeHint
+@onready var _ip_label: Label = $CenterWrap/V/Panels/HostBox/HostV/IpLabel
+@onready var _rooms: ItemList = $CenterWrap/V/Panels/JoinBox/JoinV/Rooms
+@onready var _code_edit: LineEdit = $CenterWrap/V/Panels/JoinBox/JoinV/Row/CodeEdit
+@onready var _btn_code: Button = $CenterWrap/V/Panels/JoinBox/JoinV/Row/BtnCode
+@onready var _btn_refresh: Button = $CenterWrap/V/Panels/JoinBox/JoinV/BtnRefresh
+@onready var _status: Label = $CenterWrap/V/StatusPanel/Status
+@onready var _btn_manual: Button = $CenterWrap/V/Footer/BtnManual
+@onready var _manual_row: HBoxContainer = $CenterWrap/V/ManualRow
+@onready var _ip_edit: LineEdit = $CenterWrap/V/ManualRow/IpEdit
+@onready var _btn_ip: Button = $CenterWrap/V/ManualRow/BtnIp
+@onready var _btn_back: Button = $CenterWrap/V/Footer/BtnBack
 
 var _timeout := Timer.new()
 var _hosting := false
@@ -28,6 +33,7 @@ var _reject_msg := ""          # pesan terakhir dari host, agar tidak tertimpa
 var _status_stamp := 0         # kapan status terakhir ditulis (ms)
 
 func _ready() -> void:
+    Audio.play_music("menu")
     _btn_host.pressed.connect(_on_host)
     _btn_code.pressed.connect(_on_join_code)
     _code_edit.text_submitted.connect(func(_t: String): _on_join_code())
@@ -52,6 +58,32 @@ func _ready() -> void:
 
     Lan.start_scan()
     _refresh_rooms()
+    call_deferred("_play_entrance")
+
+func _play_entrance() -> void:
+    _title.modulate.a = 0.0
+    _hint.modulate.a = 0.0
+    _divider.pivot_offset = _divider.size * 0.5
+    _divider.scale.x = 0.01
+    _host_box.pivot_offset = _host_box.size * 0.5
+    _host_box.modulate.a = 0.0
+    _host_box.scale = Vector2(0.94, 0.94)
+    _join_box.pivot_offset = _join_box.size * 0.5
+    _join_box.modulate.a = 0.0
+    _join_box.scale = Vector2(0.94, 0.94)
+
+    var tw := create_tween().set_parallel(true)
+    tw.tween_property(_title, "modulate:a", 1.0, 0.36)
+    tw.tween_property(_hint, "modulate:a", 1.0, 0.36).set_delay(0.08)
+    tw.tween_property(_divider, "scale:x", 1.0, 0.44).set_delay(0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+    tw.tween_property(_host_box, "modulate:a", 1.0, 0.34).set_delay(0.14)
+    tw.tween_property(_host_box, "scale", Vector2.ONE, 0.38).set_delay(0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+    tw.tween_property(_join_box, "modulate:a", 1.0, 0.34).set_delay(0.22)
+    tw.tween_property(_join_box, "scale", Vector2.ONE, 0.38).set_delay(0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _unhandled_input(e: InputEvent) -> void:
+    if e.is_action_pressed("ui_cancel"):
+        _on_back()
 
 func _exit_tree() -> void:
     _timeout.stop()
