@@ -8,13 +8,14 @@ extends CanvasLayer
 signal resolved(take_uid: int)
 
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
-const CARD_SIZE := Vector2(186, 248)
-const PICKED_SIZE := Vector2(158, 212)
+const BASE_CARD_SIZE := Vector2(280, 380)
+const BASE_PICKED_SIZE := Vector2(228, 310)
 
 @onready var _dim: ColorRect = $Root/Dim
 @onready var _content: Control = $Root/Content
 @onready var _row: HBoxContainer = $Root/Content/TopStage/Row
 @onready var _source_slot: CenterContainer = $Root/Content/TopStage/SourceFrame/SourceSlot
+@onready var _picked_slot: PanelContainer = $Root/Content/PickedWrap/PickedSlot
 @onready var _picked_placeholder: Label = $Root/Content/PickedWrap/PickedSlot/Placeholder
 @onready var _picked_holder: CenterContainer = $Root/Content/PickedWrap/PickedSlot/CardHolder
 @onready var _confirm_btn: Button = $Root/Content/Banner/H/Confirm
@@ -22,22 +23,42 @@ const PICKED_SIZE := Vector2(158, 212)
 
 var _cards: Array = []
 var _nodes: Array[Control] = []
+var _source_card: Control = null
 var _picked := -1
 var _inspecting := false
 var _picked_card_node: Control = null
+var _card_size := BASE_CARD_SIZE
+var _picked_size := BASE_PICKED_SIZE
 
 func _ready() -> void:
 	hide()
 	_confirm_btn.pressed.connect(_on_confirm)
 	_inspect_btn.pressed.connect(_toggle_inspect)
+	get_viewport().size_changed.connect(_update_responsive_sizes)
 
 	# Tampilkan kartu Spektrometer di sisi kanan atas (seperti kartu Trainer di Pokemon TCG Live)
-	var src: Control = CARD_SCENE.instantiate()
-	_source_slot.add_child(src)
-	src.fit(CARD_SIZE)
-	src.setup({"uid": -1, "id": "spektrometer", "placed_turn": -1}, true, false, false)
+	_source_card = CARD_SCENE.instantiate()
+	_source_slot.add_child(_source_card)
+	_source_card.setup({"uid": -1, "id": "spektrometer", "placed_turn": -1}, true, false, false)
+	_update_responsive_sizes()
+
+func _update_responsive_sizes() -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var s := clampf(minf(vp.x / 1920.0, vp.y / 1080.0), 0.55, 1.20)
+	_card_size = (BASE_CARD_SIZE * s).round()
+	_picked_size = (BASE_PICKED_SIZE * s).round()
+	if is_instance_valid(_source_card):
+		_source_card.fit(_card_size)
+	if is_instance_valid(_picked_slot):
+		_picked_slot.custom_minimum_size = _picked_size + Vector2(14.0, 14.0)
+	for n in _nodes:
+		if is_instance_valid(n):
+			n.fit(_card_size)
+	if is_instance_valid(_picked_card_node):
+		_picked_card_node.fit(_picked_size)
 
 func show_spektrometer(cards: Array) -> void:
+	_update_responsive_sizes()
 	_cards = cards.duplicate(true)
 	_picked = -1
 	_inspecting = false
@@ -51,7 +72,7 @@ func show_spektrometer(cards: Array) -> void:
 	for c in _cards:
 		var n: Control = CARD_SCENE.instantiate()
 		_row.add_child(n)
-		n.fit(CARD_SIZE)
+		n.fit(_card_size)
 		n.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		n.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		n.setup(c, true, true, false)
@@ -125,8 +146,8 @@ func _refresh_selection() -> void:
 	_picked_placeholder.visible = false
 	var pn: Control = CARD_SCENE.instantiate()
 	_picked_holder.add_child(pn)
-	pn.fit(PICKED_SIZE)
-	pn.pivot_offset = PICKED_SIZE * 0.5
+	pn.fit(_picked_size)
+	pn.pivot_offset = _picked_size * 0.5
 	pn.setup(picked_data, true, true, false)
 	pn.clicked.connect(func(_u): _on_card_clicked(_picked))
 	pn.scale = Vector2(0.86, 0.86)

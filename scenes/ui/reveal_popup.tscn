@@ -125,7 +125,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.03, 0.04, 0.06, 0.74)
+color = Color(0.02, 0.03, 0.045, 0.80)
 
 [node name="Content" type="VBoxContainer" parent="Root"]
 layout_mode = 1
@@ -134,17 +134,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 26
 alignment = 1
 
 [node name="TopStage" type="HBoxContainer" parent="Root/Content"]
 layout_mode = 2
-theme_override_constants/separation = 56
+theme_override_constants/separation = 64
 alignment = 1
 
 [node name="Row" type="HBoxContainer" parent="Root/Content/TopStage"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 26
 alignment = 1
 
 [node name="SourceFrame" type="PanelContainer" parent="Root/Content/TopStage"]
@@ -177,24 +177,24 @@ alignment = 1
 [node name="Title" type="Label" parent="Root/Content/Banner/H/Texts"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.98, 1.0, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 28
 text = "Pilih 1 kartu untuk diambil ke tanganmu."
 horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="Root/Content/Banner/H/Texts"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.76, 0.86, 0.94, 0.92)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 17
 text = "Sisa 2 kartu akan dikembalikan & diacak ke deck."
 horizontal_alignment = 1
 
 [node name="Confirm" type="Button" parent="Root/Content/Banner/H"]
-custom_minimum_size = Vector2(160, 48)
+custom_minimum_size = Vector2(210, 58)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.96, 0.99, 0.98, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBoxFlat_confirm")
 theme_override_styles/hover = SubResource("StyleBoxFlat_confirm_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_confirm")
@@ -204,14 +204,14 @@ text = "KONFIRMASI"
 layout_mode = 2
 
 [node name="PickedSlot" type="PanelContainer" parent="Root/Content/PickedWrap"]
-custom_minimum_size = Vector2(166, 222)
+custom_minimum_size = Vector2(236, 320)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
 
 [node name="Placeholder" type="Label" parent="Root/Content/PickedWrap/PickedSlot"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.66, 0.74, 0.85)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 20
 text = "PILIHAN"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -224,14 +224,14 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 18.0
-offset_top = -24.0
-offset_right = 232.0
-offset_bottom = 24.0
+offset_left = 22.0
+offset_top = -28.0
+offset_right = 276.0
+offset_bottom = 28.0
 grow_vertical = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.94, 0.98, 1.0, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("StyleBoxFlat_inspect")
 theme_override_styles/hover = SubResource("StyleBoxFlat_inspect_hover")
 text = "LIHAT PAPAN"

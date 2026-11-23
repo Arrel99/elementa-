@@ -237,6 +237,9 @@ func _layout() -> void:
 # --- Aksi (bab 4.8 / 6.2) ---------------------------------------------------
 
 func submit(action: Dictionary) -> void:
+	if $EmbeddedTutorial.is_active() and not $EmbeddedTutorial.is_action_allowed(action, view):
+		$EmbeddedTutorial.nudge()
+		return
 	if vs_ai:
 		_handle(1, action)
 	elif local_test:
@@ -361,9 +364,10 @@ func render(v: Dictionary) -> void:
 	var extra := ""
 	if v.countdown > 0:
 		extra = "  •  Hitung mundur %d" % v.countdown
+	$EmbeddedTutorial.on_view_updated(v)
 	$Hud/OppBadge/Num.text = str(v.opp.points)
 	$Hud/MyBadge/Num.text = str(v.me.points)
-	$Hud/EndTurn.disabled = (not v.my_turn) or v.winner != -2 or over
+	$Hud/EndTurn.disabled = (not v.my_turn) or v.winner != -2 or over or (not $EmbeddedTutorial.is_end_turn_allowed())
 	$Hud/MyTurnBar.modulate.a = 1.0 if (v.my_turn and v.winner == -2) else 0.14
 	$Hud/OppTurnBar.modulate.a = 1.0 if ((not v.my_turn) and v.winner == -2) else 0.14
 	_disp_me_time = float(v.me.get("time_left", GameState.MATCH_CLOCK_SECONDS))
@@ -380,7 +384,6 @@ func render(v: Dictionary) -> void:
 	$CoinFlipOverlay.sync(v, local_test)
 	$TurnHistory.update_history(v, local_test)
 	$DiscardDrawer.refresh_if_open(v, local_test)
-	$EmbeddedTutorial.on_view_updated(v)
 	if v.get("coin_phase", {}).is_empty() and int(v.winner) == -2:
 		var tno := int(v.get("turn_no", 1))
 		if _last_turn_no > 0 and tno != _last_turn_no:
@@ -516,7 +519,7 @@ func _on_preview_hover(data: Dictionary, source: Node) -> void:
 	if _drag_ghost != null:
 		return
 	var z := _zone_of(int(data.get("uid", -1)))
-	var on_right := (z == "my_special" or z == "opp_special")
+	var on_right: bool = (z == "my_special" or z == "opp_special" or $DiscardDrawer.is_open())
 	$CardPreview.hover(data, source, on_right)
 
 func _on_preview_exit(source: Node) -> void:

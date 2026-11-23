@@ -152,37 +152,37 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Card" type="PanelContainer" parent="Root/Center"]
-custom_minimum_size = Vector2(560, 0)
+custom_minimum_size = Vector2(740, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
 [node name="V" type="VBoxContainer" parent="Root/Center/Card"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 20
 
 [node name="AccentBar" type="Panel" parent="Root/Center/Card/V"]
-custom_minimum_size = Vector2(0, 5)
+custom_minimum_size = Vector2(0, 6)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_accent")
 
 [node name="Badge" type="Label" parent="Root/Center/Card/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.68, 0.76, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 15
 text = "PERTANDINGAN SELESAI"
 horizontal_alignment = 1
 
 [node name="Title" type="Label" parent="Root/Center/Card/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.98, 1.0, 1)
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 54
 text = "KAMU MENANG!"
 horizontal_alignment = 1
 
 [node name="Reason" type="Label" parent="Root/Center/Card/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.76, 0.83, 0.90, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 19
 text = "Alasan kemenangan"
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -211,21 +211,21 @@ horizontal_alignment = 1
 [node name="Points" type="Label" parent="Root/Center/Card/V/Scores/MeBox/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 62
 text = "0"
 horizontal_alignment = 1
 
 [node name="Meta" type="Label" parent="Root/Center/Card/V/Scores/MeBox/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.74, 0.84, 0.92, 0.9)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "0 Senyawa"
 horizontal_alignment = 1
 
 [node name="Vs" type="Label" parent="Root/Center/Card/V/Scores"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.50, 0.58, 0.66, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 22
 text = "VS"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -242,45 +242,45 @@ theme_override_constants/separation = 4
 [node name="Who" type="Label" parent="Root/Center/Card/V/Scores/OppBox/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.68, 0.70, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 16
 text = "LAWAN"
 horizontal_alignment = 1
 
 [node name="Points" type="Label" parent="Root/Center/Card/V/Scores/OppBox/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 62
 text = "0"
 horizontal_alignment = 1
 
 [node name="Meta" type="Label" parent="Root/Center/Card/V/Scores/OppBox/V"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.76, 0.78, 0.9)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "0 Senyawa"
 horizontal_alignment = 1
 
 [node name="Buttons" type="HBoxContainer" parent="Root/Center/Card/V"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="Rematch" type="Button" parent="Root/Center/Card/V/Buttons"]
-custom_minimum_size = Vector2(200, 52)
+custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.96, 0.99, 0.98, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("StyleBoxFlat_cta")
 theme_override_styles/hover = SubResource("StyleBoxFlat_cta_hover")
 text = "Main Lagi"
 
 [node name="Back" type="Button" parent="Root/Center/Card/V/Buttons"]
-custom_minimum_size = Vector2(200, 52)
+custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.90, 0.94, 0.98, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Kembali ke Menu"

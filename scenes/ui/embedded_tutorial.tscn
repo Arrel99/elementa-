@@ -97,51 +97,74 @@ corner_radius_bottom_left = 6
 layer = 70
 script = ExtResource("1_tut")
 
+[node name="MaskRoot" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DimTop" type="ColorRect" parent="MaskRoot"]
+color = Color(0.01, 0.015, 0.025, 0.58)
+
+[node name="DimBottom" type="ColorRect" parent="MaskRoot"]
+color = Color(0.01, 0.015, 0.025, 0.58)
+
+[node name="DimLeft" type="ColorRect" parent="MaskRoot"]
+color = Color(0.01, 0.015, 0.025, 0.58)
+
+[node name="DimRight" type="ColorRect" parent="MaskRoot"]
+color = Color(0.01, 0.015, 0.025, 0.58)
+
+[node name="SpotlightFrame" type="Panel" parent="MaskRoot"]
+mouse_filter = 2
+
 [node name="Banner" type="PanelContainer" parent="."]
 visible = false
 offset_left = 18.0
 offset_top = 18.0
-offset_right = 478.0
-offset_bottom = 178.0
+offset_right = 378.0
+offset_bottom = 136.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
 
 [node name="V" type="VBoxContainer" parent="Banner"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="TopRow" type="HBoxContainer" parent="Banner/V"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="Badge" type="Label" parent="Banner/V/TopRow"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.84, 0.98, 0.94, 1)
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_badge")
-text = "TUTORIAL 1 / 6"
+text = "1 / 6"
 
 [node name="Title" type="Label" parent="Banner/V/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.95, 0.97, 0.99, 1)
-theme_override_font_sizes/font_size = 18
-text = "Pasang Unsur"
-
-[node name="SkipBtn" type="Button" parent="Banner/V/TopRow"]
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.68, 0.76, 0.84, 1)
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_secondary")
-theme_override_styles/hover = SubResource("StyleBoxFlat_secondary_hover")
-text = "Lewati"
+theme_override_font_sizes/font_size = 17
+text = "Pasang H & O"
 
 [node name="Body" type="Label" parent="Banner/V"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.88, 0.94, 1)
+theme_override_colors/font_color = Color(0.84, 0.90, 0.95, 1)
 theme_override_font_sizes/font_size = 15
-text = "Seret atau klik kartu H dan O ke slot Zona Dasar."
+text = "Seret atau klik H dan O ke Zona Dasar."
 autowrap_mode = 3
+
+[node name="Pointer" type="Label" parent="Banner/V"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.86, 0.74, 1)
+theme_override_font_sizes/font_size = 16
+text = "▼"
+horizontal_alignment = 1
 
 [node name="Actions" type="HBoxContainer" parent="Banner/V"]
 visible = false

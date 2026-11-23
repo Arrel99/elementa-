@@ -437,13 +437,13 @@ func _build_spell_sub_moves(p: int, data: CardData, args: Dictionary) -> Array:
 		"perisai_inert":
 			return [{"text": "Perisai aktif hingga awal giliran berikutnya", "card_id": ""}]
 		"spektrometer":
-			return [{"text": "Mengintip 3 kartu teratas Deck...", "card_id": ""}]
+			return [{"text": "Mengintip 3 kartu teratas Deck...", "card_id": "", "card_back": true}]
 		"bilas":
 			var tc := _peek(players[p].base, target_uid)
 			var subs: Array = []
 			if not tc.is_empty():
 				subs.append({"text": "Membuang %s dari Zona Dasar ke Discard" % _card_label(tc.id), "card_id": tc.id})
-			subs.append({"text": "Menarik 1 kartu baru dari Deck", "card_id": ""})
+			subs.append({"text": "Menarik 1 kartu baru dari Deck", "card_id": "", "card_back": true})
 			return subs
 		"korosi":
 			if players[1 - p].shield:
@@ -457,9 +457,10 @@ func _build_spell_sub_moves(p: int, data: CardData, args: Dictionary) -> Array:
 			if not sc.is_empty():
 				var pts := _special_stack_points(sc)
 				var parts_txt := _parts_label(sc)
+				var part_ids: Array = sc.get("parts", []).duplicate()
 				return [
 					{"text": "Memecah %s kembali ke Tabel Senyawa (-%d poin)" % [_card_label(sc.id), pts], "card_id": sc.id},
-					{"text": "Mengembalikan %s ke tangan" % parts_txt, "card_id": ""},
+					{"text": "Mengembalikan %s ke tangan" % parts_txt, "card_id": "", "card_ids": part_ids},
 				]
 			return []
 		"elektrolisis_paksa":
@@ -469,9 +470,10 @@ func _build_spell_sub_moves(p: int, data: CardData, args: Dictionary) -> Array:
 			if not sc.is_empty():
 				var pts := _special_stack_points(sc)
 				var parts_txt := _parts_label(sc)
+				var part_ids: Array = sc.get("parts", []).duplicate()
 				return [
 					{"text": "Memecah %s milik lawan ke Tabel Senyawa (-%d poin)" % [_card_label(sc.id), pts], "card_id": sc.id},
-					{"text": "Mengembalikan %s ke tangan lawan" % parts_txt, "card_id": ""},
+					{"text": "Mengembalikan %s ke tangan lawan" % parts_txt, "card_id": "", "card_ids": part_ids},
 				]
 			return []
 		_:

@@ -8,12 +8,12 @@ signal preview_exit(source: Node)
 signal preview_pin(data: Dictionary, source: Node)
 
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
-const THUMB_SIZE := Vector2(126, 170)
 
 const HEADER_ME := Color(0.18, 0.34, 0.54, 1.0)
 const HEADER_OPP := Color(0.56, 0.20, 0.22, 1.0)
 
 @onready var _root: Control = $Root
+@onready var _drawer: PanelContainer = $Root/Drawer
 @onready var _header_panel: PanelContainer = $Root/Drawer/V/HeaderPanel
 @onready var _owner_lbl: Label = $Root/Drawer/V/HeaderPanel/H/Titles/Owner
 @onready var _grid: GridContainer = $Root/Drawer/V/Scroll/Grid
@@ -26,6 +26,7 @@ const HEADER_OPP := Color(0.56, 0.20, 0.22, 1.0)
 var _cards: Array = []
 var _viewing_me := true
 var _filter := "all"       # all | basic | spell | special
+var _thumb_size := Vector2(180, 244)
 
 func _ready() -> void:
 	_root.hide()
@@ -35,8 +36,28 @@ func _ready() -> void:
 	_btn_basic.pressed.connect(_set_filter.bind("basic"))
 	_btn_spell.pressed.connect(_set_filter.bind("spell"))
 	_btn_special.pressed.connect(_set_filter.bind("special"))
+	get_viewport().size_changed.connect(_on_viewport_resized)
+	_resize_drawer()
+
+func _on_viewport_resized() -> void:
+	_resize_drawer()
+	if _root.visible:
+		_render_grid()
+
+func _resize_drawer() -> void:
+	if not is_instance_valid(_drawer):
+		return
+	var vp := get_viewport().get_visible_rect().size
+	var w := roundf(clampf(vp.x / 3.0, 420.0, 760.0))
+	_drawer.offset_left = 0.0
+	_drawer.offset_right = w
+	_grid.columns = 3
+	var avail_w := maxf(w - 52.0, 300.0)
+	var card_w := floorf(avail_w / 3.0)
+	_thumb_size = Vector2(card_w, roundf(card_w * 1.36))
 
 func open(cards: Array, owner_title: String, is_me: bool) -> void:
+	_resize_drawer()
 	_cards = cards.duplicate(true)
 	_viewing_me = is_me
 	_filter = "all"
@@ -146,7 +167,7 @@ func _render_grid() -> void:
 		_grid.add_child(n)
 		n.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		n.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		n.fit(THUMB_SIZE)
+		n.fit(_thumb_size)
 		n.setup(c, true, false, true)
 		n.preview_hover.connect(func(d, s): preview_hover.emit(d, s))
 		n.preview_exit.connect(func(s): preview_exit.emit(s))

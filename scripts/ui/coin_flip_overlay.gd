@@ -18,7 +18,7 @@ var _pending_order_cp := {}
 var _pending_local := false
 var _pending_me_idx := 0
 var _idle_t := 0.0
-var _resting_y := 0.0
+var _resting_x := 0.0
 
 func _ready() -> void:
 	hide()
@@ -33,8 +33,9 @@ func _process(delta: float) -> void:
 		return
 	# Goyangan 3D halus saat diam agar kilau logam dan ketebalan koin terasa nyata
 	_idle_t += delta
-	_coin_pivot.rotation.y = _resting_y + sin(_idle_t * 1.8) * 0.22
-	_coin_pivot.rotation.x = cos(_idle_t * 1.4) * 0.12
+	_coin_pivot.rotation.x = _resting_x + cos(_idle_t * 1.4) * 0.12
+	_coin_pivot.rotation.y = sin(_idle_t * 1.8) * 0.20
+	_coin_pivot.rotation.z = 0.0
 
 # --- Membangun Koin Logam 3D -------------------------------------------------
 
@@ -50,10 +51,10 @@ func _build_3d_coin_scene() -> void:
 	_world.add_child(we)
 
 	var cam := Camera3D.new()
-	cam.fov = 34.0
-	cam.position = Vector3(0.0, 0.15, 5.2)
+	cam.fov = 36.0
+	cam.position = Vector3(0.0, 0.35, 6.2)
 	_world.add_child(cam)
-	cam.look_at(Vector3.ZERO, Vector3.UP)
+	cam.look_at(Vector3(0.0, 0.25, 0.0), Vector3.UP)
 	cam.current = true
 
 	var key_light := DirectionalLight3D.new()
@@ -123,28 +124,32 @@ func _build_3d_coin_scene() -> void:
 	t_rim.position.z = -(thick * 0.5 + 0.015)
 	_coin_pivot.add_child(t_rim)
 
-	# Molekul H2O timbul 3D di sisi TAILS
+	# Molekul H2O & label TAILS di dalam t_face (diputar 180° di sumbu X agar saat
+	# koin berputar vertikal 180°/PI di sumbu X, sisi TAILS tampil tegak sempurna!)
+	var t_face := Node3D.new()
+	t_face.rotation_degrees.x = 180.0
+	_coin_pivot.add_child(t_face)
+
 	var m_o := _make_sphere(0.24, silver_mat)
-	m_o.position = Vector3(0.0, 0.30, -(thick * 0.5 + 0.04))
-	_coin_pivot.add_child(m_o)
+	m_o.position = Vector3(0.0, 0.30, thick * 0.5 + 0.04)
+	t_face.add_child(m_o)
 
 	var m_h1 := _make_sphere(0.16, silver_mat)
-	m_h1.position = Vector3(-0.38, -0.06, -(thick * 0.5 + 0.04))
-	_coin_pivot.add_child(m_h1)
+	m_h1.position = Vector3(-0.38, -0.06, thick * 0.5 + 0.04)
+	t_face.add_child(m_h1)
 
 	var m_h2 := _make_sphere(0.16, silver_mat)
-	m_h2.position = Vector3(0.38, -0.06, -(thick * 0.5 + 0.04))
-	_coin_pivot.add_child(m_h2)
+	m_h2.position = Vector3(0.38, -0.06, thick * 0.5 + 0.04)
+	t_face.add_child(m_h2)
 
-	var b1 := _make_bond(Vector3(-0.19, 0.12, -(thick * 0.5 + 0.035)), 46.0, silver_mat)
-	_coin_pivot.add_child(b1)
-	var b2 := _make_bond(Vector3(0.19, 0.12, -(thick * 0.5 + 0.035)), -46.0, silver_mat)
-	_coin_pivot.add_child(b2)
+	var b1 := _make_bond(Vector3(-0.19, 0.12, thick * 0.5 + 0.035), 46.0, silver_mat)
+	t_face.add_child(b1)
+	var b2 := _make_bond(Vector3(0.19, 0.12, thick * 0.5 + 0.035), -46.0, silver_mat)
+	t_face.add_child(b2)
 
 	var t_lbl := _make_coin_label("TAILS", Color(0.84, 0.94, 1.0))
-	t_lbl.position = Vector3(0.0, -0.68, -(thick * 0.5 + 0.035))
-	t_lbl.rotation_degrees.y = 180.0
-	_coin_pivot.add_child(t_lbl)
+	t_lbl.position = Vector3(0.0, -0.68, thick * 0.5 + 0.035)
+	t_face.add_child(t_lbl)
 
 func _metal_mat(col: Color, rough: float, met: float) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -227,7 +232,7 @@ func sync(v: Dictionary, is_local_test: bool) -> void:
 		if _last_stage != "pick_call":
 			_last_stage = "pick_call"
 			_last_result = ""
-			_resting_y = 0.0
+			_resting_x = 0.0
 			_coin_pivot.position = Vector3.ZERO
 			_coin_pivot.rotation = Vector3.ZERO
 		var caller := int(cp.get("caller", 0))
@@ -257,28 +262,38 @@ func _play_flip_animation(result_side: String) -> void:
 	_is_animating = true
 	_call_row.visible = false
 	_order_row.visible = false
-	_title.text = "Memutar koin..."
+	_title.text = "Melempar koin..."
 
-	# Putar 3D nyata pada sumbu Y: 0 / 2*PI = HEADS (+Z), PI = TAILS (-Z)
+	# Lemparan vertikal nyata: koin melambung tinggi & berputar jungkir-balik pada sumbu X!
+	# 0 / 2*PI = HEADS (+Z), PI = TAILS (tegak lurus menghadap kamera)
 	var spins := 6
-	var target_y := float(spins * 2) * PI + (0.0 if result_side == "heads" else PI)
-	_resting_y = 0.0 if result_side == "heads" else PI
+	var target_x := float(spins * 2) * PI + (0.0 if result_side == "heads" else PI)
+	_resting_x = 0.0 if result_side == "heads" else PI
 	_coin_pivot.position = Vector3.ZERO
 	_coin_pivot.rotation = Vector3.ZERO
-	Audio.play_sfx("coin_flip", -1.0)
+	_coin_pivot.scale = Vector3.ONE
 
 	var tw := create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(_coin_pivot, "rotation:y", target_y, 1.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(_coin_pivot, "position:y", 0.55, 0.52).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(_coin_pivot, "rotation:x", 0.35, 0.52).set_trans(Tween.TRANS_SINE)
+	# 1) Ancang-ancang singkat sebelum terlempar ke atas
+	tw.tween_property(_coin_pivot, "position:y", -0.22, 0.10).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.chain().tween_callback(func(): Audio.play_sfx("coin_flip", -1.0))
+
+	# 2) Terlempar tinggi ke atas sambil berputar vertikal cepat pada sumbu X
 	tw.chain().set_parallel(true)
-	tw.tween_property(_coin_pivot, "position:y", 0.0, 0.58).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	tw.tween_property(_coin_pivot, "rotation:x", 0.0, 0.58).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_coin_pivot, "rotation:x", target_x, 1.48).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_coin_pivot, "position:y", 1.32, 0.56).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_coin_pivot, "position:z", 0.35, 0.56).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_coin_pivot, "rotation:z", 0.14, 0.56).set_trans(Tween.TRANS_SINE)
+
+	# 3) Jatuh kembali ke bawah dengan pantulan elastis saat mendarat
+	tw.chain().set_parallel(true)
+	tw.tween_property(_coin_pivot, "position:y", 0.0, 0.68).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_coin_pivot, "position:z", 0.0, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(_coin_pivot, "rotation:z", 0.0, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.chain().tween_callback(func(): Audio.play_sfx("coin_land", -1.0))
 	tw.chain().tween_interval(0.20)
 	tw.chain().tween_callback(func():
-		_coin_pivot.rotation.y = _resting_y
+		_coin_pivot.rotation = Vector3(_resting_x, 0.0, 0.0)
 		_is_animating = false
 		_show_order_choice())
 
