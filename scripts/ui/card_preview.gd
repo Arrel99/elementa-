@@ -35,6 +35,7 @@ var _data := {}
 var _stack_cards: Array = []        # [kartu utama, unsur 1, unsur 2]
 var _active_idx := 0
 var _pinned := false
+var _hover_right := false
 var _open := false
 
 func _ready() -> void:
@@ -154,22 +155,21 @@ func _make_nav_btn(txt: String) -> Button:
 
 # --- API untuk papan ---------------------------------------------------------
 
-func hover(data: Dictionary, source: Node) -> void:
+func hover(data: Dictionary, source: Node, on_right := false) -> void:
 	if source == null or not is_instance_valid(source):
 		return
 	if _pinned:
 		return
-	if _open and _source == source:
+	if _open and _source == source and _hover_right == on_right:
 		_timer.stop()
 		return
 	_source = source
 	_data = data.duplicate(true)
+	_hover_right = on_right
 	_timer.start()
 
 func unhover(source: Node) -> void:
 	if _pinned or _source != source:
-		return
-	if _open and _is_mouse_over_preview():
 		return
 	_timer.stop()
 	hide_preview()
@@ -237,6 +237,7 @@ func _render_stack(animate: bool) -> void:
 		if i != _active_idx:
 			order.append(i)
 
+	_stack.mouse_filter = Control.MOUSE_FILTER_PASS if _pinned else Control.MOUSE_FILTER_IGNORE
 	for i in _slots.size():
 		var slot: Control = _slots[i]
 		var badge: Label = _badges[i]
@@ -255,8 +256,9 @@ func _render_stack(animate: bool) -> void:
 		slot.size = sz
 		slot.visible = true
 		slot.z_index = 10 - depth
-		slot.mouse_filter = Control.MOUSE_FILTER_STOP if has_multi else Control.MOUSE_FILTER_IGNORE
-		slot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if (has_multi and not is_front) else Control.CURSOR_ARROW
+		# Saat hanya hover (belum klik kanan), pratinjau tembus klik agar tidak mengganggu klik kiri!
+		slot.mouse_filter = Control.MOUSE_FILTER_STOP if (_pinned and has_multi) else Control.MOUSE_FILTER_IGNORE
+		slot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if (_pinned and has_multi and not is_front) else Control.CURSOR_ARROW
 
 		var target_mod := Color.WHITE if is_front else Color(0.82, 0.86, 0.92, 1.0)
 		if animate:
@@ -275,28 +277,22 @@ func _render_stack(animate: bool) -> void:
 		else:
 			badge.visible = false
 
-	_nav_bar.visible = has_multi
-	if has_multi:
+	_nav_bar.visible = has_multi and _pinned
+	if has_multi and _pinned:
 		var active_d: CardData = CardDB.get_card(String(_stack_cards[_active_idx].get("id", "")))
 		var active_name := active_d.display_name if active_d != null else ""
 		_nav_lbl.text = "%d / %d  •  %s" % [_active_idx + 1, count, active_name]
 
 func _on_slot_input(e: InputEvent, idx: int) -> void:
-	if not (e is InputEventMouseButton) or not e.pressed:
+	if not _pinned or not (e is InputEventMouseButton) or not e.pressed:
 		return
 	var mb := e as InputEventMouseButton
 	if mb.button_index == MOUSE_BUTTON_LEFT and idx < _stack_cards.size():
 		if _stack_cards.size() > 1:
-			# Klik kartu di belakang: bawa kartu itu ke depan dan tahan pratinjau agar mudah dibaca
 			_active_idx = idx
-			if not _pinned:
-				_pinned = true
-				_dim.visible = true
-				_hint.visible = true
-				_apply_position()
 			_render_stack(true)
 			get_viewport().set_input_as_handled()
-	elif mb.button_index == MOUSE_BUTTON_RIGHT and _pinned:
+	elif mb.button_index == MOUSE_BUTTON_RIGHT:
 		hide_preview()
 		get_viewport().set_input_as_handled()
 
@@ -328,6 +324,16 @@ func _apply_position() -> void:
 		_center.anchor_top = 0.0
 		_center.anchor_bottom = 1.0
 		_center.offset_left = 0.0
+		_center.offset_right = 0.0
+		_center.offset_top = 0.0
+	elif _hover_right:
+		# Khusus Zona Senyawa (di kiri papan): tampilkan pratinjau hover di sisi kanan (sebelah kiri HUD)
+		_center.anchor_left = 0.56
+		_center.anchor_right = 0.89
+		_center.anchor_top = 0.08
+		_center.anchor_bottom = 0.96
+		_center.offset_left = 0.0
+		_center.offset_right = -12.0
 		_center.offset_top = 0.0
 	else:
 		_center.anchor_left = 0.0
@@ -335,6 +341,7 @@ func _apply_position() -> void:
 		_center.anchor_top = 0.08
 		_center.anchor_bottom = 0.96
 		_center.offset_left = 18.0
+		_center.offset_right = 0.0
 		_center.offset_top = 0.0
 
 func _is_mouse_over_preview() -> bool:

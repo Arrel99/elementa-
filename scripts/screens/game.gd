@@ -506,7 +506,9 @@ func _on_hand_card_hover(n: Control, on: bool) -> void:
 func _on_preview_hover(data: Dictionary, source: Node) -> void:
 	if _drag_ghost != null:
 		return
-	$CardPreview.hover(data, source)
+	var z := _zone_of(int(data.get("uid", -1)))
+	var on_right := (z == "my_special" or z == "opp_special")
+	$CardPreview.hover(data, source, on_right)
 
 func _on_preview_exit(source: Node) -> void:
 	$CardPreview.unhover(source)
