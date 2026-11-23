@@ -52,12 +52,14 @@ var _shields: Dictionary = {}        # "me" | "opp" -> { "ring": MeshInstance3D,
 
 var _known_uids := {}                # uid yang sudah ada di papan pada render sebelumnya
 var _prev_board_cards := {}          # uid -> {id, pos, size, is_me, zone} untuk animasi asal/pindah
+var _prev_active_spells := {}        # uid -> {id, pos, is_me} untuk animasi spell aktif -> discard
 var _prev_deck_counts := {"me": -1, "opp": -1}
 var _prev_compound_counts := {}      # jumlah salinan tiap senyawa di render sebelumnya (untuk animasi refill dari deck)
 var _last_history_len := 0           # untuk mendeteksi aksi baru di riwayat
 var _last_spektro_resolved := 0      # jumlah Spektrometer yang sudah selesai (picu animasi kocok deck)
 var _did_initial_shuffle := false
 var _fx_root: Node3D                 # wadah animasi kartu (sintesis, spell, draw, shuffle, discard)
+var _staged_spell_root: Node3D       # wadah kartu spell yang sedang menunggu pemilihan target (Mode.PICK_TARGET)
 var _time := 0.0
 
 func _ready() -> void:
@@ -77,6 +79,10 @@ func _ready() -> void:
 	_fx_root = Node3D.new()
 	_fx_root.name = "FxRoot"
 	add_child(_fx_root)
+
+	_staged_spell_root = Node3D.new()
+	_staged_spell_root.name = "StagedSpellRoot"
+	add_child(_staged_spell_root)
 
 func _process(delta: float) -> void:
 	_time += delta
@@ -673,31 +679,119 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 	_update_pile("opp_deck", int(v.opp.deck_count))
 	var opp_disc_cards: Array = v.opp.get("discard", [])
 	var opp_disc_y := _update_pile("opp_discard", int(v.opp.discard_count))
+	var top_o_node: Node3D = null
 	if not opp_disc_cards.is_empty():
 		var top_opp: Dictionary = opp_disc_cards[opp_disc_cards.size() - 1]
-		var top_o_node := _spawn_discard_top_card(top_opp, Vector3(5.95, opp_disc_y, -1.62), false)
+		top_o_node = _spawn_discard_top_card(top_opp, Vector3(5.95, opp_disc_y, -1.62), false)
 		top_o_node.name = "TopOppDiscard"
 
 	_update_pile("compound_deck", v.compound_pile.size())
 
 	var me_disc_cards: Array = v.me.get("discard", [])
 	var me_disc_y := _update_pile("me_discard", me_disc_cards.size())
+	var top_m_node: Node3D = null
 	if not me_disc_cards.is_empty():
 		var top_me: Dictionary = me_disc_cards[me_disc_cards.size() - 1]
-		var top_m_node := _spawn_discard_top_card(top_me, Vector3(5.95, me_disc_y, 1.52), true)
+		top_m_node = _spawn_discard_top_card(top_me, Vector3(5.95, me_disc_y, 1.52), true)
 		top_m_node.name = "TopMeDiscard"
 
 	_update_pile("me_deck", int(v.me.deck_count))
 	_update_shield("opp", bool(v.opp.shield))
 	_update_shield("me", bool(v.me.shield))
 
+	# Kartu Spell yang sedang aktif (terdiam di Zona Spell hingga efeknya selesai!)
+	var next_active_spells := {}
+	_render_active_spells(v.me.get("active_spells", []), true, next_active_spells)
+	_render_active_spells(v.opp.get("active_spells", []), false, next_active_spells)
+	_animate_finished_active_spells(next_active_spells, top_m_node, top_o_node)
+	_prev_active_spells = next_active_spells
+
 	# Animasi awal pertandingan (kocok kedua deck) + animasi draw + animasi kartu yang baru keluar/masuk
 	_animate_deck_events(v)
 	_animate_removed_cards(v, next_uids)
-	_animate_new_spells(v)
+	_animate_new_spells(v, top_m_node, top_o_node)
 
 	_known_uids = next_uids
 	_prev_board_cards = next_board_cards
+
+## Menampilkan kartu Spell yang sedang menunggu pemilihan target di Zona Spell (Mode.PICK_TARGET).
+func set_staged_spell(card: Dictionary) -> void:
+	clear_staged_spell()
+	if card.is_empty():
+		return
+	var slot_pos := Vector3(4.60, 0.045, 2.35)
+	var c3d: Node3D = CARD_3D_SCRIPT.new()
+	_staged_spell_root.add_child(c3d)
+	c3d.setup(card, SIZE_SPELL, true, false, true)
+	c3d.set_border_pulse(true, Color(0.38, 0.82, 0.92, 1.0))
+	c3d.preview_hover.connect(func(d, s): card_preview_hover.emit(d, s))
+	c3d.preview_exit.connect(func(s): card_preview_exit.emit(s))
+	c3d.preview_pin.connect(func(d, s): card_preview_pin.emit(d, s))
+	c3d.position = Vector3(2.2, 1.45, 4.8)
+	c3d.rotation_degrees.x = -22.0
+	c3d.scale = Vector3(1.14, 1.14, 1.14)
+	Audio.play_sfx("spell_cast", -3.0, 0.04)
+	var tw := c3d.create_tween().set_parallel(true)
+	tw.tween_property(c3d, "position", slot_pos, 0.30).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.30).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c3d, "scale", Vector3.ONE, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func clear_staged_spell() -> void:
+	if _staged_spell_root == null:
+		return
+	for ch in _staged_spell_root.get_children():
+		_staged_spell_root.remove_child(ch)
+		ch.queue_free()
+
+func _render_active_spells(cards: Array, is_me: bool, out_map: Dictionary) -> void:
+	var base_z := 2.35 if is_me else -2.45
+	for i in cards.size():
+		var c: Dictionary = cards[i]
+		var uid := int(c.get("uid", -1))
+		var pos := Vector3(4.60 + float(i) * 0.05, 0.025 + float(i) * 0.042, base_z - float(i) * 0.04)
+		var is_new := not _prev_active_spells.has(uid)
+		out_map[uid] = {"id": String(c.get("id", "")), "pos": pos, "is_me": is_me}
+		var c3d := _spawn_card(c, pos, SIZE_SPELL, true, false, true, "", Color.WHITE, false, false, false, is_me)
+		c3d.set_border_pulse(true, Color(0.42, 0.84, 0.90, 1.0))
+		if is_new:
+			Audio.play_sfx("spell_cast", -2.0, 0.04)
+			c3d.position = Vector3(2.2, 1.45, 4.8 if is_me else -4.8)
+			c3d.rotation_degrees.x = -22.0 if is_me else 22.0
+			c3d.scale = Vector3(1.16, 1.16, 1.16)
+			var tw := c3d.create_tween().set_parallel(true)
+			tw.tween_property(c3d, "position", pos, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(c3d, "scale", Vector3.ONE, 0.40).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+## Saat spell aktif (Spektrometer / Perisai Inert / Katalis) selesai dipakai,
+## luncurkan kartu tersebut dari Zona Spell menuju Discard Pile.
+func _animate_finished_active_spells(next_map: Dictionary, top_m: Node3D, top_o: Node3D) -> void:
+	for uid in _prev_active_spells:
+		if next_map.has(uid):
+			continue
+		var prev: Dictionary = _prev_active_spells[uid]
+		var cid := String(prev.get("id", ""))
+		var start_pos: Vector3 = prev.get("pos", Vector3(4.60, 0.03, 2.35))
+		var is_me := bool(prev.get("is_me", true))
+		var disc_pos := Vector3(5.95, 0.36, 1.52 if is_me else -1.62)
+		var top_node: Node3D = top_m if is_me else top_o
+		if is_instance_valid(top_node):
+			top_node.visible = false
+		Audio.play_sfx("card_discard", -2.0, 0.05)
+		var c3d: Node3D = CARD_3D_SCRIPT.new()
+		_fx_root.add_child(c3d)
+		c3d.setup({"uid": -1, "id": cid, "placed_turn": -1}, SIZE_SPELL, true, false, false)
+		c3d.position = start_pos
+		var tw := c3d.create_tween()
+		tw.set_parallel(true)
+		tw.tween_property(c3d, "position", start_pos + Vector3(0.0, 0.45, 0.0), 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.chain().set_parallel(true)
+		tw.tween_property(c3d, "position", disc_pos, 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_property(c3d, "scale", Vector3(0.76, 0.76, 0.76), 0.36).set_trans(Tween.TRANS_CUBIC)
+		tw.chain().tween_callback(func():
+			if is_instance_valid(top_node):
+				top_node.visible = true
+			c3d.queue_free())
 
 func _spawn_discard_top_card(card: Dictionary, pos: Vector3, is_me: bool) -> Node3D:
 	var c3d: Node3D = CARD_3D_SCRIPT.new()
@@ -889,7 +983,7 @@ func _animate_removed_cards(v: Dictionary, next_uids: Dictionary) -> void:
 				twp.tween_property(p3d, "scale", Vector3(0.82, 0.82, 0.82), 0.46)
 				twp.chain().tween_callback(p3d.queue_free)
 
-func _animate_new_spells(v: Dictionary) -> void:
+func _animate_new_spells(v: Dictionary, top_m: Node3D, top_o: Node3D) -> void:
 	var hist: Array = v.get("history", [])
 	if hist.size() < _last_history_len:
 		_last_history_len = hist.size()
@@ -901,7 +995,9 @@ func _animate_new_spells(v: Dictionary) -> void:
 		var cid := String(item.get("card_id", ""))
 		var is_me := (int(item.get("player", 0)) == me_idx)
 		if act == "spell" and cid != "" and CardDB.cards.has(cid):
-			_play_spell_slot_anim(cid, is_me)
+			# Spektrometer, Perisai Inert, dan Katalis menetap di Zona Spell lewat active_spells
+			if not (cid in ["spektrometer", "perisai_inert", "katalis"]):
+				_play_spell_slot_anim(cid, is_me, top_m if is_me else top_o)
 		elif act == "synth" and cid != "" and CardDB.cards.has(cid):
 			var spec_arr: Array = v.me.special if is_me else v.opp.special
 			var target_slot := mini(maxi(spec_arr.size() - 1, 0), 7)
@@ -998,14 +1094,18 @@ func _play_synth_anim(result_id: String, is_me: bool, target_slot: int) -> void:
 	tw_r.tween_property(res_card, "scale", Vector3(0.86, 0.86, 0.86), 0.42).set_trans(Tween.TRANS_CUBIC)
 	tw_r.chain().tween_callback(res_card.queue_free)
 
-## Animasi kartu Spell mendarat ke Slot Spell, tampil jelas, lalu meluncur ke Discard Pile.
-func _play_spell_slot_anim(card_id: String, is_me: bool) -> void:
+## Animasi kartu Spell bertarget: menetap di Zona Spell selama animasi efek berjalan,
+## baru setelah efek selesai kartu meluncur ke Discard Pile (dan Discard baru muncul saat mendarat).
+func _play_spell_slot_anim(card_id: String, is_me: bool, top_disc_node: Node3D = null) -> void:
 	Audio.play_sfx("spell_cast", -2.0, 0.04)
-	var slot_pos := Vector3(4.60, 0.04, 2.35 if is_me else -2.45)
+	var slot_pos := Vector3(4.60, 0.045, 2.35 if is_me else -2.45)
 	var disc_pos := Vector3(5.95, 0.36, 1.52 if is_me else -1.62)
+	if is_instance_valid(top_disc_node):
+		top_disc_node.visible = false
 	var c3d: Node3D = CARD_3D_SCRIPT.new()
 	_fx_root.add_child(c3d)
 	c3d.setup({"uid": -1, "id": card_id, "placed_turn": -1}, SIZE_SPELL, true, false, false)
+	c3d.set_border_pulse(true, Color(0.42, 0.84, 0.90, 1.0))
 	c3d.position = Vector3(2.2, 1.45, 4.8 if is_me else -4.8)
 	c3d.rotation_degrees.x = -24.0 if is_me else 24.0
 	c3d.scale = Vector3(1.18, 1.18, 1.18)
@@ -1013,16 +1113,20 @@ func _play_spell_slot_anim(card_id: String, is_me: bool) -> void:
 	var tw := c3d.create_tween()
 	# 1) Meluncur & mendarat mantap ke Slot Spell
 	tw.set_parallel(true)
-	tw.tween_property(c3d, "position", slot_pos, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(c3d, "scale", Vector3(1.04, 1.04, 1.04), 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	# 2) Tahan agar pemain jelas melihat kartu Spell aktif di Slot Spell
-	tw.chain().tween_interval(0.78)
-	# 3) Meluncur halus masuk ke tumpukan Discard Pile
+	tw.tween_property(c3d, "position", slot_pos, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c3d, "rotation_degrees:x", 0.0, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c3d, "scale", Vector3(1.03, 1.03, 1.03), 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# 2) Terdiam di Slot Spell sampai animasi efek target selesai sepenuhnya
+	tw.chain().tween_interval(1.05)
+	# 3) Efek selesai -> baru meluncur masuk ke tumpukan Discard Pile
+	tw.chain().tween_callback(func(): Audio.play_sfx("card_discard", -2.5, 0.05))
 	tw.chain().set_parallel(true)
 	tw.tween_property(c3d, "position", disc_pos, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(c3d, "scale", Vector3(0.76, 0.76, 0.76), 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	tw.chain().tween_callback(c3d.queue_free)
+	tw.chain().tween_callback(func():
+		if is_instance_valid(top_disc_node):
+			top_disc_node.visible = true
+		c3d.queue_free())
 
 ## Menampilkan 2 kartu unsur dasar yang menempel di bawah/belakang kartu senyawa
 ## (mirip kartu Energy di belakang Pokemon TCG Live). Mengembalikan posisi Y untuk kartu utama di atasnya.

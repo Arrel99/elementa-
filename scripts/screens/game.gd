@@ -612,10 +612,7 @@ func _execute_dropped_card(uid: int, global_pos: Vector2) -> void:
 				_clear_glow()
 				submit({"type": "spell", "uid": uid, "args": {"target_uid": hit_uid}})
 			else:
-				mode = Mode.PICK_TARGET
-				pending_spell_uid = uid
-				pending_zone = zone
-				_highlight_zone(zone)
+				_enter_pick_target(uid, card, zone)
 
 # --- Interaksi (bab 4.4 / 4.5) ---------------------------------------------
 
@@ -683,10 +680,19 @@ func _click_hand(uid: int) -> void:
 		if zone == "":
 			submit({"type": "spell", "uid": uid, "args": {}})
 		else:
-			mode = Mode.PICK_TARGET
-			pending_spell_uid = uid
-			pending_zone = zone
-			_highlight_zone(zone)           # sorot zona target (efek, bukan teks)
+			_enter_pick_target(uid, card, zone)
+
+func _enter_pick_target(uid: int, card: Dictionary, zone: String) -> void:
+	mode = Mode.PICK_TARGET
+	pending_spell_uid = uid
+	pending_zone = zone
+	_highlight_zone(zone)
+	# Letakkan kartu spell sementara di Zona Spell 3D selama pemain memilih targetnya
+	if is_instance_valid(board3d):
+		board3d.set_staged_spell(card)
+	for ch in $MeHandDock.get_children():
+		if "uid" in ch and int(ch.uid) == uid:
+			ch.modulate.a = 0.25
 
 func _reset_mode() -> void:
 	mode = Mode.IDLE
@@ -694,6 +700,10 @@ func _reset_mode() -> void:
 	pending_spell_uid = -1
 	pending_zone = ""
 	_clear_glow()
+	if is_instance_valid(board3d):
+		board3d.clear_staged_spell()
+	for ch in $MeHandDock.get_children():
+		ch.modulate.a = 1.0
 
 func _on_discard_clicked(is_me: bool) -> void:
 	if view.is_empty():

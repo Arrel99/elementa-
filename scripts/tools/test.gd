@@ -213,9 +213,13 @@ func _ready() -> void:
 	var spec := _force_hand(g13, 0, "spektrometer")
 	_check(g13.play_spell(0, spec.uid, {}) == "", "Spektrometer dimainkan")
 	_check(not g13.pending.is_empty(), "Muncul efek Spektrometer yang menunggu")
+	_check(g13.players[0].active_spells.size() == 1, "Spektrometer terdiam di Zona Spell sebelum selesai")
+	_check(g13.players[0].discard.is_empty(), "Spektrometer belum masuk Discard sebelum selesai")
 	_check(g13.pending.cards.size() == 3, "Menampilkan 3 kartu teratas")
 	var take: int = g13.pending.cards[0].uid
 	_check(g13.resolve_spektrometer(0, take) == "", "Spektrometer diselesaikan")
+	_check(g13.players[0].active_spells.is_empty(), "Spektrometer keluar dari Zona Spell setelah selesai")
+	_check(g13.players[0].discard.size() == 1, "Spektrometer masuk Discard setelah selesai")
 	_check(g13.players[0].hand.size() == hand_before2 + 1, "1 kartu diambil ke tangan")
 	_check(g13.players[0].deck.size() == deck_before - 1, "Sisa 2 kartu kembali ke deck")
 	_check(g13.pending.is_empty(), "Efek Spektrometer selesai")

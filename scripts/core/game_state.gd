@@ -56,6 +56,7 @@ func setup(rng_seed: int, with_coin_flip := false) -> void:
 	for i in 2:
 		players.append({
 			"deck": _build_deck(), "hand": [], "base": [], "special": [],
+			"active_spells": [],
 			"discard": [], "points": 0, "shield": false,
 			"time_left": MATCH_CLOCK_SECONDS,
 		})
@@ -275,6 +276,9 @@ func synthesize(p: int, uid_a: int, uid_b: int) -> String:
 	var pts: int = CardDB.get_card(result).points
 	_recalc_points(p)
 	synth_left -= 1
+	# Jika jatah sintesis sudah habis, Katalis yang aktif di Zona Spell selesai dipakai -> masuk Discard
+	if synth_left <= 0:
+		_discard_active_spells_by_id(p, "katalis")
 	_record(p, "synth", result, "Sintesis %s + %s -> %s (+%d)" % [
 		_card_sym(a.id), _card_sym(b.id), _card_label(result), pts])
 	_check_special_trigger(p)
@@ -303,11 +307,28 @@ func play_spell(p: int, uid: int, args: Dictionary) -> String:
 	var err: String = fn.call(p, args)
 	if err != "":
 		return err
-	pl.discard.append(_take(pl.hand, uid))
+	var spell_card := _take(pl.hand, uid)
+	# Spell dengan efek berkelanjutan / menunggu resolusi tetap berada di Zona Spell
+	# hingga efeknya selesai, baru dipindahkan ke Discard.
+	if data.spell_effect in ["spektrometer", "perisai_inert", "katalis"]:
+		pl.active_spells.append(spell_card)
+	else:
+		pl.discard.append(spell_card)
 	if not is_katalis:
 		spell_left -= 1           # Katalis tidak mengurangi jatah spell (bagian 8)
 	_record(p, "spell", c.id, "Memainkan Spell %s" % data.display_name, spell_subs)
 	return ""
+
+## Memindahkan kartu spell aktif dengan id tertentu dari Zona Spell ke Discard Pile.
+func _discard_active_spells_by_id(p: int, card_id: String) -> void:
+	var pl = players[p]
+	var keep: Array = []
+	for sc in pl.active_spells:
+		if String(sc.get("id", "")) == card_id:
+			pl.discard.append(sc)
+		else:
+			keep.append(sc)
+	pl.active_spells = keep
 
 func _build_spell_sub_moves(p: int, data: CardData, args: Dictionary) -> Array:
 	var target_uid := int(args.get("target_uid", -1))
@@ -508,6 +529,8 @@ func resolve_spektrometer(p: int, take_uid: int) -> String:
 	players[p].deck.shuffle()     # deck diacak lagi setelah efek selesai
 	players[p].hand.append(take)
 	pending = {}
+	# Efek Spektrometer selesai -> pindahkan kartu Spektrometer dari Zona Spell ke Discard
+	_discard_active_spells_by_id(p, "spektrometer")
 	# Perbarui sub-move pada entri Spektrometer terakhir (kartu pilihan hanya terlihat oleh pemiliknya)
 	for i in range(history.size() - 1, -1, -1):
 		var h: Dictionary = history[i]
@@ -624,6 +647,8 @@ func end_turn(p: int) -> String:
 	var pl = players[p]
 	if _rules().hand_max > 0 and pl.hand.size() > _rules().hand_max:
 		return "Tangan melebihi %d kartu. Buang dulu (klik kartunya)." % _rules().hand_max
+	# Akhiri spell Katalis yang masih tersisa di akhir giliran pemain ini -> masuk Discard
+	_discard_active_spells_by_id(p, "katalis")
 	# hitungan mundur berjalan tiap akhir giliran kedua pemain (bagian 9.3)
 	if countdown > 0:
 		countdown -= 1
@@ -632,6 +657,7 @@ func end_turn(p: int) -> String:
 	synth_left = 1
 	spell_left = 1
 	players[current].shield = false   # perisai berakhir di awal giliran sendiri (bagian 8)
+	_discard_active_spells_by_id(current, "perisai_inert")
 	if countdown == 0:
 		win_reason = "special_full"
 		_finish_by_points()
@@ -691,13 +717,15 @@ func view_for(p: int) -> Dictionary:
 		"history": _history_view(p),
 		"me": {
 			"hand": me.hand.duplicate(true), "base": me.base.duplicate(true),
-			"special": me.special.duplicate(true), "points": me.points,
+			"special": me.special.duplicate(true), "active_spells": me.active_spells.duplicate(true),
+			"points": me.points,
 			"deck_count": me.deck.size(), "discard": me.discard.duplicate(true),
 			"shield": me.shield, "time_left": float(me.get("time_left", MATCH_CLOCK_SECONDS)),
 		},
 		"opp": {
 			"hand_backs": _backs(op.hand.size()), "base": op.base.duplicate(true),
-			"special": op.special.duplicate(true), "points": op.points,
+			"special": op.special.duplicate(true), "active_spells": op.active_spells.duplicate(true),
+			"points": op.points,
 			"deck_count": op.deck.size(), "discard_count": op.discard.size(),
 			"discard": op.discard.duplicate(true),
 			"shield": op.shield, "time_left": float(op.get("time_left", MATCH_CLOCK_SECONDS)),
