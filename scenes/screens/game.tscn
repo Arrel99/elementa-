@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/discard_drawer.tscn" id="12_discard"]
 [ext_resource type="PackedScene" path="res://scenes/ui/result_modal.tscn" id="13_result"]
 [ext_resource type="PackedScene" path="res://scenes/ui/coin_flip_overlay.tscn" id="14_coin"]
+[ext_resource type="PackedScene" path="res://scenes/ui/embedded_tutorial.tscn" id="15_embedded_tut"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 8.0
@@ -282,3 +283,5 @@ cancel_button_text = "Batal"
 [node name="DiscardDrawer" parent="." instance=ExtResource("12_discard")]
 
 [node name="CoinFlipOverlay" parent="." instance=ExtResource("14_coin")]
+
+[node name="EmbeddedTutorial" parent="." instance=ExtResource("15_embedded_tut")]

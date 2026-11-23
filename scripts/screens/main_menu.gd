@@ -19,7 +19,7 @@ func _ready() -> void:
 	Audio.play_music("menu")
 	_v.get_node("Play").pressed.connect(_go.bind("lobby"))
 	_v.get_node("Library").pressed.connect(_go.bind("library"))
-	_v.get_node("HowTo").pressed.connect(func(): $TutorialModal.open(0))
+	_v.get_node("HowTo").pressed.connect(_start_tutorial)
 	_v.get_node("Settings").pressed.connect(_open_settings)
 	_v.get_node("Quit").pressed.connect(get_tree().quit)
 	$SettingsPanel/Box/Close.pressed.connect(_close_settings)
@@ -64,11 +64,6 @@ func _ready() -> void:
 
 	# Jalankan animasi masuk bertahap setelah tata letak siap
 	call_deferred("_play_entrance_anim")
-
-	# Tutorial bertahap satu kali saat pertama bermain (bab 7.3)
-	if not bool(Settings.get_value("ui", "seen_tutorial", false)):
-		$TutorialModal.open(0)
-		Settings.set_value("ui", "seen_tutorial", true)
 
 func _setup_button_motion() -> void:
 	for ch in _v.get_children():
@@ -142,10 +137,18 @@ func _close_settings() -> void:
 	tw.tween_property(panel, "modulate:a", 0.0, 0.14)
 	tw.chain().tween_callback(panel.hide)
 
+func _start_tutorial() -> void:
+	Net.local_test = false
+	Net.vs_ai = true
+	Net.tutorial_mode = true
+	Net.ai_difficulty = "easy"
+	_go("game")
+
 func _start_practice() -> void:
 	Settings.set_value("ui", "show_coach", true)
 	Net.local_test = false
 	Net.vs_ai = true
+	Net.tutorial_mode = false
 	_go("game")
 
 func _unhandled_input(e: InputEvent) -> void:

@@ -19,6 +19,7 @@ signal version_rejected(msg: String)
 var client_loaded := false
 var local_test := false
 var vs_ai := false
+var tutorial_mode := false
 var ai_difficulty := "normal"  # easy | normal | hard | extreme
 var room_code := ""            # kode yang dipakai host untuk menyaring tamu
 
@@ -54,6 +55,7 @@ func reset() -> void:
     client_loaded = false
     local_test = false
     vs_ai = false
+    tutorial_mode = false
     ai_difficulty = "normal"
     room_code = ""
 

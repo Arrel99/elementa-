@@ -42,6 +42,7 @@ var pending_spell_uid := -1
 var pending_zone := ""
 var local_test := false
 var vs_ai := false
+var tutorial_mode := false
 var ai_difficulty := "normal"
 var easy_mode := true
 var turn_timer := Timer.new()
@@ -69,6 +70,7 @@ func _ready() -> void:
 	Audio.play_music("game")
 	local_test = Net.local_test
 	vs_ai = Net.vs_ai
+	tutorial_mode = Net.tutorial_mode
 	ai_difficulty = Net.ai_difficulty
 	resized.connect(_layout)
 	_layout()
@@ -88,6 +90,7 @@ func _ready() -> void:
 	$InGameSettings.give_up_requested.connect($GiveUpDialog.popup_centered)
 	$Result.back_to_menu_requested.connect(_back_to_menu)
 	$Result.rematch_requested.connect(_rematch)
+	$EmbeddedTutorial.back_to_menu_requested.connect(_back_to_menu)
 	$CoinFlipOverlay.coin_call_chosen.connect(func(side: String): submit({"type": "coin_call", "side": side}))
 	$CoinFlipOverlay.turn_order_chosen.connect(func(first: bool): submit({"type": "coin_order", "first": first}))
 	$GiveUpDialog.confirmed.connect(func(): submit({"type": "give_up"}))
@@ -164,7 +167,12 @@ func _clock_color(sec: float) -> Color:
 
 func start_as_host() -> void:
 	state = GameState.new()
-	state.setup(randi(), true)        # mulai dengan lempar koin sebelum draw kartu pertama
+	if tutorial_mode:
+		state.setup_tutorial()
+		$EmbeddedTutorial.start()
+	else:
+		state.setup(randi(), true)        # mulai dengan lempar koin sebelum draw kartu pertama
+		$EmbeddedTutorial.stop()
 	my_index = 0
 	_prev_hand_uids.clear()
 	_last_turn_no = 0
@@ -372,6 +380,7 @@ func render(v: Dictionary) -> void:
 	$CoinFlipOverlay.sync(v, local_test)
 	$TurnHistory.update_history(v, local_test)
 	$DiscardDrawer.refresh_if_open(v, local_test)
+	$EmbeddedTutorial.on_view_updated(v)
 	if v.get("coin_phase", {}).is_empty() and int(v.winner) == -2:
 		var tno := int(v.get("turn_no", 1))
 		if _last_turn_no > 0 and tno != _last_turn_no:
@@ -517,6 +526,7 @@ func _on_preview_pin(data: Dictionary, source: Node) -> void:
 	if _drag_ghost != null:
 		return
 	$CardPreview.pin(data, source)
+	$EmbeddedTutorial.on_preview_pinned()
 
 # --- Drag & Drop kartu tangan -----------------------------------------------
 

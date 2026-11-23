@@ -90,6 +90,48 @@ func setup(rng_seed: int, with_coin_flip := false) -> void:
 	else:
 		coin_phase = {}
 
+## Menyiapkan papan khusus Embedded Tutorial dengan kartu awal terjamin
+## agar pemain bisa langsung mencoba pasang unsur, sintesis, dan spell.
+func setup_tutorial() -> void:
+	setup(4242, false)
+	current = 0
+	turn_no = 1
+	synth_left = 1
+	spell_left = 1
+	coin_phase = {}
+	pending = {}
+	history = []
+
+	# Kembalikan tangan acak ke deck lalu susun tangan awal tutorial yang pasti cocok
+	for i in 2:
+		for c in players[i].hand:
+			players[i].deck.append(c)
+		players[i].hand.clear()
+		players[i].base.clear()
+		players[i].special.clear()
+		players[i].active_spells.clear()
+		players[i].discard.clear()
+
+	for cid in ["H", "O", "Na", "Cl", "korosi", "katalis"]:
+		players[0].hand.append(_pull_from_deck_or_new(0, cid))
+	for cid in ["C", "O", "H", "N", "Ca"]:
+		players[1].hand.append(_pull_from_deck_or_new(1, cid))
+
+	# Pasang 1 unsur Fe di papan AI agar pemain punya target Korosi yang siap
+	var opp_fe := _pull_from_deck_or_new(1, "Fe")
+	opp_fe.placed_turn = 0
+	opp_fe["slot"] = 0
+	players[1].base.append(opp_fe)
+	_recalc_points(0)
+	_recalc_points(1)
+
+func _pull_from_deck_or_new(p: int, cid: String) -> Dictionary:
+	var deck: Array = players[p].deck
+	for i in deck.size():
+		if String(deck[i].id) == cid:
+			return deck.pop_at(i)
+	return _new_card(cid)
+
 ## Tahap 1 koin flip: pemain pemilih menentukan Heads / Tails, lalu koin dilempar 50/50.
 func choose_coin_call(p: int, side: String) -> String:
 	if coin_phase.is_empty() or String(coin_phase.get("stage", "")) != "pick_call":

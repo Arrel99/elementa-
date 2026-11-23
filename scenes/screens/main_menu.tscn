@@ -278,7 +278,7 @@ theme_override_font_sizes/font_size = 23
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
-text = "Cara Bermain"
+text = "Tutorial"
 
 [node name="Settings" type="Button" parent="CenterWrap/Column/MenuCard/V"]
 custom_minimum_size = Vector2(390, 60)

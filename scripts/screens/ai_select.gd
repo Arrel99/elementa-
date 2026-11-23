@@ -194,6 +194,7 @@ func _play_entrance() -> void:
 func _start_ai_match(diff: String) -> void:
 	Net.local_test = false
 	Net.vs_ai = true
+	Net.tutorial_mode = false
 	Net.ai_difficulty = diff
 	get_tree().change_scene_to_file("res://scenes/screens/game.tscn")
 
