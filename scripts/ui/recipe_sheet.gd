@@ -41,7 +41,7 @@ func sync_view(v: Dictionary) -> void:
 	if _root.visible:
 		_rebuild()
 
-func _unhandled_input(e: InputEvent) -> void:
+func _input(e: InputEvent) -> void:
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_TAB:
 		if _toggle_btn.visible:
 			toggle()
