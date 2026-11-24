@@ -20,6 +20,7 @@ var client_loaded := false
 var local_test := false
 var vs_ai := false
 var tutorial_mode := false
+var puzzle_id := ""
 var ai_difficulty := "normal"  # easy | normal | hard | extreme
 var room_code := ""            # kode yang dipakai host untuk menyaring tamu
 
@@ -56,6 +57,7 @@ func reset() -> void:
     local_test = false
     vs_ai = false
     tutorial_mode = false
+    puzzle_id = ""
     ai_difficulty = "normal"
     room_code = ""
 

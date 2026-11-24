@@ -62,6 +62,7 @@ func _ready() -> void:
 	var ai_btn: Button = _v.get_node("LocalTest")
 	ai_btn.visible = true
 	ai_btn.pressed.connect(_go.bind("ai_select"))
+	_v.get_node("Challenge").pressed.connect(_go.bind("puzzle_select"))
 
 	# Pasang animasi hover/tekan taktil pada semua tombol menu
 	_setup_button_motion()
@@ -148,6 +149,7 @@ func _start_tutorial() -> void:
 	Net.local_test = false
 	Net.vs_ai = true
 	Net.tutorial_mode = true
+	Net.puzzle_id = ""
 	Net.ai_difficulty = "easy"
 	_go("game")
 

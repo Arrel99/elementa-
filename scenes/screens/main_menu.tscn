@@ -302,6 +302,17 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 text = "VS. AI"
 
+[node name="Challenge" type="Button" parent="CenterWrap/Column/MenuCard/V"]
+custom_minimum_size = Vector2(390, 60)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.88, 0.93, 0.90, 1)
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "Tantangan"
+
 [node name="Quit" type="Button" parent="CenterWrap/Column/MenuCard/V"]
 custom_minimum_size = Vector2(390, 60)
 layout_mode = 2

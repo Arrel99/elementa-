@@ -7,6 +7,7 @@ extends Node3D
 
 signal card_clicked(uid: int)
 signal discard_clicked(is_me: bool)
+signal compound_table_clicked(comp_id: String)
 signal card_preview_hover(data: Dictionary, source: Node)
 signal card_preview_exit(source: Node)
 signal card_preview_pin(data: Dictionary, source: Node)
@@ -1242,9 +1243,12 @@ func _render_compound_table(ids: Array, my_base: Array, turn_no: int, my_turn: b
 			pos, SIZE_TABLE, true, false, true, "", Color.WHITE, false, false, false)
 		card_node.rotation_degrees.x = 18.0   # menengadah jelas di atas rak 3D tanpa terpotong
 
-		# Kedip HANYA pada kartu senyawa yang benar-benar bisa disintesis sekarang (tidak saat cooldown!)
+		# Kedip & bisa diklik langsung untuk sintesis HANYA jika bahan sudah siap & tidak cooldown!
 		if can_synth_now:
+			card_node.interactive = true
 			card_node.set_border_pulse(true, Color(0.32, 0.90, 0.58, 1.0))
+			var cid_copy := id
+			card_node.clicked.connect(func(_u): compound_table_clicked.emit(cid_copy))
 
 		# Jika slot ini baru terisi ulang dari Deck Senyawa, luncurkan halus dari deck ke slotnya!
 		var slot_changed := (i < _prev_table_slots.size() and _prev_table_slots[i] != id)

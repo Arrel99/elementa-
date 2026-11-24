@@ -148,8 +148,28 @@ func _make_deck_card(tier: Dictionary) -> Control:
 	tag_lbl.add_theme_color_override("font_color", acc_col.lightened(0.22))
 	lbl_box.add_child(tag_lbl)
 
-	# Interaksi hover & klik
 	var diff_id := String(tier.id)
+	var wins := int(Settings.get_value("stats", "ai_wins_" + diff_id, 0))
+	var losses := int(Settings.get_value("stats", "ai_losses_" + diff_id, 0))
+
+	# Lencana rekor menang/kalah di pojok atas kartu deck AI
+	if wins > 0 or losses > 0:
+		var stat_lbl := Label.new()
+		stat_lbl.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		stat_lbl.offset_top = 18.0
+		stat_lbl.offset_bottom = 44.0
+		stat_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		stat_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		stat_lbl.add_theme_font_size_override("font_size", 13)
+		if wins > 0:
+			stat_lbl.text = "★ %dM - %dK" % [wins, losses]
+			stat_lbl.add_theme_color_override("font_color", Color(0.96, 0.86, 0.44, 1.0))
+		else:
+			stat_lbl.text = "%dM - %dK" % [wins, losses]
+			stat_lbl.add_theme_color_override("font_color", Color(0.76, 0.82, 0.88, 0.9))
+		btn.add_child(stat_lbl)
+
+	# Interaksi hover & klik
 	btn.pressed.connect(func(): _start_ai_match(diff_id))
 	btn.mouse_entered.connect(func(): _hover_card(wrap, border, acc_col, true))
 	btn.mouse_exited.connect(func(): _hover_card(wrap, border, acc_col, false))
@@ -195,6 +215,7 @@ func _start_ai_match(diff: String) -> void:
 	Net.local_test = false
 	Net.vs_ai = true
 	Net.tutorial_mode = false
+	Net.puzzle_id = ""
 	Net.ai_difficulty = diff
 	get_tree().change_scene_to_file("res://scenes/screens/game.tscn")
 

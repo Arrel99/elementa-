@@ -3,6 +3,8 @@ extends CanvasLayer
 ## Drawer Battle Log bergaya Pokemon TCG Live (lebar 1/3 layar di sisi kanan).
 ## Urutan terbaru di paling atas, dengan miniatur kartu besar & gambar kartu pada dropdown.
 
+signal preview_pin(data: Dictionary, source: Node)
+
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 
 const HEADER_ME := Color(0.18, 0.34, 0.52, 1.0)
@@ -182,7 +184,7 @@ func _make_action_row(item: Dictionary, accent_col: Color, show_divider: bool) -
 	h.add_theme_constant_override("separation", 14)
 	outer_v.add_child(h)
 
-	# Miniatur kartu utama yang dimainkan
+	# Miniatur kartu utama yang dimainkan (klik kanan untuk zoom detail!)
 	var cid := String(item.get("card_id", ""))
 	if cid != "" and CardDB.cards.has(cid):
 		var thumb: Control = CARD_SCENE.instantiate()
@@ -190,7 +192,8 @@ func _make_action_row(item: Dictionary, accent_col: Color, show_divider: bool) -
 		thumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		h.add_child(thumb)
 		thumb.fit(MAIN_THUMB_SIZE)
-		thumb.setup({"uid": -1, "id": cid, "placed_turn": -1}, true, false, false)
+		thumb.setup({"uid": -1, "id": cid, "placed_turn": -1}, true, false, true)
+		thumb.preview_pin.connect(func(d, s): preview_pin.emit(d, s))
 
 	var detail_lbl := Label.new()
 	detail_lbl.text = String(item.get("detail", ""))
@@ -291,7 +294,9 @@ func _add_sub_thumb(parent: Control, cid: String, face_up: bool, sz: Vector2) ->
 	sthumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	parent.add_child(sthumb)
 	sthumb.fit(sz)
-	sthumb.setup({"uid": -1, "id": cid, "placed_turn": -1}, face_up, false, false)
+	sthumb.setup({"uid": -1, "id": cid, "placed_turn": -1}, face_up, false, face_up)
+	if face_up:
+		sthumb.preview_pin.connect(func(d, s): preview_pin.emit(d, s))
 
 func _scroll_to_top() -> void:
 	if is_instance_valid(_scroll):

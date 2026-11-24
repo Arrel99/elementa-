@@ -6,11 +6,12 @@ extends Control
 
 const CARD_SCENE := preload("res://scenes/ui/card.tscn")
 const AI_SCRIPT := preload("res://scripts/core/ai_player.gd")
+const PUZZLE_DB := preload("res://scripts/core/puzzle_db.gd")
 
 # Ukuran kartu tangan di overlay 2D (skala dasar untuk tinggi jendela 1080)
 const SIZE_HAND := Vector2(114, 152)
 const SIZE_OPP_HAND := Vector2(76, 102)
-const HUD_BASE_SIZE := Vector2(142, 376)
+const HUD_BASE_SIZE := Vector2(146, 408)
 const HUD_PAD := 8.0
 const LOG_BTN_SIZE := Vector2(66, 66)
 
@@ -43,6 +44,8 @@ var pending_zone := ""
 var local_test := false
 var vs_ai := false
 var tutorial_mode := false
+var puzzle_id := ""
+var _puzzle_banner: PanelContainer = null
 var ai_difficulty := "normal"
 var easy_mode := true
 var turn_timer := Timer.new()
@@ -51,7 +54,9 @@ var _pending_key := ""          # penanda efek interaktif yang sedang ditampilka
 var _glow_tween: Tween          # denyut glow zona tangan
 var _playable := {}             # uid kartu yang bisa dimainkan (dari state)
 var _prev_hand_uids := {}       # uid kartu di tangan sebelumnya (untuk animasi masuk kartu baru)
-var _last_turn_no := 0          # melacak pergantian giliran untuk bunyi turn_start
+var _last_turn_no := 0          # melacak pergantian giliran untuk bunyi & banner turn_start
+var _last_me_pts := -1          # melacak selisih poin untuk angka skor mengambang
+var _last_opp_pts := -1
 var _result_sfx_played := false # mencegah bunyi hasil diputar berulang
 var _ui_scale := 1.0
 var _disp_me_time := 900.0      # tampilan jam lokal pemain (15:00)
@@ -71,12 +76,14 @@ func _ready() -> void:
 	local_test = Net.local_test
 	vs_ai = Net.vs_ai
 	tutorial_mode = Net.tutorial_mode
+	puzzle_id = Net.puzzle_id
 	ai_difficulty = Net.ai_difficulty
 	resized.connect(_layout)
 	_layout()
 
 	board3d.card_clicked.connect(_on_card_clicked)
 	board3d.discard_clicked.connect(_on_discard_clicked)
+	board3d.compound_table_clicked.connect(_on_compound_table_clicked)
 	board3d.card_preview_hover.connect(_on_preview_hover)
 	board3d.card_preview_exit.connect(_on_preview_exit)
 	board3d.card_preview_pin.connect(_on_preview_pin)
@@ -84,6 +91,7 @@ func _ready() -> void:
 	$DiscardDrawer.preview_hover.connect(_on_preview_hover)
 	$DiscardDrawer.preview_exit.connect(_on_preview_exit)
 	$DiscardDrawer.preview_pin.connect(_on_preview_pin)
+	$TurnHistory.preview_pin.connect(_on_preview_pin)
 
 	$Hud/EndTurn.pressed.connect(func(): submit({"type": "end"}))
 	$BattleLogBtn.pressed.connect(func(): $TurnHistory.toggle())
@@ -168,7 +176,11 @@ func _clock_color(sec: float) -> Color:
 func start_as_host() -> void:
 	randomize()                       # pastikan seed acak murni di setiap pertandingan (tidak rigged)
 	state = GameState.new()
-	if tutorial_mode:
+	if puzzle_id != "":
+		var pinfo: Dictionary = PUZZLE_DB.apply_puzzle(state, puzzle_id)
+		$EmbeddedTutorial.stop()
+		_show_puzzle_banner(pinfo)
+	elif tutorial_mode:
 		state.setup_tutorial()
 		$EmbeddedTutorial.start()
 	else:
@@ -177,6 +189,8 @@ func start_as_host() -> void:
 	my_index = 0
 	_prev_hand_uids.clear()
 	_last_turn_no = 0
+	_last_me_pts = -1
+	_last_opp_pts = -1
 	_result_sfx_played = false
 	_broadcast()
 
@@ -366,9 +380,26 @@ func render(v: Dictionary) -> void:
 	if v.countdown > 0:
 		extra = "  •  Hitung mundur %d" % v.countdown
 	$EmbeddedTutorial.on_view_updated(v)
-	$Hud/OppBadge/Num.text = str(v.opp.points)
-	$Hud/MyBadge/Num.text = str(v.me.points)
+	var me_pts := int(v.me.points)
+	var opp_pts := int(v.opp.points)
+	if _last_me_pts >= 0 and me_pts != _last_me_pts:
+		_spawn_score_delta(me_pts - _last_me_pts, true)
+	if _last_opp_pts >= 0 and opp_pts != _last_opp_pts:
+		_spawn_score_delta(opp_pts - _last_opp_pts, false)
+	_last_me_pts = me_pts
+	_last_opp_pts = opp_pts
+
+	$Hud/OppBadge/Num.text = str(opp_pts)
+	$Hud/MyBadge/Num.text = str(me_pts)
 	$Hud/EndTurn.disabled = (not v.my_turn) or v.winner != -2 or over or (not $EmbeddedTutorial.is_end_turn_allowed())
+	var s_left := int(v.get("synth_left", 0))
+	var sp_left := int(v.get("spell_left", 0))
+	$Hud/ActionRow/SynthVal.text = "Sin: %d" % s_left
+	$Hud/ActionRow/SpellVal.text = "Spl: %d" % sp_left
+	$Hud/ActionRow/SynthVal.add_theme_color_override("font_color",
+		Color(0.40, 0.94, 0.72) if s_left >= 2 else (Color(0.62, 0.88, 0.78) if s_left == 1 else Color(0.44, 0.50, 0.58)))
+	$Hud/ActionRow/SpellVal.add_theme_color_override("font_color",
+		Color(0.76, 0.84, 0.96) if sp_left >= 1 else Color(0.44, 0.50, 0.58))
 	$Hud/MyTurnBar.modulate.a = 1.0 if (v.my_turn and v.winner == -2) else 0.14
 	$Hud/OppTurnBar.modulate.a = 1.0 if ((not v.my_turn) and v.winner == -2) else 0.14
 	_disp_me_time = float(v.me.get("time_left", GameState.MATCH_CLOCK_SECONDS))
@@ -385,10 +416,15 @@ func render(v: Dictionary) -> void:
 	$CoinFlipOverlay.sync(v, local_test)
 	$TurnHistory.update_history(v, local_test)
 	$DiscardDrawer.refresh_if_open(v, local_test)
+	$RecipeSheet.sync_view(v)
+	$RecipeSheet.set_button_visible(v.get("coin_phase", {}).is_empty() and not $EmbeddedTutorial.is_active())
 	if v.get("coin_phase", {}).is_empty() and int(v.winner) == -2:
 		var tno := int(v.get("turn_no", 1))
 		if _last_turn_no > 0 and tno != _last_turn_no:
 			Audio.play_sfx("turn_start", -3.0)
+			_show_turn_banner(bool(v.my_turn))
+		elif _last_turn_no == 0 and not tutorial_mode:
+			_show_turn_banner(bool(v.my_turn))
 		_last_turn_no = tno
 	if v.winner != -2:
 		_show_result()
@@ -798,6 +834,95 @@ func _reset_mode() -> void:
 	if is_instance_valid(board3d):
 		board3d.restore_base_pulses()
 
+## Klik langsung kartu senyawa yang berkedip hijau di Tabel Senyawa untuk langsung menyintesisnya.
+func _on_compound_table_clicked(comp_id: String) -> void:
+	if view.is_empty() or view.winner != -2 or not view.my_turn or not view.pending.is_empty():
+		return
+	var d := CardDB.get_card(comp_id)
+	if d == null or d.recipe.size() != 2:
+		return
+	var tno := int(view.get("turn_no", 1))
+	var uid_a := -1
+	var uid_b := -1
+	for c in view.me.base:
+		if int(c.get("placed_turn", -1)) == tno:
+			continue
+		var cid := String(c.id)
+		if uid_a == -1 and cid == String(d.recipe[0]):
+			uid_a = int(c.uid)
+		elif uid_b == -1 and cid == String(d.recipe[1]):
+			uid_b = int(c.uid)
+	if uid_a != -1 and uid_b != -1:
+		submit({"type": "synth", "a": uid_a, "b": uid_b})
+		_reset_mode()
+
+## Banner transisi giliran singkat di tengah layar (~0,75 detik, tembus klik).
+func _show_turn_banner(is_my_turn: bool) -> void:
+	var panel := PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.z_index = 150
+	var sb := StyleBoxFlat.new()
+	sb.content_margin_left = 36.0
+	sb.content_margin_right = 36.0
+	sb.content_margin_top = 12.0
+	sb.content_margin_bottom = 12.0
+	sb.bg_color = Color(0.11, 0.22, 0.34, 0.94) if is_my_turn else Color(0.32, 0.13, 0.16, 0.94)
+	sb.border_width_top = 2
+	sb.border_width_bottom = 2
+	sb.border_color = Color(0.42, 0.72, 0.94, 0.95) if is_my_turn else Color(0.84, 0.42, 0.46, 0.95)
+	sb.corner_radius_top_left = 8
+	sb.corner_radius_top_right = 8
+	sb.corner_radius_bottom_right = 8
+	sb.corner_radius_bottom_left = 8
+	panel.add_theme_stylebox_override("panel", sb)
+
+	var lbl := Label.new()
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.text = "GILIRAN KAMU" if is_my_turn else ("GILIRAN AI" if vs_ai else "GILIRAN LAWAN")
+	lbl.add_theme_font_size_override("font_size", 28)
+	lbl.add_theme_color_override("font_color", Color(0.96, 0.98, 1.0, 1.0))
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel.add_child(lbl)
+
+	add_child(panel)
+	panel.reset_size()
+	var cx := (size.x - panel.size.x) * 0.5
+	var cy := size.y * 0.44
+	panel.position = Vector2(cx - 28.0, cy)
+	panel.modulate.a = 0.0
+	var tw := panel.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(panel, "position:x", cx, 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(panel, "modulate:a", 1.0, 0.16)
+	tw.chain().tween_interval(0.50)
+	tw.chain().set_parallel(true)
+	tw.tween_property(panel, "position:x", cx + 28.0, 0.20).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tw.tween_property(panel, "modulate:a", 0.0, 0.20)
+	tw.chain().tween_callback(panel.queue_free)
+
+## Angka selisih skor (+16, -10) yang melayang naik di dekat lencana skor.
+func _spawn_score_delta(delta_pts: int, is_me: bool) -> void:
+	var badge: Control = $Hud/MyBadge if is_me else $Hud/OppBadge
+	var lbl := Label.new()
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.z_index = 140
+	lbl.text = ("+%d" % delta_pts) if delta_pts > 0 else str(delta_pts)
+	lbl.add_theme_font_size_override("font_size", 30)
+	lbl.add_theme_color_override("font_color",
+		Color(0.42, 0.94, 0.68, 1.0) if delta_pts > 0 else Color(0.96, 0.44, 0.46, 1.0))
+	lbl.add_theme_constant_override("outline_size", 5)
+	lbl.add_theme_color_override("font_outline_color", Color(0.05, 0.06, 0.08, 0.92))
+	add_child(lbl)
+	var start_pos := badge.global_position + Vector2(-42.0 * _ui_scale, 10.0 * _ui_scale)
+	lbl.position = start_pos
+	lbl.modulate.a = 0.0
+	var tw := lbl.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(lbl, "position:y", start_pos.y - 46.0 * _ui_scale, 0.95).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(lbl, "modulate:a", 1.0, 0.14)
+	tw.chain().tween_property(lbl, "modulate:a", 0.0, 0.28)
+	tw.chain().tween_callback(lbl.queue_free)
+
 func _on_discard_clicked(is_me: bool) -> void:
 	if view.is_empty():
 		return
@@ -815,6 +940,9 @@ func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel"):
 		if $GiveUpDialog.is_open():
 			$GiveUpDialog.close()
+			return
+		if $RecipeSheet.is_open():
+			$RecipeSheet.close()
 			return
 		if $DiscardDrawer.is_open():
 			$DiscardDrawer.close()
@@ -863,11 +991,64 @@ func _show_result() -> void:
 	if not _result_sfx_played:
 		_result_sfx_played = true
 		var me_idx := int(view.get("me_index", 0))
-		if local_test or int(view.winner) == me_idx:
+		var won := (int(view.winner) == me_idx)
+		if local_test or won:
 			Audio.play_sfx("win_fanfare", -1.0)
 		else:
 			Audio.play_sfx("lose_jingle", -1.0)
+		# Simpan rekor menang/kalah per level AI atau status selesai Puzzle
+		if puzzle_id != "" and won:
+			Settings.set_value("stats", "puzzle_" + puzzle_id, true)
+		elif vs_ai and not tutorial_mode and puzzle_id == "" and int(view.winner) != -1:
+			var key := ("ai_wins_" if won else "ai_losses_") + ai_difficulty
+			var prev := int(Settings.get_value("stats", key, 0))
+			Settings.set_value("stats", key, prev + 1)
 	$Result.show_result(view, REASON_TEXT.get(view.win_reason, ""), local_test, vs_ai, ai_difficulty)
+
+func _show_puzzle_banner(pinfo: Dictionary) -> void:
+	if is_instance_valid(_puzzle_banner):
+		_puzzle_banner.queue_free()
+	if pinfo.is_empty():
+		return
+	var panel := PanelContainer.new()
+	panel.z_index = 90
+	var sb := StyleBoxFlat.new()
+	sb.content_margin_left = 16.0
+	sb.content_margin_right = 16.0
+	sb.content_margin_top = 8.0
+	sb.content_margin_bottom = 8.0
+	sb.bg_color = Color(0.08, 0.105, 0.135, 0.94)
+	sb.border_width_left = 3
+	sb.border_width_top = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.border_color = Color(0.32, 0.74, 0.64, 0.95)
+	sb.corner_radius_top_left = 8
+	sb.corner_radius_top_right = 8
+	sb.corner_radius_bottom_right = 8
+	sb.corner_radius_bottom_left = 8
+	panel.add_theme_stylebox_override("panel", sb)
+
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 14)
+	panel.add_child(h)
+
+	var lbl := Label.new()
+	lbl.text = "PUZZLE %s — %s: %s" % [String(pinfo.num), String(pinfo.title), String(pinfo.goal)]
+	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_color_override("font_color", Color(0.90, 0.95, 0.98))
+	h.add_child(lbl)
+
+	var retry_btn := Button.new()
+	retry_btn.text = "Ulangi"
+	retry_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	retry_btn.add_theme_font_size_override("font_size", 13)
+	retry_btn.pressed.connect(start_as_host)
+	h.add_child(retry_btn)
+
+	add_child(panel)
+	panel.position = Vector2(172.0, 12.0)
+	_puzzle_banner = panel
 
 func _rematch() -> void:
 	$Result.hide()
