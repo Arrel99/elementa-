@@ -52,6 +52,7 @@ var _shields: Dictionary = {}        # "me" | "opp" -> { "ring": MeshInstance3D,
 
 var _known_uids := {}                # uid yang sudah ada di papan pada render sebelumnya
 var _prev_board_cards := {}          # uid -> {id, pos, size, is_me, zone} untuk animasi asal/pindah
+var _my_base_nodes := {}             # uid -> {"node": Node3D, "playable": bool} untuk sorotan pasangan sintesis
 var _prev_active_spells := {}        # uid -> {id, pos, is_me} untuk animasi spell aktif -> discard
 var _prev_deck_counts := {"me": -1, "opp": -1}
 var _prev_table_slots: Array[String] = []   # isi 8 slot Tabel Senyawa di render sebelumnya (untuk animasi refill)
@@ -628,6 +629,7 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 
 	var next_uids := {}
 	var next_board_cards := {}
+	_my_base_nodes.clear()
 	var playable_base: Array = playable.get("base", [])
 
 	# Kartu Zona Dasar Pemain (mengikuti slot pilihan pemain)
@@ -642,8 +644,9 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		next_board_cards[uid] = {"id": String(c.get("id", "")), "pos": pos, "size": SIZE_BASE, "is_me": true, "zone": "base"}
 		var is_cd := int(c.get("placed_turn", -1)) == int(v.turn_no)
 		var is_play := playable_base.has(uid)
-		_spawn_card(c, pos, SIZE_BASE, true, true, true, "", Color.WHITE,
+		var node := _spawn_card(c, pos, SIZE_BASE, true, true, true, "", Color.WHITE,
 			is_cd, is_play, not _known_uids.has(uid), true)
+		_my_base_nodes[uid] = {"node": node, "playable": is_play}
 
 	# Kartu Zona Dasar Lawan (mengikuti slot pilihan lawan)
 	for i in v.opp.base.size():
@@ -686,8 +689,10 @@ func render_board(v: Dictionary, playable: Dictionary, easy_mode: bool) -> void:
 		_spawn_card(c, Vector3(pos.x, top_y, pos.z), SIZE_SPECIAL, true, true, true, "", Color.WHITE,
 			false, false, false, false)
 
-	# Tabel Senyawa di garis tengah (maks 8 kartu tampil; sisanya ada di tumpukan Deck Senyawa)
-	var shown_table_count := _render_compound_table(v.compound_pile, v.me.base, easy_mode)
+	# Tabel Senyawa di garis tengah (maks 8 kartu tampil; kedip hanya jika bahan sudah siap & tidak cooldown)
+	var shown_table_count := _render_compound_table(
+		v.compound_pile, v.me.base, int(v.get("turn_no", 1)),
+		bool(v.get("my_turn", false)), int(v.get("synth_left", 0)))
 
 	# Tumpukan 3D & Perisai (kartu buang teratas tampil terbuka menghadap atas!)
 	_update_pile("opp_deck", int(v.opp.deck_count))
@@ -1173,11 +1178,36 @@ func _spawn_attached_under(special_card: Dictionary, base_pos: Vector3, card_sz:
 		node.rotation_degrees.y = rots[idx]
 	return base_pos.y + 0.072
 
-func _render_compound_table(ids: Array, my_base: Array, easy_mode: bool) -> int:
+## Saat pemain mengklik 1 kartu dasar untuk sintesis, sorot HANYA kartu pasangan yang cocok (bukan seluruh zona).
+func highlight_synth_selection(selected_uid: int, partner_uids: Array) -> void:
+	clear_glow()
+	for uid in _my_base_nodes:
+		var info: Dictionary = _my_base_nodes[uid]
+		var node: Node3D = info.node
+		if not is_instance_valid(node):
+			continue
+		if int(uid) == selected_uid:
+			node.set_border_pulse(true, Color(0.38, 0.78, 0.96, 1.0))
+		elif partner_uids.has(int(uid)):
+			node.set_border_pulse(true, Color(0.28, 0.88, 0.56, 1.0))
+		else:
+			node.set_border_pulse(false)
+
+## Mengembalikan status kedip normal pada kartu Zona Dasar setelah mode sintesis berakhir/dibatalkan.
+func restore_base_pulses() -> void:
+	for uid in _my_base_nodes:
+		var info: Dictionary = _my_base_nodes[uid]
+		var node: Node3D = info.node
+		if is_instance_valid(node):
+			node.set_playable(bool(info.playable))
+
+func _render_compound_table(ids: Array, my_base: Array, turn_no: int, my_turn: bool, synth_left: int) -> int:
 	const MAX_TABLE_SLOTS := 8
-	var mine := {}
+	# Hanya hitung unsur di Zona Dasar yang SUDAH bebas cooldown 1 giliran
+	var ready_mine := {}
 	for c in my_base:
-		mine[c.id] = true
+		if int(c.get("placed_turn", -1)) != turn_no:
+			ready_mine[String(c.id)] = true
 
 	# Ambil langsung hingga 8 kartu pertama dari Deck Senyawa yang sudah diacak
 	# (tetap random — boleh ada lebih dari 1 senyawa sejenis yang tampil bersamaan)
@@ -1201,18 +1231,20 @@ func _render_compound_table(ids: Array, my_base: Array, easy_mode: bool) -> int:
 		var d: CardData = CardDB.get_card(id)
 		if d == null or d.recipe.size() != 2:
 			continue
-		var have := int(mine.has(d.recipe[0])) + int(mine.has(d.recipe[1]))
+		var can_synth_now: bool = (
+			my_turn and synth_left > 0
+			and ready_mine.has(String(d.recipe[0]))
+			and ready_mine.has(String(d.recipe[1]))
+		)
 		var pos := Vector3(start_x + float(i) * spacing, 0.25, -0.05)
 		var card_node := _spawn_card(
 			{"uid": -1, "id": id, "placed_turn": -1},
 			pos, SIZE_TABLE, true, false, true, "", Color.WHITE, false, false, false)
 		card_node.rotation_degrees.x = 18.0   # menengadah jelas di atas rak 3D tanpa terpotong
 
-		# Animasi bingkai pinggiran berdenyut seperti kartu di tangan
-		if have == 2:
+		# Kedip HANYA pada kartu senyawa yang benar-benar bisa disintesis sekarang (tidak saat cooldown!)
+		if can_synth_now:
 			card_node.set_border_pulse(true, Color(0.32, 0.90, 0.58, 1.0))
-		elif have == 1 and easy_mode:
-			card_node.set_border_pulse(true, Color(0.95, 0.80, 0.30, 1.0))
 
 		# Jika slot ini baru terisi ulang dari Deck Senyawa, luncurkan halus dari deck ke slotnya!
 		var slot_changed := (i < _prev_table_slots.size() and _prev_table_slots[i] != id)

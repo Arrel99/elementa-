@@ -156,7 +156,7 @@ func _apply_geometry() -> void:
 	_back_mesh.position.y = -0.002
 
 	var glow_quad := QuadMesh.new()
-	glow_quad.size = Vector2(card_size.x + 0.24, card_size.y + 0.24)
+	glow_quad.size = Vector2(card_size.x + 0.11, card_size.y + 0.11)
 	_glow_mesh.mesh = glow_quad
 	_glow_mesh.position.y = 0.012
 

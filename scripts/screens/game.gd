@@ -731,9 +731,13 @@ func _on_card_clicked(uid: int) -> void:
 			if zone == "hand":
 				_click_hand(uid)
 			elif zone == "my_base":
+				var partners := _synth_partners_for(uid)
+				if partners.is_empty():
+					$Toast.show_text("Belum ada pasangan sintesis yang siap untuk kartu ini.")
+					return
 				mode = Mode.PICK_SYNTH
 				synth_first = uid
-				_highlight_zone("my_base")
+				board3d.highlight_synth_selection(uid, partners)
 		Mode.PICK_SYNTH:
 			if zone == "my_base" and uid != synth_first:
 				submit({"type": "synth", "a": synth_first, "b": uid})
@@ -763,12 +767,36 @@ func _click_hand(uid: int) -> void:
 		# Semua Spell langsung masuk & terkunci di Zona Spell (jika butuh target, lanjut pilih target)
 		submit({"type": "spell", "uid": uid, "args": {}})
 
+func _synth_partners_for(uid: int) -> Array[int]:
+	var out: Array[int] = []
+	if view.is_empty() or not bool(view.get("my_turn", false)) or int(view.get("synth_left", 0)) <= 0:
+		return out
+	var tno := int(view.get("turn_no", 1))
+	var first_c := {}
+	for c in view.me.base:
+		if int(c.get("uid", -1)) == uid:
+			first_c = c
+			break
+	if first_c.is_empty() or int(first_c.get("placed_turn", -1)) == tno:
+		return out
+	var pile: Array = view.get("compound_pile", [])
+	for c in view.me.base:
+		var buid := int(c.get("uid", -1))
+		if buid == uid or int(c.get("placed_turn", -1)) == tno:
+			continue
+		var res := CardDB.find_recipe(String(first_c.id), String(c.id))
+		if res != "" and pile.has(res):
+			out.append(buid)
+	return out
+
 func _reset_mode() -> void:
 	mode = Mode.IDLE
 	synth_first = -1
 	pending_spell_uid = -1
 	pending_zone = ""
 	_clear_glow()
+	if is_instance_valid(board3d):
+		board3d.restore_base_pulses()
 
 func _on_discard_clicked(is_me: bool) -> void:
 	if view.is_empty():
