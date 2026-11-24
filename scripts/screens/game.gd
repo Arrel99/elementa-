@@ -813,6 +813,9 @@ func _on_discard_clicked(is_me: bool) -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel"):
+		if $GiveUpDialog.is_open():
+			$GiveUpDialog.close()
+			return
 		if $DiscardDrawer.is_open():
 			$DiscardDrawer.close()
 			return

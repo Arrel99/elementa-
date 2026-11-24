@@ -23,8 +23,12 @@ func _ready() -> void:
 	_v.get_node("Settings").pressed.connect(_open_settings)
 	_v.get_node("Quit").pressed.connect(get_tree().quit)
 	$SettingsPanel/Box/Close.pressed.connect(_close_settings)
+	$SettingsDim.gui_input.connect(func(e: InputEvent):
+		if e is InputEventMouseButton and e.pressed:
+			_close_settings())
 	$TutorialModal.start_practice_requested.connect(_start_practice)
 	$Version.text = "v" + Net.GAME_VERSION
+	$SettingsDim.hide()
 	$SettingsPanel.hide()
 
 	var vol: float = float(Settings.get_value("audio", "master", 0.8))
@@ -118,6 +122,7 @@ func _play_entrance_anim() -> void:
 			idx += 1
 
 func _open_settings() -> void:
+	$SettingsDim.show()
 	var panel: PanelContainer = $SettingsPanel
 	panel.show()
 	panel.pivot_offset = panel.size * 0.5
@@ -135,7 +140,9 @@ func _close_settings() -> void:
 	var tw := panel.create_tween().set_parallel(true)
 	tw.tween_property(panel, "scale", Vector2(0.94, 0.94), 0.14).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	tw.tween_property(panel, "modulate:a", 0.0, 0.14)
-	tw.chain().tween_callback(panel.hide)
+	tw.chain().tween_callback(func():
+		panel.hide()
+		$SettingsDim.hide())
 
 func _start_tutorial() -> void:
 	Net.local_test = false

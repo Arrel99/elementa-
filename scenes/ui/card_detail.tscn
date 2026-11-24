@@ -180,24 +180,24 @@ size_flags_vertical = 3
 theme_override_constants/separation = 24
 
 [node name="PreviewSlot" type="CenterContainer" parent="Root/Center/Card/V/Body"]
-custom_minimum_size = Vector2(236, 0)
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 
 [node name="Info" type="VBoxContainer" parent="Root/Center/Card/V/Body"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 14
 
 [node name="Name" type="Label" parent="Root/Center/Card/V/Body/Info"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.96, 0.98, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 36
 text = "Nama Kartu"
 autowrap_mode = 3
 
 [node name="StatsRow" type="HBoxContainer" parent="Root/Center/Card/V/Body/Info"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="DescPanel" type="PanelContainer" parent="Root/Center/Card/V/Body/Info"]
 layout_mode = 2
@@ -206,7 +206,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_box")
 [node name="Desc" type="Label" parent="Root/Center/Card/V/Body/Info/DescPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.86, 0.90, 0.94, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 text = "Deskripsi"
 autowrap_mode = 3
 
@@ -218,7 +218,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_recipe")
 [node name="Recipe" type="Label" parent="Root/Center/Card/V/Body/Info/RecipePanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.92, 0.87, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 text = "Resep"
 autowrap_mode = 3
 

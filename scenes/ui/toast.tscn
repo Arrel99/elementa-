@@ -3,20 +3,20 @@
 [ext_resource type="Script" path="res://scripts/ui/toast.gd" id="1_toast"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
-content_margin_left = 18.0
-content_margin_top = 12.0
-content_margin_right = 18.0
-content_margin_bottom = 12.0
-bg_color = Color(0.09, 0.1, 0.13, 0.94)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9, 0.5, 0.3, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+content_margin_left = 28.0
+content_margin_top = 16.0
+content_margin_right = 28.0
+content_margin_bottom = 16.0
+bg_color = Color(0.088, 0.106, 0.136, 0.96)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.76, 0.34, 0.38, 0.95)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="Toast" type="PanelContainer"]
 anchors_preset = 8
@@ -26,10 +26,13 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_toast")
 script = ExtResource("1_toast")
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 20
 text = "Pesan"
 horizontal_alignment = 1

@@ -29,7 +29,7 @@ func _ready() -> void:
 
 	_preview_card = CARD_SCENE.instantiate()
 	_preview_slot.add_child(_preview_card)
-	_preview_card.fit(Vector2(224, 304))
+	_preview_card.fit(Vector2(296, 402))
 	_resize_modal()
 
 func show_card(id: String) -> void:
@@ -38,7 +38,7 @@ func show_card(id: String) -> void:
 		return
 
 	_preview_card.setup({"uid": -1, "id": id, "placed_turn": -1}, true, false, false)
-	_preview_card.fit(Vector2(224, 304))
+	_preview_card.fit(Vector2(296, 402))
 	_preview_card.set_info_button(false)
 
 	match d.type:
@@ -132,8 +132,8 @@ func _resize_modal() -> void:
 	if not is_instance_valid(_card_panel):
 		return
 	var vp := get_viewport().get_visible_rect().size
-	var w := clampf(vp.x * 0.62, 620.0, 860.0)
-	var h := clampf(vp.y * 0.68, 420.0, 560.0)
+	var w := clampf(vp.x * 0.70, 780.0, 1060.0)
+	var h := clampf(vp.y * 0.74, 520.0, 680.0)
 	_card_panel.custom_minimum_size = Vector2(w, h)
 
 func _on_dim_input(e: InputEvent) -> void:

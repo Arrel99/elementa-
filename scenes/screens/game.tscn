@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/result_modal.tscn" id="13_result"]
 [ext_resource type="PackedScene" path="res://scenes/ui/coin_flip_overlay.tscn" id="14_coin"]
 [ext_resource type="PackedScene" path="res://scenes/ui/embedded_tutorial.tscn" id="15_embedded_tut"]
+[ext_resource type="PackedScene" path="res://scenes/ui/give_up_modal.tscn" id="16_giveup"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 8.0
@@ -260,13 +261,7 @@ script = ExtResource("11_hexbtn")
 
 [node name="Toast" parent="." instance=ExtResource("2_toast")]
 
-[node name="GiveUpDialog" type="ConfirmationDialog" parent="."]
-title = "Menyerah"
-initial_position = 2
-size = Vector2i(320, 120)
-dialog_text = "Yakin ingin menyerah?"
-ok_button_text = "Menyerah"
-cancel_button_text = "Batal"
+[node name="GiveUpDialog" parent="." instance=ExtResource("16_giveup")]
 
 [node name="Result" parent="." instance=ExtResource("13_result")]
 
